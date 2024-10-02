@@ -17,8 +17,6 @@ export const getUser = async (req: Request, res: Response): Promise<Response> =>
             return res.status(404).json({ message: "User not found" });
         }
 
-        console.log(user);
-
         return res.json(user);
     } catch (error: any) {
         console.error(error);
@@ -26,6 +24,22 @@ export const getUser = async (req: Request, res: Response): Promise<Response> =>
         if (error instanceof jwt.JsonWebTokenError) {
             return res.status(401).json({ message: "Failed to authenticate token" });
         }
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const getUsers = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        // Find all users in the database
+        const users = await User.find();
+
+        if (users.length === 0) {
+            return res.status(404).json({ message: "No users found" });
+        }
+
+        return res.json(users);
+    } catch (error: any) {
+        console.error(error);
         return res.status(500).json({ message: error.message });
     }
 };
