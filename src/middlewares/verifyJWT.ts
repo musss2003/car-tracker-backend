@@ -6,14 +6,11 @@ interface AuthenticateRequest extends Request {
     user?: IUser;
 }
 
-// Helper function to extract token
-function getTokenFrom(req: Request): string | null {
-    return req.cookies?.accessToken || null;
-}
-
 const authenticate = async (req: AuthenticateRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const token = getTokenFrom(req);
+        const authHeader = req.headers.authorization;
+
+        const token = authHeader && authHeader.split(' ')[1];  // Bearer <token>
 
         if (!token) {
             res.status(401).json({ message: "Authentication token not found" });
@@ -21,6 +18,7 @@ const authenticate = async (req: AuthenticateRequest, res: Response, next: NextF
         }
 
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || '') as { id: string };
+
         const user = await User.findById(decodedToken.id);
 
         if (!user) {
