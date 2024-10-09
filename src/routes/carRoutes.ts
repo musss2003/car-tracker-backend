@@ -35,7 +35,7 @@ router.put('/:license_plate', async (req: Request, res: Response) => {
 });
 
 // Route to delete a car by ID
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:license_plate', async (req: Request, res: Response) => {
   await deleteCar(req, res);
 });
 
