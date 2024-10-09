@@ -51,7 +51,7 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
 
     try {
         // Validate input to avoid security issues like injection & ensure data integrity
-        const allowedUpdates = ['username', 'email', 'name', 'profilePhotoUrl', 'role'];
+        const allowedUpdates = ['username', 'email', 'name', 'profilePhotoUrl', 'citizenshipId'];
         const isValidOperation = Object.keys(updates).every((key) => allowedUpdates.includes(key));
 
         if (!isValidOperation) {
