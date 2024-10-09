@@ -62,15 +62,20 @@ export const updateCar = async (req: Request, res: Response) => {
   }
 };
 
-// Delete a car by ID
+// Delete a car by license plate
 export const deleteCar = async (req: Request, res: Response) => {
   try {
-    const deletedCar = await Car.findByIdAndDelete(req.params.id);
+    const { license_plate } = req.params; // Extract license plate from request parameters
+    const deletedCar = await Car.findOneAndDelete({ license_plate }); // Use findOneAndDelete with license plate
+
     if (!deletedCar) {
       return res.status(404).json({ message: 'Car not found' });
     }
+
     res.status(200).json({ message: 'Car deleted successfully' });
   } catch (error) {
+    console.error('Error deleting car:', error); // Log the error for debugging
     res.status(500).json({ message: 'Error deleting car' });
   }
 };
+
