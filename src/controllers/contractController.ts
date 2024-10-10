@@ -11,6 +11,19 @@ export const getContracts = async (req: Request, res: Response) => {
   }
 };
 
+export const getContractsPopulated = async (req: Request, res: Response) => {
+  try {
+      const contracts = await Contract.find()
+          .populate('customer', 'name email')  // Populate 'customer' with specific fields
+          .populate('car', 'model licensePlate'); // Populate 'car' with specific fields
+
+      return contracts;
+  } catch (error) {
+      console.error('Error fetching contracts from database:', error);
+      throw error;
+  }
+};
+
 // Get a single contract by ID
 export const getContract = async (req: Request, res: Response) => {
   try {
