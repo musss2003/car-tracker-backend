@@ -6,6 +6,7 @@ import {
   deleteContract,
   getContracts,
   getActiveContracts,
+  getContractsPopulated,
 } from '../controllers/contractController';
 import authenticate from '../middlewares/verifyJWT';
 
@@ -17,6 +18,11 @@ const router = express.Router();
 // Route to get all contracts
 router.get('/', async (req: Request, res: Response) => {
   await getContracts(req, res);
+});
+
+// Route to get all contracts
+router.get('/populated', async (req: Request, res: Response) => {
+  await getContractsPopulated(req, res);
 });
 
 // Route to get all contracts

@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import contractRoutes from './routes/contractRoutes';
 import carRoutes from './routes/carRoutes';
+import customerRoutes from './routes/customerRoutes';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -29,6 +30,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/cars', carRoutes); // Register the car routes
+app.use('/api/customers', customerRoutes); // Register the car routes
+
 
 
 
