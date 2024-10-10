@@ -20,6 +20,7 @@ export interface IContract extends Document {
     additionalNotes?: string;
     createdAt?: Date;
     updatedAt?: Date;
+    contractPhoto?: string;
 }
 
 const contractSchema: Schema = new Schema({
@@ -42,6 +43,7 @@ const contractSchema: Schema = new Schema({
     additionalNotes: { type: String },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
+    contractPhoto: { type: String }
 });
 
 export default mongoose.model<IContract>('Contract', contractSchema);
