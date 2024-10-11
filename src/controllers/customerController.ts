@@ -63,22 +63,20 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
 };
 
 
-export const searchCustomersByName = async (req:Request, res:Response) => {
+export const searchCustomersByName = async (req: Request, res: Response) => {
     const { name } = req.query;
 
-    // Check if the 'name' parameter is provided
     if (!name) {
         return res.status(400).json({ error: 'Name query parameter is required' });
     }
 
     try {
-        // Use regex to search for customers by name, case-insensitive
-        const customers = await Customer.find({
-            name: { $regex: name, $options: 'i' }
-        });
+        // Replace this with your actual database query
+        const customers = await Customer.find({ name: { $regex: name, $options: 'i' } }); // Example using MongoDB
         res.json(customers);
     } catch (error) {
-        res.status(500).json({ error: 'Error searching for customers' });
+        console.error('Error fetching customers:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
