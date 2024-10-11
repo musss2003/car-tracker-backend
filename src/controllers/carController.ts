@@ -1,6 +1,7 @@
 // controllers/carController.js
 import Car from '../models/Car'; // Adjust the path according to your project structure
 import { Request, Response } from 'express';
+import Contract from '../models/Contract';
 
 // Get all cars
 export const getCars = async (req: Request, res: Response) => {
@@ -78,4 +79,40 @@ export const deleteCar = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting car' });
   }
 };
+
+export const getAvailableCars = async (req: Request, res: Response) => {
+  const { startingDate, endingDate } = req.body;
+
+  if (!startingDate || !endingDate) {
+    return res.status(400).json({ error: 'Please provide both starting and ending dates.' });
+  }
+
+  try {
+    // Convert to Date objects
+    const start = new Date(startingDate);
+    const end = new Date(endingDate);
+
+    // Find all contracts that overlap with the provided period
+    const overlappingContracts = await Contract.find({
+      $or: [
+        { 'rentalPeriod.startDate': { $lt: end, $gte: start } }, // Contracts that start in the period
+        { 'rentalPeriod.endDate': { $gt: start, $lte: end } }, // Contracts that end in the period
+        { 'rentalPeriod.startDate': { $lte: start }, 'rentalPeriod.endDate': { $gte: end } }, // Contracts that span the entire period
+      ]
+    }).select('car'); // Only select car ids
+
+    const rentedCarIds = overlappingContracts.map(contract => contract.car); // Array of car IDs that are rented
+
+    // Find all cars that are not rented
+    const availableCars = await Car.find({
+      _id: { $nin: rentedCarIds }, // Exclude cars with IDs in rentedCarIds
+    });
+    
+    res.json(availableCars);
+
+  } catch (error) {
+    console.error('Error fetching available cars:', error);
+    res.status(500).json({ error: 'Server error fetching available cars.' });
+  }
+}
 

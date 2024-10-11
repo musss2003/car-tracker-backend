@@ -30,7 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/cars', carRoutes); // Register the car routes
-app.use('/api/customers', customerRoutes); // Register the car routes
+app.use('/api/customers', customerRoutes); // Register the customer routes
 
 
 

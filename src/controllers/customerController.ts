@@ -62,6 +62,26 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
     }
 };
 
+
+export const searchCustomersByName = async (req:Request, res:Response) => {
+    const { name } = req.query;
+
+    // Check if the 'name' parameter is provided
+    if (!name) {
+        return res.status(400).json({ error: 'Name query parameter is required' });
+    }
+
+    try {
+        // Use regex to search for customers by name, case-insensitive
+        const customers = await Customer.find({
+            name: { $regex: name, $options: 'i' }
+        });
+        res.json(customers);
+    } catch (error) {
+        res.status(500).json({ error: 'Error searching for customers' });
+    }
+};
+
 // Update a customer by ID
 export const updateCustomer = async (req: Request, res: Response): Promise<Response> => {
     const customerId = req.params.id;
