@@ -7,6 +7,12 @@ const router = express.Router();
 // Middleware to verify JWT for all routes
 // router.use(authenticate);
 
+
+// Route to search customers by name
+router.get('/search', async (req: Request, res: Response) => {
+    await searchCustomersByName(req, res);
+});
+
 // Route to get a single customer by ID
 router.get('/:id', async (req: Request, res: Response) => {
     await getCustomer(req, res);
@@ -15,11 +21,6 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Route to get all customers
 router.get('/', async (req: Request, res: Response) => {
     await getCustomers(req, res);
-});
-
-// Route to search customers by name
-router.get('/search', async (req: Request, res: Response) => {
-    await searchCustomersByName(req, res);
 });
 
 // Route to create a new contract

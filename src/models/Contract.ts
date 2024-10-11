@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IContract extends Document {
-    contractNumber: string;
     customer: mongoose.Types.ObjectId;
     car: mongoose.Types.ObjectId;
     rentalPeriod: {
@@ -12,7 +11,6 @@ export interface IContract extends Document {
         dailyRate: number;
         totalAmount: number;
     };
-    status: 'active' | 'completed' | 'cancelled';
     paymentDetails: {
         paymentMethod: string;
         paymentStatus: 'pending' | 'paid';
@@ -24,7 +22,6 @@ export interface IContract extends Document {
 }
 
 const contractSchema: Schema = new Schema({
-    contractNumber: { type: String, required: true, unique: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
     car: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
     rentalPeriod: {
@@ -35,10 +32,9 @@ const contractSchema: Schema = new Schema({
         dailyRate: { type: Number, required: true },
         totalAmount: { type: Number, required: true },
     },
-    status: { type: String, enum: ['active', 'completed', 'cancelled'], default: 'active' },
     paymentDetails: {
-        paymentMethod: { type: String, required: true },
-        paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'pending' },
+        paymentMethod: { type: String, default: "cash" },
+        paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'paid' },
     },
     additionalNotes: { type: String },
     createdAt: { type: Date, default: Date.now },

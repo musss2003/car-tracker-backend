@@ -42,11 +42,11 @@ export const getContract = async (req: Request, res: Response) => {
 
 // Create a new contract
 export const createContract = async (req: Request, res: Response): Promise<Response> => {
-  const { contractNumber, customer, car, rentalPeriod, rentalPrice, paymentDetails, additionalNotes, contractPhoto } = req.body;
+  const { customer, car, rentalPeriod, rentalPrice, paymentDetails, additionalNotes, contractPhoto } = req.body;
 
   try {
       // Validate input
-      if (!contractNumber || !customer || !car || !rentalPeriod || !rentalPrice || !paymentDetails) {
+      if (!customer || !car || !rentalPeriod || !rentalPrice || !paymentDetails) {
           return res.status(400).json({ message: "All fields are required." });
       }
 
@@ -60,7 +60,6 @@ export const createContract = async (req: Request, res: Response): Promise<Respo
 
       // Create the contract
       const newContract: IContract = new Contract({
-          contractNumber,
           customer,
           car,
           rentalPeriod,
@@ -107,11 +106,20 @@ export const deleteContract = async (req: Request, res: Response) => {
 
 export const getActiveContracts = async (req: Request, res: Response) => {
   try {
-      const contracts = await Contract.find({ status: 'active' }); // Adjust the query to match your schema
-      res.json(contracts);
+    const today = new Date();
+    
+    // Find contracts where the start date is in the past and the end date is in the future
+    const contracts = await Contract.find({
+      rentalPeriod: {
+        startDate: { $lte: today },  // Start date is less than or equal to today
+        endDate: { $gte: today }     // End date is greater than or equal to today
+      }
+    });
+
+    res.json(contracts);
   } catch (error) {
-      console.error('Error fetching active contracts:', error);
-      res.status(500).send('Server Error');
+    console.error('Error fetching active contracts:', error);
+    res.status(500).send('Server Error');
   }
 };
 
