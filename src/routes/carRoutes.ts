@@ -6,8 +6,11 @@ import {
   updateCar,
   deleteCar,
   getCars,
+  getAvailableCars,
 } from '../controllers/carController';
 import authenticate from '../middlewares/verifyJWT';
+import Contract from '../models/Contract';
+import Car from '../models/Car';
 
 const router = express.Router();
 
@@ -18,6 +21,12 @@ const router = express.Router();
 router.get('/', async (req: Request, res: Response) => {
   await getCars(req, res);
 });
+
+// POST: /api/cars/available
+router.post('/available', async (req, res) => {
+  await getAvailableCars(req, res);
+});
+
 
 // Route to get a car by ID
 router.get('/:id', async (req: Request, res: Response) => {
