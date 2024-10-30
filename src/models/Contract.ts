@@ -4,12 +4,12 @@ export interface IContract extends Document {
     customer: {
         id: mongoose.Types.ObjectId;
         name: string;
-        email: string;
+        passport_number: string;
     };
     car: {
         id: mongoose.Types.ObjectId;
         model: string;
-        licensePlate: string;
+        license_plate: string;
     };
     rentalPeriod: {
         startDate: Date;
@@ -33,12 +33,12 @@ const contractSchema: Schema = new Schema({
     customer: {
         id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
         name: { type: String, required: true },
-        email: { type: String, required: true }
+        passport_number: { type: String, required: true }
     },
     car: {
         id: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
         model: { type: String, required: true },
-        licensePlate: { type: String, required: true }
+        license_plate: { type: String, required: true }
     },
     rentalPeriod: {
         startDate: { type: Date, required: true },

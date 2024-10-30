@@ -2,6 +2,7 @@
 import Car from '../models/Car'; // Adjust the path according to your project structure
 import { Request, Response } from 'express';
 import Contract from '../models/Contract';
+import mongoose from 'mongoose';
 
 // Get all cars
 export const getCars = async (req: Request, res: Response) => {
@@ -80,39 +81,44 @@ export const deleteCar = async (req: Request, res: Response) => {
   }
 };
 
-export const getAvailableCars = async (req: Request, res: Response) => {
+// Fetch available cars for a given rental period
+export const getAvailableCarsForPeriod = async (req: Request, res: Response) => {
   const { startingDate, endingDate } = req.body;
 
-  if (!startingDate || !endingDate) {
-    return res.status(400).json({ error: 'Please provide both starting and ending dates.' });
-  }
-
   try {
-    // Convert to Date objects
+    // Ensure the dates are valid
+    if (!startingDate || !endingDate) {
+      return res.status(400).json({ message: "Start date and end date are required." });
+    }
+
+    // Convert dates to ISO format
     const start = new Date(startingDate);
     const end = new Date(endingDate);
 
-    // Find all contracts that overlap with the provided period
-    const overlappingContracts = await Contract.find({
-      $or: [
-        { 'rentalPeriod.startDate': { $lt: end, $gte: start } }, // Contracts that start in the period
-        { 'rentalPeriod.endDate': { $gt: start, $lte: end } }, // Contracts that end in the period
-        { 'rentalPeriod.startDate': { $lte: start }, 'rentalPeriod.endDate': { $gte: end } }, // Contracts that span the entire period
-      ]
-    }).select('car'); // Only select car ids
+    // Fetch booked car IDs for the given period
+    const bookedCarIds = await getBookedCarIds(start, end);
 
-    const rentedCarIds = overlappingContracts.map(contract => contract.car); // Array of car IDs that are rented
-
-    // Find all cars that are not rented
+    // Fetch available cars
     const availableCars = await Car.find({
-      _id: { $nin: rentedCarIds }, // Exclude cars with IDs in rentedCarIds
+      _id: { $nin: bookedCarIds }
     });
-    
-    res.json(availableCars);
 
-  } catch (error) {
+    res.status(200).json(availableCars);
+  } catch (error: any) {
     console.error('Error fetching available cars:', error);
-    res.status(500).json({ error: 'Server error fetching available cars.' });
+    res.status(500).json({ message: 'Error fetching available cars', error });
   }
-}
+};
 
+// Helper function to get booked car IDs for a given period
+const getBookedCarIds = async (start: Date, end: Date): Promise<mongoose.Types.ObjectId[]> => {
+  const contracts = await Contract.find({
+    $or: [
+      { 'rentalPeriod.startDate': { $lte: end, $gte: start } },
+      { 'rentalPeriod.endDate': { $lte: end, $gte: start } },
+      { 'rentalPeriod.startDate': { $lte: start }, 'rentalPeriod.endDate': { $gte: end } }
+    ]
+  });
+
+  return contracts.map(contract => contract.car.id);
+};
