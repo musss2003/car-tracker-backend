@@ -1,8 +1,16 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IContract extends Document {
-    customer: mongoose.Types.ObjectId;
-    car: mongoose.Types.ObjectId;
+    customer: {
+        id: mongoose.Types.ObjectId;
+        name: string;
+        email: string;
+    };
+    car: {
+        id: mongoose.Types.ObjectId;
+        model: string;
+        licensePlate: string;
+    };
     rentalPeriod: {
         startDate: Date;
         endDate: Date;
@@ -22,8 +30,16 @@ export interface IContract extends Document {
 }
 
 const contractSchema: Schema = new Schema({
-    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-    car: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
+    customer: {
+        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
+        name: { type: String, required: true },
+        email: { type: String, required: true }
+    },
+    car: {
+        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
+        model: { type: String, required: true },
+        licensePlate: { type: String, required: true }
+    },
     rentalPeriod: {
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
@@ -43,4 +59,3 @@ const contractSchema: Schema = new Schema({
 });
 
 export default mongoose.model<IContract>('Contract', contractSchema);
-
