@@ -13,6 +13,18 @@ export const getContracts = async (req: Request, res: Response) => {
   }
 };
 
+// Get total revenue
+export const getTotalRevenue = async (req: Request, res: Response) => {
+  try {
+    const contracts = await Contract.find();
+    const totalRevenue = contracts.reduce((acc, contract) => acc + contract.rentalPrice.totalAmount, 0);
+    
+    res.status(200).json({ totalRevenue });
+  } catch (error) {
+    res.status(500).json({ message: 'Error calculating total revenue', error });
+  }
+};
+
 export const getContractsPopulated = async (req: Request, res: Response) => {
 
   try {
