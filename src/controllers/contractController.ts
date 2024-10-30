@@ -18,7 +18,7 @@ export const getTotalRevenue = async (req: Request, res: Response) => {
   try {
     const contracts = await Contract.find();
     const totalRevenue = contracts.reduce((acc, contract) => acc + contract.rentalPrice.totalAmount, 0);
-    
+
     res.status(200).json({ totalRevenue });
   } catch (error) {
     res.status(500).json({ message: 'Error calculating total revenue', error });
@@ -70,10 +70,18 @@ export const createContract = async (req: Request, res: Response): Promise<Respo
           return res.status(404).json({ message: "Customer or Car not found." });
       }
 
-      // Create the contract
+      // Create the contract with additional customer and car details
       const newContract: IContract = new Contract({
-          customer,
-          car,
+          customer: {
+              id: existingCustomer._id,
+              name: existingCustomer.name,
+              email: existingCustomer.email
+          },
+          car: {
+              id: existingCar._id,
+              model: existingCar.model,
+              licensePlate: existingCar.license_plate
+          },
           rentalPeriod,
           rentalPrice,
           paymentDetails,
