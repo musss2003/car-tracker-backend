@@ -86,12 +86,23 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
     const updates = req.body;
 
     try {
-        const allowedUpdates = ['name', 'email', 'phone_number', 'address', 'driver_license_number', 'passport_number'];
-        const isValidOperation = Object.keys(updates).every((key) => allowedUpdates.includes(key));
+        // const allowedUpdates = [
+        //     'id',
+        //     'name', 
+        //     'email', 
+        //     'phone_number', 
+        //     'address', 
+        //     'driver_license_number', 
+        //     'passport_number', 
+        //     'drivingLicensePhotoUrl', 
+        //     'passportPhotoUrl'
+        // ];
 
-        if (!isValidOperation) {
-            return res.status(400).json({ message: "Invalid updates!" });
-        }
+        // const isValidOperation = Object.keys(updates).every((key) => allowedUpdates.includes(key));
+
+        // if (!isValidOperation) {
+        //     return res.status(400).json({ message: "Invalid updates!" });
+        // }
 
         const customer = await Customer.findByIdAndUpdate(customerId, updates, {
             new: true, // return the updated document
