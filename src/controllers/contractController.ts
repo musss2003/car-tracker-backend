@@ -75,12 +75,12 @@ export const createContract = async (req: Request, res: Response): Promise<Respo
           customer: {
               id: existingCustomer._id,
               name: existingCustomer.name,
-              email: existingCustomer.email
+              passport_number: existingCustomer.passport_number
           },
           car: {
               id: existingCar._id,
               model: existingCar.model,
-              licensePlate: existingCar.license_plate
+              license_plate: existingCar.license_plate
           },
           rentalPeriod,
           rentalPrice,

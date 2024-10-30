@@ -6,7 +6,7 @@ import {
   updateCar,
   deleteCar,
   getCars,
-  getAvailableCars,
+  getAvailableCarsForPeriod,
 } from '../controllers/carController';
 import authenticate from '../middlewares/verifyJWT';
 import Contract from '../models/Contract';
@@ -24,7 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 // POST: /api/cars/available
 router.post('/available', async (req, res) => {
-  await getAvailableCars(req, res);
+  await getAvailableCarsForPeriod(req, res);
 });
 
 
