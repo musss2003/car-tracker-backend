@@ -4,10 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/app.js",
-    "dev": "ts-node src/app.ts"
-  },
+  "start": "node index.js",        
+  "dev": "nodemon src/app.ts"         
+},
   "keywords": [],
   "author": "Mustafa Sinanovic",
   "license": "ISC",
@@ -23,6 +22,7 @@
     "dotenv": "^16.4.5",
     "express-list-endpoints": "^7.1.0",
     "mongoose": "^8.7.0",
+    "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   },
