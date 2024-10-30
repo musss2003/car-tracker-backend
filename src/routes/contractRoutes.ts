@@ -7,13 +7,14 @@ import {
   getContracts,
   getActiveContracts,
   getContractsPopulated,
+  getTotalRevenue,
 } from '../controllers/contractController';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();
 
 // Middleware to verify JWT for all contract routes
-// router.use(authenticate);
+router.use(authenticate);
 
 // Route to get all contracts
 router.get('/', async (req: Request, res: Response) => {
@@ -28,6 +29,11 @@ router.get('/populated', async (req: Request, res: Response) => {
 // Route to get all contracts
 router.get('/active', async (req: Request, res: Response) => {
   await getActiveContracts(req, res);
+});
+
+// Route to get all contracts
+router.get('/revenue', async (req: Request, res: Response) => {
+  await getTotalRevenue(req, res);
 });
 
 
