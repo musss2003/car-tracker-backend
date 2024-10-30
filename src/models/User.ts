@@ -44,8 +44,8 @@ const userSchema: Schema<IUser> = new Schema({
     },
     role: {
         type: String,
-        enum: ['admin', 'staff'],
-        default: 'staff',
+        enum: ['admin', 'staff', 'user'],
+        default: 'user',
     },
     lastLogin: {
         type: Date,
