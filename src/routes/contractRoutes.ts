@@ -8,6 +8,7 @@ import {
   getActiveContracts,
   getContractsPopulated,
   getTotalRevenue,
+  downloadContractDocx,
 } from '../controllers/contractController';
 import authenticate from '../middlewares/verifyJWT';
 
@@ -41,6 +42,12 @@ router.get('/revenue', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   await getContract(req, res);
 });
+
+// Route to download the generated DOCX file
+router.get('/download/:id', async (req: Request, res: Response) => {
+  await downloadContractDocx(req, res);
+});
+
 
 // Route to create a new contract
 router.post('/', async (req: Request, res: Response) => {

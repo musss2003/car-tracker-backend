@@ -9,6 +9,7 @@ import customerRoutes from './routes/customerRoutes';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 
 
 dotenv.config();
@@ -21,6 +22,14 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Middleware to serve static files
+app.use('/src/assets', express.static(path.join(__dirname, 'src/assets')));
+
+app.get('/src/assets/contract_template.docx', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.sendFile(path.join(__dirname, 'src/assets/contract_template.docx'));
+});
 
 // Connect to database
 connectToDb();
