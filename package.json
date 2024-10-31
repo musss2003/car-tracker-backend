@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "start": "node index.js",        
-  "dev": "nodemon src/app.ts"         
-},
+    "start": "node index.js",
+    "dev": "nodemon src/app.ts"
+  },
   "keywords": [],
   "author": "Mustafa Sinanovic",
   "license": "ISC",
@@ -31,7 +31,9 @@
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "docxtemplater": "^3.51.2",
     "express": "^4.21.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "pizzip": "^3.1.7"
   }
 }
