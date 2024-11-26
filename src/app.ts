@@ -6,15 +6,22 @@ import userRoutes from './routes/userRoutes';
 import contractRoutes from './routes/contractRoutes';
 import carRoutes from './routes/carRoutes';
 import customerRoutes from './routes/customerRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import http from 'http';
+import { Server } from 'socket.io'; // Using Socket.IO
+import Notification from './models/Notification'; // Import the custom Notification model
+
 
 
 dotenv.config();
 
 const app: Application = express();
+const server = http.createServer(app); // Create the HTTP server
+const io = new Server(server); // Attach Socket.IO to the server
 
 app.use(cors({
     origin: process.env.BASE_URL,  // Specify the exact origin
@@ -23,6 +30,71 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Handle WebSocket connections
+io.on('connection', (socket) => {
+    console.log(`User connected: ${socket.id}`);
+
+    // Handle joining a specific room for a user
+    socket.on('join', (userId: string) => {
+        socket.join(userId); // Join a room with the user's ID
+        console.log(`User ${userId} joined room`);
+    });
+
+    // Emit a notification to a specific user
+    socket.on('sendNotification', async (data) => {
+        const { recipientId, type, message } = data;
+
+        try {
+            const notification = await Notification.create({
+                recipient: recipientId,
+                type,
+                message,
+                status: "new",
+            });
+
+            io.to(recipientId).emit('receiveNotification', notification);
+
+        } catch (err) {
+            console.error('Error sending notification:', err);
+        }
+    });
+
+     // Listen for a mark-as-read event from the client
+     socket.on('markAsRead', async (notificationId) => {
+        try {
+            const notification = await Notification.findById(notificationId);
+
+            if (notification) {
+                notification.status = 'seen';
+                await notification.save();
+
+                // Notify the client that the status has been updated
+                socket.emit('notificationUpdated', notification);
+            }
+        } catch (err) {
+            console.error('Error updating notification:', err);
+        }
+    });
+
+    // Listen for a bulk mark-as-read event
+    socket.on('markAllAsRead', async (recipientId) => {
+        try {
+            const updatedNotifications = await Notification.updateMany(
+                { recipient: recipientId, status: 'new' },
+                { $set: { status: 'seen' } }
+            );
+
+            // Notify the client about the bulk update
+            socket.emit('allNotificationsUpdated', updatedNotifications);
+        } catch (err) {
+            console.error('Error updating notifications:', err);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+    });
+});
 // Middleware to serve static files
 app.use('/src/assets', express.static(path.join(__dirname, 'src/assets')));
 
@@ -40,6 +112,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/cars', carRoutes); // Register the car routes
 app.use('/api/customers', customerRoutes); // Register the customer routes
+app.use('/api/notifications', notificationRoutes); // manipulate notifications
 
 
 
