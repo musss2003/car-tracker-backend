@@ -14,10 +14,22 @@ import path from 'path';
 import http from 'http';
 import { Server } from 'socket.io'; // Using Socket.IO
 import Notification from './models/Notification'; // Import the custom Notification model
+import multer from "multer";
+
 
 
 
 dotenv.config();
+
+const storage = multer.diskStorage({
+    destination: 'public/uploads/',
+    filename: function(req, file, cb){
+        cb(null, file.originalname);
+    }
+});
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 const app: Application = express();
 const server = http.createServer(app); // Create the HTTP server
@@ -106,6 +118,9 @@ app.get('/src/assets/contract_template.docx', (req, res) => {
 // Connect to database
 connectToDb();
 
+// Apply multer middleware globally
+app.use(upload.single('bookPic'));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -114,19 +129,11 @@ app.use('/api/cars', carRoutes); // Register the car routes
 app.use('/api/customers', customerRoutes); // Register the customer routes
 app.use('/api/notifications', notificationRoutes); // manipulate notifications
 
-
-
-
-// Home route
-app.get('/', (req: Request, res: Response) => {
-    res.send('Welcome to the Home Page!');
-});
-
 // List all routes
 app.get('/routes', (req: Request, res: Response) => {
     res.status(200).send(endPoints(app));
 });
 
 // Set up port and listen
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
