@@ -13,6 +13,7 @@ export interface IContract extends Document {
         manufacturer: string;
         model: string;
         license_plate: string;
+        price_per_day: number
     };
     rentalPeriod: {
         startDate: Date;

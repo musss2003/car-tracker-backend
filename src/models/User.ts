@@ -2,6 +2,12 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+enum UserRole {
+    ADMIN = "admin",
+    EMPLOYEE = "employee",
+    USER = "user", // Add other roles if needed
+}
+
 // Define the IUser interface
 export interface IUser extends Document {
     _id: string;
@@ -11,7 +17,7 @@ export interface IUser extends Document {
     citizenshipId?: string;
     profilePhotoUrl?: string;
     password: string;
-    role: string; // Enum type for user role
+    role: UserRole; // Enum type for user role
     lastLogin?: Date;
 
     // Method to generate an access token
@@ -45,8 +51,8 @@ const userSchema: Schema<IUser> = new Schema({
     },
     role: {
         type: String,
-        enum: ['admin', 'staff', 'user'],
-        default: 'user',
+        enum: Object.values(UserRole), // ⬅️ Allow only "admin", "employee", "user"
+        default: UserRole.USER,
     },
     lastLogin: {
         type: Date,
