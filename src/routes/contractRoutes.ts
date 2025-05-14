@@ -19,6 +19,11 @@ router.use(authenticate);
 
 // Route to get all contracts
 router.get('/', async (req: Request, res: Response) => {
+  await getContract(req, res);
+});
+
+// Route to get all contracts
+router.get('/all', async (req: Request, res: Response) => {
   await getContracts(req, res);
 });
 

@@ -22,6 +22,8 @@ router.put('/:id', async (req: Request, res: Response) => {
   await updateUser(req, res);
 });
 
+router.post('/')
+
 // Route to delete user by ID
 router.delete('/:id', async (req: Request, res: Response) => {
   await deleteUser(req, res);

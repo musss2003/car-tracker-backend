@@ -163,7 +163,7 @@ export const sessionCheck = async (
 
     // req['user'] = user; // Optionally attach the user to the request object for further use
 
-    res.status(200).json({ authenticated: true, username: user.username, email: user.email, id: user._id });
+    res.status(200).json({ authenticated: true, username: user.username, email: user.email, id: user._id, role: user.role});
   } catch (error: any) {
     console.error('Error during session validation:', error.message);
     if (error instanceof jwt.JsonWebTokenError) {

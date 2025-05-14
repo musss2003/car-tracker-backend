@@ -73,7 +73,13 @@ export const searchCustomersByName = async (req: Request, res: Response) => {
     try {
         // Replace this with your actual database query
         const customers = await Customer.find({ name: { $regex: name, $options: 'i' } }); // Example using MongoDB
-        res.json(customers);
+
+        const modifiedCustomers = customers.map(customer => {
+            const { _id, ...rest } = customer.toObject();
+            return { id: _id, ...rest };
+        });
+        
+        res.json(modifiedCustomers);
     } catch (error) {
         console.error('Error fetching customers:', error);
         res.status(500).json({ error: 'Internal Server Error' });
