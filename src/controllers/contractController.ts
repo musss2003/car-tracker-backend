@@ -46,7 +46,7 @@ export const getContractsPopulated = async (req: Request, res: Response) => {
 // Get a single contract by ID
 export const getContract = async (req: Request, res: Response) => {
   try {
-    const contract = await Contract.findById(req.params.id);
+    const contract = await Contract.findById(req.params.id)
     if (!contract) {
       return res.status(404).json({ message: 'Contract not found' });
     }
@@ -58,6 +58,7 @@ export const getContract = async (req: Request, res: Response) => {
 
 // Create a new contract
 export const createContract = async (req: Request, res: Response): Promise<Response> => {
+
   const { customer, car, rentalPeriod, rentalPrice, paymentDetails, additionalNotes, contractPhoto } = req.body;
 
   try {

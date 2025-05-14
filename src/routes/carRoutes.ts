@@ -7,6 +7,7 @@ import {
   deleteCar,
   getCars,
   getAvailableCarsForPeriod,
+  getCarAvailability,
 } from '../controllers/carController';
 import authenticate from '../middlewares/verifyJWT';
 import Contract from '../models/Contract';
@@ -27,6 +28,10 @@ router.post('/available', async (req, res) => {
   await getAvailableCarsForPeriod(req, res);
 });
 
+// Route to check car availability by license plate
+router.get('/:license_plate/availability', async (req: Request, res: Response) => {
+  await getCarAvailability(req, res);
+});
 
 // Route to get a car by ID
 router.get('/:id', async (req: Request, res: Response) => {

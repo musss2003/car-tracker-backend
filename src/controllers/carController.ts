@@ -103,7 +103,12 @@ export const getAvailableCarsForPeriod = async (req: Request, res: Response) => 
       _id: { $nin: bookedCarIds }
     });
 
-    res.status(200).json(availableCars);
+    const formattedCars = availableCars.map(car => {
+      const { _id, ...rest } = car.toObject();
+      return { id: _id, ...rest };
+    });
+
+    res.status(200).json(formattedCars);
   } catch (error: any) {
     console.error('Error fetching available cars:', error);
     res.status(500).json({ message: 'Error fetching available cars', error });
@@ -121,4 +126,40 @@ const getBookedCarIds = async (start: Date, end: Date): Promise<mongoose.Types.O
   });
 
   return contracts.map(contract => contract.car.id);
+};
+
+// Get availability for a specific car
+export const getCarAvailability = async (req: Request, res: Response) => {
+  const { license_plate } = req.params;
+
+  try {
+    // Ensure carId is provided
+    if (!license_plate) {
+      return res.status(400).json({ message: "Car ID is required." });
+    }
+
+    const car = await Car.findOne({ license_plate });
+
+    if (!car) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+
+    const contracts = await Contract.find({ 'car.id': car._id });
+
+    // Map contracts to BookingEvent format
+    const availability = contracts.map(contract => ({
+      title: `Booked: ${contract.customer.name}`,
+      start: new Date(contract.rentalPeriod.startDate),
+      end: new Date(contract.rentalPeriod.endDate),
+      contractId: contract._id.toString(),
+      customerName: contract.customer.name,
+      customerPassportNumber: contract.customer.passport_number,
+      totalAmount: contract.rentalPrice.totalAmount
+    }));
+
+    res.status(200).json(availability);
+  } catch (error: any) {
+    console.error('Error fetching car availability:', error);
+    res.status(500).json({ message: 'Error fetching car availability', error });
+  }
 };
