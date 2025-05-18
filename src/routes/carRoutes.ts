@@ -8,10 +8,13 @@ import {
   getCars,
   getAvailableCarsForPeriod,
   getCarAvailability,
+  getMaintenanceRecords,
+  addMaintenanceRecord,
 } from '../controllers/carController';
 import authenticate from '../middlewares/verifyJWT';
 import Contract from '../models/Contract';
 import Car from '../models/Car';
+import { runInNewContext } from 'vm';
 
 const router = express.Router();
 
@@ -31,6 +34,15 @@ router.post('/available', async (req, res) => {
 // Route to check car availability by license plate
 router.get('/:license_plate/availability', async (req: Request, res: Response) => {
   await getCarAvailability(req, res);
+});
+
+// Route to get maintenance records for a car by license plate
+router.get('/:license_plate/maintenance', async (req: Request, res: Response) => {
+  await getMaintenanceRecords(req, res);
+});
+
+router.post('/maintenance', async (req: Request, res: Response) => {
+  await addMaintenanceRecord(req, res);
 });
 
 // Route to get a car by ID

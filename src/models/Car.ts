@@ -9,6 +9,7 @@ export interface ICar {
     license_plate: string;
     chassis_number?: string; // Optional field
     price_per_day?: number; // Optional field
+    mileage?: number; // Optional field
 }
 
 // Create the car schema
@@ -39,6 +40,9 @@ const carSchema: Schema<ICar> = new Schema({
     price_per_day: {
         type: Number,
     },
+    mileage: {
+        type: Number
+    }
 });
 
 // Create the Car model

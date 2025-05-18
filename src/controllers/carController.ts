@@ -3,6 +3,7 @@ import Car from '../models/Car'; // Adjust the path according to your project st
 import { Request, Response } from 'express';
 import Contract from '../models/Contract';
 import mongoose from 'mongoose';
+import CarMaintenanceRecord from '../models/MaintenanceRecord';
 
 // Get all cars
 export const getCars = async (req: Request, res: Response) => {
@@ -161,5 +162,64 @@ export const getCarAvailability = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error fetching car availability:', error);
     res.status(500).json({ message: 'Error fetching car availability', error });
+  }
+};
+
+// Get maintenance records for a specific car by license plate
+export const getMaintenanceRecords = async (req: Request, res: Response) => {
+  const { license_plate } = req.params;
+
+  try {
+    // Ensure license_plate is provided
+    if (!license_plate) {
+      return res.status(400).json({ message: "License plate is required." });
+    }
+
+    // Fetch maintenance records for the car
+    // Fetch maintenance records directly by license plate
+    const maintenanceRecords = await CarMaintenanceRecord.find({ carLicensePlate: license_plate });
+
+    if (!maintenanceRecords || maintenanceRecords.length === 0) {
+      return res.status(404).json({ message: 'No maintenance records found for this car' });
+    }
+
+    res.status(200).json(maintenanceRecords);
+  } catch (error: any) {
+    console.error('Error fetching maintenance records:', error);
+    res.status(500).json({ message: 'Error fetching maintenance records', error });
+  }
+};
+
+// Add a maintenance record for a specific car by license plate
+export const addMaintenanceRecord = async (req: Request, res: Response) => {
+  const maintenanceData = req.body;
+
+  try {
+
+
+    if (!maintenanceData || Object.keys(maintenanceData).length === 0) {
+      return res.status(400).json({ message: "Maintenance data is required." });
+    }
+
+    // Check if the car exists
+    const car = await Car.findOne({ license_plate: maintenanceData.license_plate });
+
+    if (!car) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+
+    // Create a new maintenance record
+    const newMaintenanceRecord = new CarMaintenanceRecord({
+      carLicensePlate: maintenanceData.license_plate,
+      ...maintenanceData
+    });
+
+    // Save the maintenance record
+    const savedRecord = await newMaintenanceRecord.save();
+
+    res.status(201).json(savedRecord);
+  } catch (error: any) {
+    console.error('Error adding maintenance record:', error);
+    res.status(500).json({ message: 'Error adding maintenance record', error });
   }
 };
