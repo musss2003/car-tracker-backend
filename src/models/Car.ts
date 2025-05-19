@@ -41,6 +41,7 @@ const carSchema: Schema<ICar> = new Schema({
         type: Number,
     },
     mileage: {
+        required: true,
         type: Number
     }
 });

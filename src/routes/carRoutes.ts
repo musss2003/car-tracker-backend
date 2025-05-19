@@ -10,11 +10,10 @@ import {
   getCarAvailability,
   getMaintenanceRecords,
   addMaintenanceRecord,
+  getUpcomingMaintenance,
+  getAllMaintenanceRecords,
 } from '../controllers/carController';
 import authenticate from '../middlewares/verifyJWT';
-import Contract from '../models/Contract';
-import Car from '../models/Car';
-import { runInNewContext } from 'vm';
 
 const router = express.Router();
 
@@ -24,6 +23,26 @@ const router = express.Router();
 // Route to get all cars
 router.get('/', async (req: Request, res: Response) => {
   await getCars(req, res);
+});
+
+// Route to create a new car
+router.post('/', async (req: Request, res: Response) => {
+  await createCar(req, res);
+});
+
+// Route to get a car by ID
+router.get('/:id', async (req: Request, res: Response) => {
+  await getCar(req, res);
+});
+
+// Route to update a car by license plate
+router.put('/:license_plate', async (req: Request, res: Response) => {
+  await updateCar(req, res);
+});
+
+// Route to delete a car by license plate
+router.delete('/:license_plate', async (req: Request, res: Response) => {
+  await deleteCar(req, res);
 });
 
 // POST: /api/cars/available
@@ -41,28 +60,19 @@ router.get('/:license_plate/maintenance', async (req: Request, res: Response) =>
   await getMaintenanceRecords(req, res);
 });
 
+// Route to add a maintenance record
 router.post('/maintenance', async (req: Request, res: Response) => {
   await addMaintenanceRecord(req, res);
 });
 
-// Route to get a car by ID
-router.get('/:id', async (req: Request, res: Response) => {
-  await getCar(req, res);
+// Route to get upcoming maintenance records
+router.get('/maintenance/upcoming', async (req: Request, res: Response) => {
+  await getUpcomingMaintenance(req, res);
 });
 
-// Route to create a new car
-router.post('/', async (req: Request, res: Response) => {
-  await createCar(req, res);
-});
-
-// Route to update a car by ID
-router.put('/:license_plate', async (req: Request, res: Response) => {
-  await updateCar(req, res);
-});
-
-// Route to delete a car by ID
-router.delete('/:license_plate', async (req: Request, res: Response) => {
-  await deleteCar(req, res);
+// Route to get all maintenance records
+router.get('/maintenance/all', async (req: Request, res: Response) => {
+  await getAllMaintenanceRecords(req, res); 
 });
 
 export default router;

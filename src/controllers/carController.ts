@@ -202,7 +202,7 @@ export const addMaintenanceRecord = async (req: Request, res: Response) => {
     }
 
     // Check if the car exists
-    const car = await Car.findOne({ license_plate: maintenanceData.license_plate });
+    const car = await Car.findOne({ license_plate: maintenanceData.carLicensePlate });
 
     if (!car) {
       return res.status(404).json({ message: 'Car not found' });
@@ -210,7 +210,7 @@ export const addMaintenanceRecord = async (req: Request, res: Response) => {
 
     // Create a new maintenance record
     const newMaintenanceRecord = new CarMaintenanceRecord({
-      carLicensePlate: maintenanceData.license_plate,
+      carLicensePlate: maintenanceData.carLicensePlate,
       ...maintenanceData
     });
 
@@ -221,5 +221,71 @@ export const addMaintenanceRecord = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error adding maintenance record:', error);
     res.status(500).json({ message: 'Error adding maintenance record', error });
+  }
+};
+
+// Get upcoming maintenance records
+export const getUpcomingMaintenance = async (req: Request, res: Response) => {
+  try {
+    // Fetch maintenance records with a due date in the future
+    const upcomingMaintenanceRecords = await CarMaintenanceRecord.find({
+      maintenanceDueDate: { $gte: new Date() }
+    });
+
+    // Check if any maintenance is close to being due based on mileage
+    const maintenanceWithMileageCheck = await Promise.all(
+      upcomingMaintenanceRecords.map(async (record) => {
+        const car = await Car.findOne({ license_plate: record.carLicensePlate });
+        if (car && (car.mileage ?? 0) >= (record.nextDueMileage ?? 0) - 500) {
+          return {
+            ...record.toObject(),
+            isCloseToDue: true,
+          };
+        }
+        return {
+          ...record.toObject(),
+          isCloseToDue: false,
+        };
+      })
+    );
+
+    res.status(200).json(maintenanceWithMileageCheck);
+  } catch (error: any) {
+    console.error('Error fetching upcoming maintenance records:', error);
+    res.status(500).json({ message: 'Error fetching upcoming maintenance records', error });
+  }
+};
+
+// Fetch all maintenance records
+export const getAllMaintenanceRecords = async (req: Request, res: Response) => {
+  try {
+    // Fetch all maintenance records
+    const maintenanceRecords = await CarMaintenanceRecord.find();
+
+    // Map maintenance records to include car details
+    const maintenanceRecordsWithCar = await Promise.all(
+
+      maintenanceRecords.map(async (record) => {
+
+        const car = await Car.findOne({ license_plate: record.carLicensePlate });
+
+        const isOverdue = car && car.mileage !== undefined && record.nextDueMileage !== null && record.nextDueMileage < car.mileage;
+
+        return {
+          ...record.toObject(),
+          carDetails: car ? {
+            manufacturer: car.manufacturer,
+            model: car.model,
+            year: car.year,
+          } : null,
+          isOverdue: isOverdue ?? false,
+        };
+      })
+    );
+
+    res.status(200).json(maintenanceRecordsWithCar);
+  } catch (error: any) {
+    console.error('Error fetching all maintenance records:', error);
+    res.status(500).json({ message: 'Error fetching all maintenance records', error });
   }
 };
