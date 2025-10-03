@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 
 import authenticate from '../middlewares/verifyJWT';
-import { createNotification, deleteNotification, getNotification, getNotifications, getUnreadNotifications, markAllNotificationsAsRead, markNotificationAsRead, updateNotification } from '../controllers/notificationController';
+import { createNotification, deleteNotification, getNotification, getNotifications, getUnreadNotifications, markAllNotificationsAsRead, markNotificationAsRead, updateNotification } from '../controllers/notification';
 
 
 const router = express.Router();

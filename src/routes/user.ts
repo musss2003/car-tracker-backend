@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import {getUser, updateUser, deleteUser, getUsers} from '../controllers/userController';
+import {getUser, updateUser, deleteUser, getUsers} from '../controllers/user';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();

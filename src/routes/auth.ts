@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { register, login, logout, sessionCheck } from '../controllers/authController';
+import { register, login, logout, sessionCheck } from '../controllers/auth';
 import authenticate from '../middlewares/verifyJWT';
 // Import verifyRole if needed
 // import { verifyRole } from '../middlewares/verifyRole'; 

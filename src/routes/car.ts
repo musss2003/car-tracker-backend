@@ -8,7 +8,7 @@ import {
   getCars,
   getAvailableCarsForPeriod,
   getCarAvailability,
-} from '../controllers/carController';
+} from '../controllers/car';
 import authenticate from '../middlewares/verifyJWT';
 import Contract from '../models/Contract';
 import Car from '../models/Car';

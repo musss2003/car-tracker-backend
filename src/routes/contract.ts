@@ -9,7 +9,7 @@ import {
   getContractsPopulated,
   getTotalRevenue,
   downloadContractDocx,
-} from '../controllers/contractController';
+} from '../controllers/contract';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();

@@ -1,12 +1,12 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
-import { connectToDb } from './config/dbConfig';
-import authRoutes from './routes/authRoutes';
-import userRoutes from './routes/userRoutes';
-import contractRoutes from './routes/contractRoutes';
-import carRoutes from './routes/carRoutes';
-import customerRoutes from './routes/customerRoutes';
-import notificationRoutes from './routes/notificationRoutes';
+import { connectMongo, pool } from './config/db';
+import authRoutes from './routes/auth';
+import userRoutes from './routes/user';
+import contractRoutes from './routes/contract';
+import carRoutes from './routes/car';
+import customerRoutes from './routes/customer';
+import notificationRoutes from './routes/notification';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -116,7 +116,10 @@ app.get('/src/assets/contract_template.docx', (req, res) => {
 });
 
 // Connect to database
-connectToDb();
+(async () => {
+  await connectMongo(); // Connect MongoDB
+  // PostgreSQL pool auto-connects when imported
+})();
 
 // Apply multer middleware globally
 app.use(upload.single('bookPic'));

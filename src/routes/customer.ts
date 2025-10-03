@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getCustomer, getCustomers, updateCustomer, deleteCustomer, createCustomer, searchCustomersByName } from '../controllers/customerController';
+import { getCustomer, getCustomers, updateCustomer, deleteCustomer, createCustomer, searchCustomersByName } from '../controllers/customer';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();
