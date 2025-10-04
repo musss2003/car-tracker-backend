@@ -1,40 +1,55 @@
-import mongoose, { Document, Schema } from 'mongoose';
 
-// Define the Customer interface
-interface ICustomer extends Document {
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity('customers')
+export class Customer {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @Column({ type: 'varchar', length: 255 })
     name: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
     email?: string; // Optional
-    phone_number?: string; // Optional
+
+    @Column({ name: 'phone_number', type: 'varchar', length: 20, nullable: true })
+    phoneNumber?: string; // Optional
+
+    @Column({ type: 'text', nullable: true })
     address?: string; // Optional
-    driver_license_number: string;
-    passport_number: string;
+
+    @Column({ name: 'driver_license_number', type: 'varchar', length: 50 })
+    driverLicenseNumber: string;
+
+    @Column({ name: 'passport_number', type: 'varchar', length: 50 })
+    passportNumber: string;
+
+    @Column({ name: 'driver_license_photo_url', type: 'text', nullable: true })
+    drivingLicensePhotoUrl?: string;
+
+    @Column({ name: 'passport_photo_url', type: 'text', nullable: true })
+    passportPhotoUrl?: string;
+
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
+
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
 }
 
-// Create the customer schema
-const customerSchema: Schema<ICustomer> = new Schema({
-    name: {
-        type: String,
-        required: true,
-    },
-    email: {
-        type: String,
-    },
-    phone_number: {
-        type: String,
-    },
-    address: {
-        type: String,
-    },
-    driver_license_number: {
-        type: String,
-        required: true,
-    },
-    passport_number: {
-        type: String,
-        required: true,
-    },
-});
+// Export interface for compatibility
+export interface ICustomer {
+    id: string;
+    name: string;
+    email?: string;
+    phoneNumber?: string;
+    address?: string;
+    driverLicenseNumber: string;
+    passportNumber: string;
+    drivingLicensePhotoUrl?: string;
+    passportPhotoUrl?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
 
-// Export the Customer model
-const Customer = mongoose.model<ICustomer>('Customer', customerSchema);
 export default Customer;

@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
-import { connectMongo, pool } from './config/db';
+import { connectMongo, pool, initializeTypeORM, AppDataSource } from './config/db';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import contractRoutes from './routes/contract';
@@ -13,8 +13,9 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import http from 'http';
 import { Server } from 'socket.io'; // Using Socket.IO
-import Notification from './models/Notification'; // Import the custom Notification model
+import { Notification, NotificationStatus } from './models/Notification'; // Import the TypeORM Notification model
 import multer from "multer";
+import "reflect-metadata"; // Required for TypeORM
 
 
 
@@ -54,17 +55,21 @@ io.on('connection', (socket) => {
 
     // Emit a notification to a specific user
     socket.on('sendNotification', async (data) => {
-        const { recipientId, type, message } = data;
+        const { recipientId, type, message, senderId } = data;
 
         try {
-            const notification = await Notification.create({
-                recipient: recipientId,
+            const notificationRepository = AppDataSource.getRepository(Notification);
+            
+            const notification = notificationRepository.create({
+                recipientId,
+                senderId: senderId || undefined,
                 type,
                 message,
-                status: "new",
+                status: NotificationStatus.NEW
             });
 
-            io.to(recipientId).emit('receiveNotification', notification);
+            const savedNotification = await notificationRepository.save(notification);
+            io.to(recipientId).emit('receiveNotification', savedNotification);
 
         } catch (err) {
             console.error('Error sending notification:', err);
@@ -74,14 +79,15 @@ io.on('connection', (socket) => {
      // Listen for a mark-as-read event from the client
      socket.on('markAsRead', async (notificationId) => {
         try {
-            const notification = await Notification.findById(notificationId);
+            const notificationRepository = AppDataSource.getRepository(Notification);
+            const notification = await notificationRepository.findOne({ where: { id: notificationId } });
 
             if (notification) {
-                notification.status = 'seen';
-                await notification.save();
+                notification.status = NotificationStatus.SEEN;
+                const updatedNotification = await notificationRepository.save(notification);
 
                 // Notify the client that the status has been updated
-                socket.emit('notificationUpdated', notification);
+                socket.emit('notificationUpdated', updatedNotification);
             }
         } catch (err) {
             console.error('Error updating notification:', err);
@@ -91,13 +97,14 @@ io.on('connection', (socket) => {
     // Listen for a bulk mark-as-read event
     socket.on('markAllAsRead', async (recipientId) => {
         try {
-            const updatedNotifications = await Notification.updateMany(
-                { recipient: recipientId, status: 'new' },
-                { $set: { status: 'seen' } }
+            const notificationRepository = AppDataSource.getRepository(Notification);
+            const updateResult = await notificationRepository.update(
+                { recipientId, status: NotificationStatus.NEW },
+                { status: NotificationStatus.SEEN }
             );
 
             // Notify the client about the bulk update
-            socket.emit('allNotificationsUpdated', updatedNotifications);
+            socket.emit('allNotificationsUpdated', { affected: updateResult.affected });
         } catch (err) {
             console.error('Error updating notifications:', err);
         }
@@ -118,6 +125,7 @@ app.get('/src/assets/contract_template.docx', (req, res) => {
 // Connect to database
 (async () => {
   await connectMongo(); // Connect MongoDB
+  await initializeTypeORM(); // Initialize TypeORM
   // PostgreSQL pool auto-connects when imported
 })();
 

@@ -1,84 +1,68 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-enum UserRole {
-    ADMIN = "admin",
-    EMPLOYEE = "employee",
-    USER = "user", // Add other roles if needed
+export enum UserRole {
+  ADMIN = "admin",
+  EMPLOYEE = "employee",
+  USER = "user",
 }
 
-// Define the IUser interface
-export interface IUser extends Document {
-    _id: string;
-    name?: string;
-    username: string;
-    email: string;
-    citizenshipId?: string;
-    profilePhotoUrl?: string;
-    password: string;
-    role: UserRole; // Enum type for user role
-    lastLogin?: Date;
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    // Method to generate an access token
-    generateAccessToken: () => string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  name?: string;
+
+  @Column({ type: 'varchar', length: 100, unique: true })
+  username: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true })
+  email: string;
+
+  @Column({ name: 'citizenship_id', type: 'varchar', length: 50, nullable: true })
+  citizenshipId?: string;
+
+  @Column({ name: 'profile_photo_url', type: 'text', nullable: true })
+  profilePhotoUrl?: string;
+
+  @Column({ name: 'refresh_token', type: 'text', nullable: true })
+  refreshToken?: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  password: string; // Hashed password
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER
+  })
+  role: UserRole;
+
+  @Column({ name: 'last_login', type: 'timestamp', nullable: true })
+  lastLogin?: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }
 
-// Create the user schema
-const userSchema: Schema<IUser> = new Schema({
-    name: {
-        type: String,
-    },
-    username: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    citizenshipId: {
-        type: String,
-    },
-    profilePhotoUrl: {
-        type: String,
-    },
-    password: {
-        type: String,
-        required: true,
-    },
-    role: {
-        type: String,
-        enum: Object.values(UserRole), // ⬅️ Allow only "admin", "employee", "user"
-        default: UserRole.USER,
-    },
-    lastLogin: {
-        type: Date,
-    },
-});
-
-// Pre-save middleware for hashing the password
-userSchema.pre<IUser>('save', async function (next) {
-    if (!this.isModified('password')) {
-        return next();
-    }
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-});
-
-// Method to generate an access token
-userSchema.methods.generateAccessToken = function (): string {
-    return jwt.sign(
-        { id: this._id },
-        process.env.ACCESS_TOKEN_SECRET || '', // Ensure you handle missing secret
-        { expiresIn: process.env.ACCESS_TOKEN_DURATION + 'ms' }
-    );
-};
-
-// Create and export the User model
-const User = mongoose.model<IUser>('User', userSchema);
+// Export interface for compatibility
+export interface IUser {
+  id: string;
+  name?: string;
+  username: string;
+  email: string;
+  citizenshipId?: string;
+  profilePhotoUrl?: string;
+  refreshToken?: string;
+  password: string;
+  role: UserRole;
+  lastLogin?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export default User;

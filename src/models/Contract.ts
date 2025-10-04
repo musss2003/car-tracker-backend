@@ -1,69 +1,101 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Customer } from './Customer';
+import { Car } from './Car';
 
-export interface IContract extends Document {
-    _id: mongoose.Types.ObjectId;
-    customer: {
-        id: mongoose.Types.ObjectId;
-        name: string;
-        passport_number: string;
-        driver_license_number: string;
-        address?: string;
-    };
-    car: {
-        id: mongoose.Types.ObjectId;
-        manufacturer: string;
-        model: string;
-        license_plate: string;
-        price_per_day: number
-    };
-    rentalPeriod: {
-        startDate: Date;
-        endDate: Date;
-    };
-    rentalPrice: {
-        dailyRate: number;
-        totalAmount: number;
-    };
-    paymentDetails: {
-        paymentMethod: string;
-        paymentStatus: 'pending' | 'paid';
-    };
-    additionalNotes?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
-    contractPhoto?: string;
+// Define payment method and status enums
+export enum PaymentMethod {
+  CASH = 'cash',
+  CARD = 'card',
+  BANK_TRANSFER = 'bank_transfer'
 }
 
-const contractSchema: Schema = new Schema({
-    customer: {
-        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-        name: { type: String, required: true },
-        passport_number: { type: String, required: true },
-        driver_license_number: { type: String, required: true },
-        address: { type: String, required: false }
-    },
-    car: {
-        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
-        manufacturer: { type: String, required: true },
-        model: { type: String, required: true },
-        license_plate: { type: String, required: true }
-    },
-    rentalPeriod: {
-        startDate: { type: Date, required: true },
-        endDate: { type: Date, required: true },
-    },
-    rentalPrice: {
-        dailyRate: { type: Number, required: true },
-        totalAmount: { type: Number, required: true },
-    },
-    paymentDetails: {
-        paymentMethod: { type: String, default: "cash" },
-        paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'paid' },
-    },
-    additionalNotes: { type: String },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now },
-    contractPhoto: { type: String }
-});
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PAID = 'paid'
+}
 
-export default mongoose.model<IContract>('Contract', contractSchema);
+@Entity('contracts')
+export class Contract {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  // Relationship with Customer
+  @Column({ name: 'customer_id' })
+  customerId: string;
+
+  @ManyToOne(() => Customer, { eager: true })
+  @JoinColumn({ name: 'customer_id' })
+  customer: Customer;
+
+  // Relationship with Car
+  @Column({ name: 'car_id' })
+  carId: string;
+
+  @ManyToOne(() => Car, { eager: true })
+  @JoinColumn({ name: 'car_id' })
+  car: Car;
+
+  // Rental Period
+  @Column({ name: 'start_date', type: 'date' })
+  startDate: Date;
+
+  @Column({ name: 'end_date', type: 'date' })
+  endDate: Date;
+
+  // Rental Price
+  @Column({ name: 'daily_rate', type: 'decimal', precision: 10, scale: 2 })
+  dailyRate: number;
+
+  @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2 })
+  totalAmount: number;
+
+  // Payment Details
+  @Column({
+    name: 'payment_method',
+    type: 'enum',
+    enum: PaymentMethod
+  })
+  paymentMethod: PaymentMethod;
+
+  @Column({
+    name: 'payment_status',
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING
+  })
+  paymentStatus: PaymentStatus;
+
+  // Additional fields
+  @Column({ name: 'additional_notes', type: 'text', nullable: true })
+  additionalNotes?: string;
+
+  @Column({ name: 'contract_photo', type: 'text', nullable: true })
+  contractPhoto?: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
+
+// Export interface for compatibility
+export interface IContract {
+  id: string;
+  customerId: string;
+  customer?: Customer;
+  carId: string;
+  car?: Car;
+  startDate: Date;
+  endDate: Date;
+  dailyRate: number;
+  totalAmount: number;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  additionalNotes?: string;
+  contractPhoto?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export default Contract;

@@ -1,197 +1,357 @@
-import { Request, Response } from 'express';
-import Contract, { IContract } from '../models/Contract'; // Assuming you're using Mongoose
-import Customer from '../models/Customer';
-import Car from '../models/Car';
-import Docxtemplater from 'docxtemplater';
-import PizZip from 'pizzip';
-import fs from 'fs';
-import path from 'path';
+// controllers/contractController.ts
+import { Request, Response } from "express";
+import { AppDataSource } from "../config/db";
+import { Contract, PaymentMethod, PaymentStatus } from "../models/Contract";
+import { Customer } from "../models/Customer";
+import { Car } from "../models/Car";
+import { Between, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
+import Docxtemplater from "docxtemplater";
+import PizZip from "pizzip";
+import fs from "fs";
+import path from "path";
 
-// Get all contracts
+interface ContractForDocx {
+  customer: {
+    name: string;
+    passportNumber: string;
+    driverLicenseNumber: string;
+    address?: string;
+  };
+  car: {
+    manufacturer: string;
+    model: string;
+    licensePlate: string;
+  };
+  startDate: Date | string;
+  endDate: Date | string;
+  dailyRate: number;
+  totalAmount: number;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  additionalNotes?: string;
+}
+
+// ✅ Get all contracts
 export const getContracts = async (req: Request, res: Response) => {
   try {
-    const contracts = await Contract.find();
+    const contractRepository = AppDataSource.getRepository(Contract);
+    const contracts = await contractRepository.find({
+      order: { createdAt: "DESC" }
+    });
     res.status(200).json(contracts);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching contracts', error });
+    console.error("Error fetching contracts:", error);
+    res.status(500).json({ message: "Error fetching contracts", error });
   }
 };
 
-// Get total revenue
+// ✅ Get total revenue
 export const getTotalRevenue = async (req: Request, res: Response) => {
   try {
-    const contracts = await Contract.find();
-    const totalRevenue = contracts.reduce((acc, contract) => acc + contract.rentalPrice.totalAmount, 0);
-
-    res.status(200).json(totalRevenue);
+    const contractRepository = AppDataSource.getRepository(Contract);
+    const result = await contractRepository
+      .createQueryBuilder("contract")
+      .select("SUM(contract.totalAmount)", "total")
+      .getRawOne();
+    
+    res.status(200).json({ totalRevenue: result.total || 0 });
   } catch (error) {
-    res.status(500).json({ message: 'Error calculating total revenue', error });
+    console.error("Error calculating revenue:", error);
+    res.status(500).json({ message: "Error calculating revenue", error });
+  }
+};
+
+// ✅ Get single contract by ID
+export const getContract = async (req: Request, res: Response) => {
+  try {
+    const contractRepository = AppDataSource.getRepository(Contract);
+    const contract = await contractRepository.findOne({ 
+      where: { id: req.params.id },
+      relations: ['customer', 'car']
+    });
+    
+    if (!contract) {
+      return res.status(404).json({ message: "Contract not found" });
+    }
+    res.status(200).json(contract);
+  } catch (error) {
+    console.error("Error fetching contract:", error);
+    res.status(500).json({ message: "Error fetching contract", error });
+  }
+};
+
+// ✅ Create a new contract
+export const createContract = async (req: Request, res: Response) => {
+  const {
+    customerId,
+    carId,
+    startDate,
+    endDate,
+    dailyRate,
+    totalAmount,
+    paymentMethod,
+    paymentStatus,
+    additionalNotes,
+    contractPhoto,
+  } = req.body;
+
+  try {
+    if (!customerId || !carId || !startDate || !endDate || !dailyRate || !totalAmount || !paymentMethod) {
+      return res.status(400).json({ message: "All required fields must be provided" });
+    }
+
+    const contractRepository = AppDataSource.getRepository(Contract);
+    const customerRepository = AppDataSource.getRepository(Customer);
+    const carRepository = AppDataSource.getRepository(Car);
+
+    // Verify customer and car exist
+    const customer = await customerRepository.findOne({ where: { id: customerId } });
+    const car = await carRepository.findOne({ where: { id: carId } });
+
+    if (!customer || !car) {
+      return res.status(400).json({ message: "Invalid customer or car ID" });
+    }
+
+    const newContract = contractRepository.create({
+      customerId,
+      carId,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      dailyRate,
+      totalAmount,
+      paymentMethod,
+      paymentStatus: paymentStatus || PaymentStatus.PENDING,
+      additionalNotes,
+      contractPhoto,
+    });
+
+    const savedContract = await contractRepository.save(newContract);
+    
+    // Load the contract with relations for document generation
+    const contractWithRelations = await contractRepository.findOne({
+      where: { id: savedContract.id },
+      relations: ['customer', 'car']
+    });
+
+    if (contractWithRelations) {
+      const contractForDocx: ContractForDocx = {
+        customer: {
+          name: contractWithRelations.customer.name,
+          passportNumber: contractWithRelations.customer.passportNumber,
+          driverLicenseNumber: contractWithRelations.customer.driverLicenseNumber,
+          address: contractWithRelations.customer.address,
+        },
+        car: {
+          manufacturer: contractWithRelations.car.manufacturer,
+          model: contractWithRelations.car.model,
+          licensePlate: contractWithRelations.car.licensePlate,
+        },
+        startDate: contractWithRelations.startDate,
+        endDate: contractWithRelations.endDate,
+        dailyRate: contractWithRelations.dailyRate,
+        totalAmount: contractWithRelations.totalAmount,
+        paymentMethod: contractWithRelations.paymentMethod,
+        paymentStatus: contractWithRelations.paymentStatus,
+        additionalNotes: contractWithRelations.additionalNotes,
+      };
+
+      const base64Docx = generateDocxFile(contractForDocx);
+      res.status(201).json({ contract: savedContract, docx: base64Docx });
+    } else {
+      res.status(201).json({ contract: savedContract });
+    }
+  } catch (error) {
+    console.error("Error creating contract:", error);
+    res.status(500).json({ message: "Error creating contract", error });
+  }
+};
+
+// ✅ Update contract
+export const updateContract = async (req: Request, res: Response) => {
+  try {
+    const fields = req.body;
+    const keys = Object.keys(fields);
+
+    if (keys.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    const contractRepository = AppDataSource.getRepository(Contract);
+    
+    // Convert date strings to Date objects if needed
+    const updateData: any = {};
+    for (const [key, value] of Object.entries(fields)) {
+      if (key === 'startDate' || key === 'endDate') {
+        updateData[key] = new Date(value as string);
+      } else {
+        updateData[key] = value;
+      }
+    }
+
+    const updateResult = await contractRepository.update(req.params.id, updateData);
+
+    if (updateResult.affected === 0) {
+      return res.status(404).json({ message: "Contract not found" });
+    }
+
+    const updatedContract = await contractRepository.findOne({
+      where: { id: req.params.id },
+      relations: ['customer', 'car']
+    });
+    
+    res.status(200).json(updatedContract);
+  } catch (error) {
+    console.error("Error updating contract:", error);
+    res.status(500).json({ message: "Error updating contract", error });
+  }
+};
+
+// ✅ Delete contract
+export const deleteContract = async (req: Request, res: Response) => {
+  try {
+    const contractRepository = AppDataSource.getRepository(Contract);
+    const deleteResult = await contractRepository.delete(req.params.id);
+
+    if (deleteResult.affected === 0) {
+      return res.status(404).json({ message: "Contract not found" });
+    }
+    res.status(200).json({ message: "Contract deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting contract:", error);
+    res.status(500).json({ message: "Error deleting contract", error });
+  }
+};
+
+// ✅ Active contracts (where today is between start and end)
+export const getActiveContracts = async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    const contractRepository = AppDataSource.getRepository(Contract);
+    
+    const activeContracts = await contractRepository.find({
+      where: {
+        startDate: LessThanOrEqual(today),
+        endDate: MoreThanOrEqual(today)
+      },
+      relations: ['customer', 'car']
+    });
+    
+    res.status(200).json(activeContracts);
+  } catch (error) {
+    console.error("Error fetching active contracts:", error);
+    res.status(500).json({ message: "Error fetching active contracts", error });
   }
 };
 
 export const getContractsPopulated = async (req: Request, res: Response) => {
-
   try {
-    const contracts = await Contract.find()
-      .populate('customer', 'name passport_number')  // Populate 'customer' with specific fields
-      .populate('car', 'model license_plate'); // Populate 'car' with specific fields
-
-    res.status(200).json(contracts);
-  } catch (error) {
-    console.error('Error fetching contracts from database:', error);
-    throw error;
-  }
-};
-
-// Get a single contract by ID
-export const getContract = async (req: Request, res: Response) => {
-  try {
-    const contract = await Contract.findById(req.params.id)
-    if (!contract) {
-      return res.status(404).json({ message: 'Contract not found' });
-    }
-    res.status(200).json(contract);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching contract', error });
-  }
-};
-
-// Create a new contract
-export const createContract = async (req: Request, res: Response): Promise<Response> => {
-
-  const { customer, car, rentalPeriod, rentalPrice, paymentDetails, additionalNotes, contractPhoto } = req.body;
-
-  try {
-    // Validate input
-    if (!customer || !car || !rentalPeriod || !rentalPrice || !paymentDetails) {
-      return res.status(400).json({ message: "All fields are required." });
-    }
-
-    // Check if customer and car exist
-    const existingCustomer = await Customer.findById(customer);
-    const existingCar = await Car.findById(car);
-
-    if (!existingCustomer || !existingCar) {
-      return res.status(404).json({ message: "Customer or Car not found." });
-    }
-
-    // Create the contract with additional customer and car details
-    const newContract: IContract = new Contract({
-      customer: {
-        id: existingCustomer._id,
-        name: existingCustomer.name,
-        passport_number: existingCustomer.passport_number,
-        driver_license_number: existingCustomer.driver_license_number,
-        address: existingCustomer.address
-      },
-      car: {
-        id: existingCar._id,
-        manufacturer: existingCar.manufacturer,
-        model: existingCar.model,
-        license_plate: existingCar.license_plate
-      },
-      rentalPeriod,
-      rentalPrice,
-      paymentDetails,
-      additionalNotes,
-      contractPhoto
+    const contractRepository = AppDataSource.getRepository(Contract);
+    
+    const contracts = await contractRepository.find({
+      relations: ['customer', 'car'],
+      order: { createdAt: 'DESC' }
     });
 
-    await newContract.save();
+    const formattedContracts = contracts.map(contract => ({
+      id: contract.id,
+      startDate: contract.startDate,
+      endDate: contract.endDate,
+      totalAmount: contract.totalAmount,
+      dailyRate: contract.dailyRate,
+      paymentMethod: contract.paymentMethod,
+      paymentStatus: contract.paymentStatus,
+      additionalNotes: contract.additionalNotes,
+      customer: {
+        id: contract.customer.id,
+        name: contract.customer.name,
+        passportNumber: contract.customer.passportNumber
+      },
+      car: {
+        id: contract.car.id,
+        model: contract.car.model,
+        licensePlate: contract.car.licensePlate
+      }
+    }));
 
-    const base64Docx = generateDocxFile(newContract);
-
-
-    return res.status(201).json({ contract: newContract, docx: base64Docx });
-  } catch (error: any) {
-    console.error('Error creating contract:', error);
-    return res.status(500).json({ message: error.message });
+    res.status(200).json(formattedContracts);
+  } catch (error) {
+    console.error('Error fetching contracts:', error);
+    res.status(500).json({ message: 'Error fetching contracts', error });
   }
 };
 
-// Endpoint to download the generated DOCX file
 export const downloadContractDocx = async (req: Request, res: Response) => {
   const contractId = req.params.id;
 
   try {
-    const contract = await Contract.findById(contractId);
+    const contractRepository = AppDataSource.getRepository(Contract);
+    
+    const contract = await contractRepository.findOne({
+      where: { id: contractId },
+      relations: ['customer', 'car']
+    });
 
     if (!contract) {
       return res.status(404).json({ message: 'Contract not found' });
     }
 
-    const newContract = new Contract({
+    const contractData: ContractForDocx = {
       customer: {
-        id: contract.customer.id,
         name: contract.customer.name,
-        passport_number: contract.customer.passport_number,
-        driver_license_number: contract.customer.driver_license_number,
+        passportNumber: contract.customer.passportNumber,
+        driverLicenseNumber: contract.customer.driverLicenseNumber,
         address: contract.customer.address
       },
       car: {
-        id: contract.car.id,
         manufacturer: contract.car.manufacturer,
         model: contract.car.model,
-        license_plate: contract.car.license_plate
+        licensePlate: contract.car.licensePlate
       },
-      rentalPeriod: {
-        startDate: contract.rentalPeriod.startDate,
-        endDate: contract.rentalPeriod.endDate
-      },
-      rentalPrice: {
-        dailyRate: contract.rentalPrice.dailyRate,
-        totalAmount: contract.rentalPrice.totalAmount
-      },
-      paymentDetails: {
-        paymentMethod: contract.paymentDetails.paymentMethod,
-        paymentStatus: contract.paymentDetails.paymentStatus
-      },
-      additionalNotes: contract.additionalNotes,
-      createdAt: contract.createdAt,
-      updatedAt: contract.updatedAt,
-      contractPhoto: contract.contractPhoto
-    });
+      startDate: contract.startDate,
+      endDate: contract.endDate,
+      dailyRate: contract.dailyRate,
+      totalAmount: contract.totalAmount,
+      paymentMethod: contract.paymentMethod,
+      paymentStatus: contract.paymentStatus,
+      additionalNotes: contract.additionalNotes
+    };
 
+    const base64Docx = generateDocxFile(contractData);
 
-    // Write the base64 string to a file
-    const base64Docx = generateDocxFile(newContract);
-
-    return res.status(201).json({ docx: base64Docx });
+    res.status(201).json({ docx: base64Docx });
   } catch (error) {
-    return res.status(500).json({ message: 'Error creating contract', error });
+    console.error('Error generating contract DOCX:', error);
+    res.status(500).json({ message: 'Error creating contract', error });
   }
-
 };
 
-const generateDocxFile = (newContract: IContract): string => {
-  // Generate DOCX file
+// ✅ Generate DOCX file
+export const generateDocxFile = (contract: ContractForDocx): string => {
   const filePath = path.join(__dirname, '../assets/contract_template.docx');
   const templateData = fs.readFileSync(filePath, 'binary');
   const zip = new PizZip(templateData);
-  const doc = new Docxtemplater(zip, {
-    paragraphLoop: true,
-    linebreaks: true,
-  });
+  const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
-  // Set data for placeholders
   doc.setData({
-    customerName: newContract.customer.name,
-    passportNumber: newContract.customer.passport_number,
-    driverLicenseNumber: newContract.customer.driver_license_number,
-    address: newContract.customer.address || 'N/A',
-    manufacturer: newContract.car.manufacturer,
-    licensePlate: newContract.car.license_plate,
-    carModel: newContract.car.model,
-    startDate: formatDate(newContract.rentalPeriod.startDate),
-    endDate: formatDate(newContract.rentalPeriod.endDate),
-    totalAmount: newContract.rentalPrice.totalAmount,
+    customerName: contract.customer.name,
+    passportNumber: contract.customer.passportNumber,
+    driverLicenseNumber: contract.customer.driverLicenseNumber,
+    address: contract.customer.address || 'N/A',
+    manufacturer: contract.car.manufacturer,
+    licensePlate: contract.car.licensePlate,
+    carModel: contract.car.model,
+    startDate: formatDate(new Date(contract.startDate)),
+    endDate: formatDate(new Date(contract.endDate)),
+    dailyRate: contract.dailyRate,
+    totalAmount: contract.totalAmount,
+    paymentMethod: contract.paymentMethod,
+    paymentStatus: contract.paymentStatus,
   });
 
   try {
-    // Render the document
     doc.render();
   } catch (error) {
-    console.error('Error rendering document:', error);
+    console.error('Error rendering DOCX:', error);
     throw error;
   }
 
@@ -200,58 +360,13 @@ const generateDocxFile = (newContract: IContract): string => {
     mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   });
 
-  // Return the contract object and the generated DOCX file as a base64 string
-  const base64Docx = buffer.toString('base64');
-
-  return base64Docx;
-}
-
-// Update a contract by ID
-export const updateContract = async (req: Request, res: Response) => {
-  try {
-    const updatedContract = await Contract.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updatedContract) {
-      return res.status(404).json({ message: 'Contract not found' });
-    }
-    res.status(200).json(updatedContract);
-  } catch (error) {
-    res.status(500).json({ message: 'Error updating contract', error });
-  }
-};
-
-// Delete a contract by ID
-export const deleteContract = async (req: Request, res: Response) => {
-  try {
-    const deletedContract = await Contract.findByIdAndDelete(req.params.id);
-    if (!deletedContract) {
-      return res.status(404).json({ message: 'Contract not found' });
-    }
-    res.status(200).json({ message: 'Contract deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting contract', error });
-  }
-};
-
-export const getActiveContracts = async (req: Request, res: Response) => {
-  try {
-    const today = new Date();
-
-    // Find contracts where the start date is in the past and the end date is in the future
-    const contracts = await Contract.find({
-      rentalPeriod: {
-        startDate: { $lte: today },  // Start date is less than or equal to today
-        endDate: { $gte: today }     // End date is greater than or equal to today
-      }
-    });
-
-    res.json(contracts);
-  } catch (error) {
-    console.error('Error fetching active contracts:', error);
-    res.status(500).send('Server Error');
-  }
+  return buffer.toString('base64');
 };
 
 const formatDate = (date: Date): string => {
-  const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
-  return new Date(date).toLocaleDateString('en-GB', options);
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 };

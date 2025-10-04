@@ -1,24 +1,26 @@
-import Notification, { INotification } from '../models/Notification';
+import { Notification, NotificationStatus } from '../models/Notification';
+import { User } from '../models/User';
 import { Request, Response } from 'express';
+import { AppDataSource } from '../config/db';
 
-declare module 'express' {
-
-    interface Request {
-
-        user?: {
-
-            _id: string;
-
-        };
-
-    }
-
+// Extend Request interface to include user property
+interface AuthenticatedRequest extends Request {
+    user?: {
+        id: string;
+        role: string;
+    };
 }
+
 
 // Get notification by ID
 export const getNotification = async (req: Request, res: Response) => {
     try {
-        const notification = await Notification.findById(req.params.id).populate('recipient sender');
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        const notification = await notificationRepository.findOne({
+            where: { id: req.params.id },
+            relations: ['recipient', 'sender']
+        });
+        
         if (notification) {
             res.status(200).json(notification);
         } else {
@@ -30,15 +32,20 @@ export const getNotification = async (req: Request, res: Response) => {
 };
 
 // Get all notifications
-export const getNotifications = async (req: Request, res: Response) => {
-    const userId = req.user?._id; // Assuming user ID is available in the request
+export const getNotifications = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
         return res.status(401).send({ error: "Unauthorized" });
     }
 
     try {
-        const notifications = await Notification.find({ recipient: userId }).sort({ createdAt: -1 });
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        const notifications = await notificationRepository.find({
+            where: { recipientId: userId },
+            relations: ['recipient', 'sender'],
+            order: { createdAt: 'DESC' }
+        });
         res.send(notifications);
     } catch (err) {
         res.status(500).send({ error: "Failed to fetch notifications" });
@@ -46,15 +53,20 @@ export const getNotifications = async (req: Request, res: Response) => {
 };
 
 // Get all new notifications
-export const getUnreadNotifications = async (req: Request, res: Response) => {
-    const userId = req.user?._id; // Assuming user ID is available in the request
+export const getUnreadNotifications = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
         return res.status(401).send({ error: "Unauthorized" });
     }
 
     try {
-        const notifications = await Notification.find({ recipient: userId, status: 'new' });
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        const notifications = await notificationRepository.find({
+            where: { recipientId: userId, status: NotificationStatus.NEW },
+            relations: ['recipient', 'sender'],
+            order: { createdAt: 'DESC' }
+        });
 
         res.status(200).json({ success: true, notifications });
     } catch (error) {
@@ -66,20 +78,20 @@ export const getUnreadNotifications = async (req: Request, res: Response) => {
 // Create a new notification
 export const createNotification = async (req: Request, res: Response) => {
     try {
-        const { recipient, sender, type, message } = req.body;
-        const newNotification: INotification = new Notification({
-            recipient,
-            sender,
+        const { recipientId, senderId, type, message } = req.body;
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        
+        const newNotification = notificationRepository.create({
+            recipientId,
+            senderId,
             type,
             message,
-            status: 'new',
-            createdAt: new Date(),
+            status: NotificationStatus.NEW,
         });
 
+        const savedNotification = await notificationRepository.save(newNotification);
 
-        await newNotification.save();
-
-        res.status(201).json(newNotification);
+        res.status(201).json(savedNotification);
     } catch (error) {
         res.status(500).json({ message: 'Error creating notification', error });
     }
@@ -88,39 +100,47 @@ export const createNotification = async (req: Request, res: Response) => {
 // Update a notification by ID
 export const updateNotification = async (req: Request, res: Response) => {
     try {
-        const { title, message } = req.body;
-        const notification = await Notification.findByIdAndUpdate(
-            req.params.id,
-            { title, message, updatedAt: new Date() },
-            { new: true }
-        );
-        if (notification) {
-            res.status(200).json(notification);
-        } else {
+        const { type, message } = req.body;
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        
+        const updateResult = await notificationRepository.update(req.params.id, {
+            type,
+            message,
+        });
+
+        if (updateResult.affected === 0) {
             res.status(404).json({ message: 'Notification not found' });
+        } else {
+            const updatedNotification = await notificationRepository.findOne({
+                where: { id: req.params.id },
+                relations: ['recipient', 'sender']
+            });
+            res.status(200).json(updatedNotification);
         }
     } catch (error) {
         res.status(500).json({ message: 'Error updating notification', error });
     }
 };
 
-export const markAllNotificationsAsRead = async (req: Request, res: Response) => {
-    const userId = req.user?._id; // Assuming user ID is available in the request
+export const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
         return res.status(401).send({ error: "Unauthorized" });
     }
 
     try {
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        
         // Update all notifications for the current user
-        const result = await Notification.updateMany(
-            { recipient: userId, status: "new" },
-            { $set: { status: "seen" } }
+        const result = await notificationRepository.update(
+            { recipientId: userId, status: NotificationStatus.NEW },
+            { status: NotificationStatus.SEEN }
         );
 
         res.send({
             message: "All notifications marked as seen",
-            notifications: result,
+            affected: result.affected,
         });
     } catch (err) {
         res.status(500).send({ error: "Failed to mark all notifications as seen" });
@@ -128,25 +148,28 @@ export const markAllNotificationsAsRead = async (req: Request, res: Response) =>
 };
 
 // Endpoint to mark notifications as read
-export const markNotificationAsRead = async (req: Request, res: Response) => {
-    const userId = req.user?._id; // Assuming user ID is available in the request
+export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
         return res.status(401).send({ error: "Unauthorized" });
     }
 
     try {
-        const notification = await Notification.findOneAndUpdate(
-            { _id: req.params.id, recipient: userId },
-            { status: "seen" },
-            { new: true }
-        );
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        
+        const notification = await notificationRepository.findOne({
+            where: { id: req.params.id, recipientId: userId }
+        });
 
         if (!notification) {
             return res.status(404).send({ error: "Notification not found" });
         }
 
-        res.send(notification);
+        notification.status = NotificationStatus.SEEN;
+        const updatedNotification = await notificationRepository.save(notification);
+
+        res.send(updatedNotification);
     } catch (err) {
         res.status(500).send({ error: "Failed to update notification" });
     }
@@ -155,8 +178,11 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
 // Delete a notification by ID
 export const deleteNotification = async (req: Request, res: Response) => {
     try {
-        const notification = await Notification.findByIdAndDelete(req.params.id);
-        if (notification) {
+        const notificationRepository = AppDataSource.getRepository(Notification);
+        
+        const result = await notificationRepository.delete(req.params.id);
+        
+        if (result.affected && result.affected > 0) {
             res.status(200).json({ message: 'Notification deleted' });
         } else {
             res.status(404).json({ message: 'Notification not found' });

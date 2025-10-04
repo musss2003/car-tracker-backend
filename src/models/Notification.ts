@@ -1,45 +1,60 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { User } from './User';
 
-// Define the Notification interface extending Mongoose Document
-export interface INotification extends Document {
-    recipient: mongoose.Types.ObjectId; // ID of the user receiving the notification
-    sender?: mongoose.Types.ObjectId;   // Optional: ID of the user sending the notification
-    type: string;                       // Type of notification (e.g., "message", "alert")
-    message: string;                    // Notification content
-    status: "new" | "seen";             // Status of the notification
-    createdAt: Date;                    // Timestamp of creation
+// Define the Notification status enum
+export enum NotificationStatus {
+    NEW = 'new',
+    SEEN = 'seen'
 }
 
-// Define the schema for the Notification model
-const NotificationSchema: Schema<INotification> = new Schema({
-    recipient: {
-        type: Schema.Types.ObjectId,
-        required: true,
-        ref: 'User', // Assuming a User model exists
-    },
-    sender: {
-        type: Schema.Types.ObjectId,
-        ref: 'User', // Optional field referencing a User model
-    },
-    type: {
-        type: String,
-        required: true,
-    },
-    message: {
-        type: String,
-        required: true,
-    },
-    status: {
-        type: String,
-        enum: ["new", "seen"], // Define valid status values
-        default: "new",       // Default status is "new"
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now, // Automatically set the current date
-    },
-});
+// Define the Notification entity for PostgreSQL
+@Entity('notifications')
+export class Notification {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
-// Create the Notification model
-const Notification = mongoose.model<INotification>('Notification', NotificationSchema);
+    @Column({ name: 'recipient_id' })
+    recipientId: string; // ID of the user receiving the notification
+
+    @ManyToOne(() => User, { eager: false })
+    @JoinColumn({ name: 'recipient_id' })
+    recipient: User;
+
+    @Column({ name: 'sender_id', nullable: true })
+    senderId?: string; // Optional: ID of the user sending the notification
+
+    @ManyToOne(() => User, { eager: false, nullable: true })
+    @JoinColumn({ name: 'sender_id' })
+    sender?: User;
+
+    @Column({ type: 'varchar', length: 100 })
+    type: string; // Type of notification (e.g., "message", "alert")
+
+    @Column({ type: 'text' })
+    message: string; // Notification content
+
+    @Column({
+        type: 'enum',
+        enum: NotificationStatus,
+        default: NotificationStatus.NEW
+    })
+    status: NotificationStatus; // Status of the notification
+
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date; // Timestamp of creation
+}
+
+// Export interface for compatibility
+export interface INotification {
+    id: string;
+    recipientId: string;
+    recipient?: User;
+    senderId?: string;
+    sender?: User;
+    type: string;
+    message: string;
+    status: NotificationStatus;
+    createdAt: Date;
+}
+
 export default Notification;

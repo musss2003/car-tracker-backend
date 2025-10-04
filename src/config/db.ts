@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 import { Pool } from "pg";
+import { DataSource } from "typeorm";
 import dotenv from "dotenv";
+import { User } from "../models/User";
+import { Customer } from "../models/Customer";
+import { Car } from "../models/Car";
+import { Contract } from "../models/Contract";
+import { Notification } from "../models/Notification";
 
 dotenv.config();
 
@@ -25,29 +31,22 @@ pool.connect()
   .then(() => console.log("✅ Connected to Neon PostgreSQL"))
   .catch(err => console.error("❌ PostgreSQL connection error:", err));
 
+// TypeORM DataSource configuration
+export const AppDataSource = new DataSource({
+  type: "postgres",
+  url: process.env.DATABASE_URL,
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
+  entities: [User, Customer, Car, Contract, Notification],
+  synchronize: process.env.NODE_ENV !== "production", // Only in development
+  logging: process.env.NODE_ENV === "development",
+});
 
-const createCarsTable = async () => {
+// Initialize TypeORM connection
+export const initializeTypeORM = async (): Promise<void> => {
   try {
-    const query = `
-      CREATE TABLE IF NOT EXISTS cars (
-        id SERIAL PRIMARY KEY,
-        manufacturer VARCHAR(100) NOT NULL,
-        model VARCHAR(100) NOT NULL,
-        year INT NOT NULL,
-        color VARCHAR(50),
-        license_plate VARCHAR(50) UNIQUE NOT NULL,
-        chassis_number VARCHAR(100),
-        price_per_day NUMERIC(10,2)
-      );
-    `;
-
-    await pool.query(query);
-    console.log("✅ Cars table created successfully");
-  } catch (err) {
-    console.error("❌ Error creating cars table:", err);
+    await AppDataSource.initialize();
+    console.log("✅ TypeORM connected to PostgreSQL");
+  } catch (error) {
+    console.error("❌ TypeORM connection error:", error);
   }
 };
-
-// Call the function
-createCarsTable();
-
