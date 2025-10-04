@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
-import { connectMongo, pool, initializeTypeORM, AppDataSource } from './config/db';
+import { initializeTypeORM, AppDataSource } from './config/db';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import contractRoutes from './routes/contract';
@@ -122,12 +122,40 @@ app.get('/src/assets/contract_template.docx', (req, res) => {
     res.sendFile(path.join(__dirname, 'src/assets/contract_template.docx'));
 });
 
-// Connect to database
-(async () => {
-  await connectMongo(); // Connect MongoDB
-  await initializeTypeORM(); // Initialize TypeORM
-  // PostgreSQL pool auto-connects when imported
-})();
+// Initialize database connection
+const startServer = async () => {
+  try {
+    // Only initialize TypeORM (PostgreSQL)
+    await initializeTypeORM();
+    
+    // Start the server only after successful database connection
+    const PORT = process.env.PORT || 5001;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📊 Database connected and ready`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Handle graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('📴 SIGTERM received, shutting down gracefully...');
+  if (AppDataSource.isInitialized) {
+    await AppDataSource.destroy();
+  }
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('📴 SIGINT received, shutting down gracefully...');
+  if (AppDataSource.isInitialized) {
+    await AppDataSource.destroy();
+  }
+  process.exit(0);
+});
 
 // Apply multer middleware globally
 app.use(upload.single('bookPic'));
@@ -140,11 +168,30 @@ app.use('/api/cars', carRoutes); // Register the car routes
 app.use('/api/customers', customerRoutes); // Register the customer routes
 app.use('/api/notifications', notificationRoutes); // manipulate notifications
 
+// Health check endpoint
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    // Test database connection
+    await AppDataSource.query('SELECT 1');
+    res.status(200).json({ 
+      status: 'ok', 
+      database: 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error', 
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // List all routes
 app.get('/routes', (req: Request, res: Response) => {
     res.status(200).send(endPoints(app));
 });
 
-// Set up port and listen
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start the server
+startServer();

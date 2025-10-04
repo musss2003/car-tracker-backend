@@ -45,7 +45,7 @@ export const getCustomers = async (req: Request, res: Response): Promise<Respons
 
 // ✅ Create a new customer
 export const createCustomer = async (req: Request, res: Response): Promise<Response> => {
-  const { name, driver_license_number, passport_number, email, phone_number, address, driving_license_photo_url, passport_photo_url } =
+  const { name, driver_license_number, passport_number, email, phone_number, address, driver_license_photo_url, passport_photo_url } =
     req.body;
 
   try {
@@ -64,7 +64,7 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
       email: email || undefined,
       phoneNumber: phone_number || undefined,
       address: address || undefined,
-      drivingLicensePhotoUrl: driving_license_photo_url || undefined,
+      drivingLicensePhotoUrl: driver_license_photo_url || undefined,
       passportPhotoUrl: passport_photo_url || undefined,
     });
 
@@ -125,7 +125,7 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
         case 'phone_number':
           convertedUpdates.phoneNumber = value;
           break;
-        case 'driving_license_photo_url':
+        case 'driver_license_photo_url':
           convertedUpdates.drivingLicensePhotoUrl = value;
           break;
         case 'passport_photo_url':
