@@ -45,11 +45,21 @@ export const getCustomers = async (req: Request, res: Response): Promise<Respons
 
 // ✅ Create a new customer
 export const createCustomer = async (req: Request, res: Response): Promise<Response> => {
-  const { name, driver_license_number, passport_number, email, phone_number, address, driver_license_photo_url, passport_photo_url } =
-    req.body;
+  const body = req.body;
 
   try {
-    if (!name || !driver_license_number || !passport_number) {
+    // Handle both camelCase (new) and snake_case (legacy) field names
+    const name = body.name;
+    const driverLicenseNumber = body.driverLicenseNumber || body.driver_license_number;
+    const passportNumber = body.passportNumber || body.passport_number;
+    const email = body.email;
+    const phoneNumber = body.phoneNumber || body.phone_number || body.phone;
+    const address = body.address;
+    const countryOfOrigin = body.countryOfOrigin || body.country_of_origin;
+    const drivingLicensePhotoUrl = body.drivingLicensePhotoUrl || body.driver_license_photo_url;
+    const passportPhotoUrl = body.passportPhotoUrl || body.passport_photo_url;
+
+    if (!name || !driverLicenseNumber || !passportNumber) {
       return res
         .status(400)
         .json({ message: "Name, driver license number, and passport number are required." });
@@ -59,13 +69,14 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
     
     const newCustomer = customerRepository.create({
       name,
-      driverLicenseNumber: driver_license_number,
-      passportNumber: passport_number,
+      driverLicenseNumber,
+      passportNumber,
       email: email || undefined,
-      phoneNumber: phone_number || undefined,
+      phoneNumber: phoneNumber || undefined,
       address: address || undefined,
-      drivingLicensePhotoUrl: driver_license_photo_url || undefined,
-      passportPhotoUrl: passport_photo_url || undefined,
+      countryOfOrigin: countryOfOrigin || undefined,
+      drivingLicensePhotoUrl: drivingLicensePhotoUrl || undefined,
+      passportPhotoUrl: passportPhotoUrl || undefined,
     });
 
     const savedCustomer = await customerRepository.save(newCustomer);
@@ -112,10 +123,11 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
 
     const customerRepository = AppDataSource.getRepository(Customer);
     
-    // Convert snake_case keys to camelCase for TypeORM entity
+    // Handle both camelCase (new frontend) and snake_case (legacy) field names
     const convertedUpdates: any = {};
     for (const [key, value] of Object.entries(updates)) {
       switch (key) {
+        // Legacy snake_case support
         case 'driver_license_number':
           convertedUpdates.driverLicenseNumber = value;
           break;
@@ -131,7 +143,24 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
         case 'passport_photo_url':
           convertedUpdates.passportPhotoUrl = value;
           break;
+        // Handle legacy 'phone' field that might be sent by mistake
+        case 'phone':
+          convertedUpdates.phoneNumber = value;
+          break;
+        // New camelCase fields - pass through directly
+        case 'driverLicenseNumber':
+        case 'passportNumber':
+        case 'phoneNumber':
+        case 'countryOfOrigin':
+        case 'drivingLicensePhotoUrl':
+        case 'passportPhotoUrl':
+        case 'name':
+        case 'email':
+        case 'address':
+          convertedUpdates[key] = value;
+          break;
         default:
+          // For any other fields, pass through directly
           convertedUpdates[key] = value;
       }
     }

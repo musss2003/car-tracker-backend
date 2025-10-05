@@ -24,6 +24,9 @@ export class Customer {
     @Column({ name: 'passport_number', type: 'varchar', length: 50 })
     passportNumber: string;
 
+    @Column({ name: 'country_of_origin', type: 'varchar', length: 100, nullable: true })
+    countryOfOrigin?: string;
+
     @Column({ name: 'driver_license_photo_url', type: 'text', nullable: true })
     drivingLicensePhotoUrl?: string;
 
@@ -46,6 +49,7 @@ export interface ICustomer {
     address?: string;
     driverLicenseNumber: string;
     passportNumber: string;
+    countryOfOrigin?: string;
     drivingLicensePhotoUrl?: string;
     passportPhotoUrl?: string;
     createdAt: Date;
