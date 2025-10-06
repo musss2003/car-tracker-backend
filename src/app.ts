@@ -7,6 +7,7 @@ import contractRoutes from './routes/contract';
 import carRoutes from './routes/car';
 import customerRoutes from './routes/customer';
 import notificationRoutes from './routes/notification';
+import countryRoutes from './routes/country';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -167,6 +168,7 @@ app.use('/api/contracts', contractRoutes);
 app.use('/api/cars', carRoutes); // Register the car routes
 app.use('/api/customers', customerRoutes); // Register the customer routes
 app.use('/api/notifications', notificationRoutes); // manipulate notifications
+app.use('/api/countries', countryRoutes); // Register the countries routes
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node dist/app.js",
     "dev": "nodemon --ext ts --exec ts-node src/app.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "setup-countries": "ts-node src/scripts/setupCountries.ts"
   },
   "keywords": [],
   "author": "Mustafa Sinanovic",

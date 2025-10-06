@@ -7,6 +7,7 @@ import { Customer } from "../models/Customer";
 import { Car } from "../models/Car";
 import { Contract } from "../models/Contract";
 import { Notification } from "../models/Notification";
+import { Country } from "../models/Country";
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ export const AppDataSource = new DataSource({
   type: "postgres",
   url: process.env.DATABASE_URL,
   ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
-  entities: [User, Customer, Car, Contract, Notification],
+  entities: [User, Customer, Car, Contract, Notification, Country],
   synchronize: process.env.NODE_ENV !== "production", // Only in development
   logging: process.env.NODE_ENV === "development",
   extra: {
