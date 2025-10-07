@@ -173,29 +173,41 @@ export const sessionCheck = async (
     return;
   }
 
-  try {
-    if (accessToken) {
-      // Try verifying access token
-      const decoded = verifyToken(accessToken);
+  // Step 1: Try to verify access token (if provided)
+  if (accessToken) {
+    try {
+      const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET || '') as JwtPayload;
+      
       const user = await getUserById(decoded.id);
-
       if (!user) {
-        res.status(404).json({ authenticated: false, message: 'User not found' });
+        console.log("User not found for decoded token ID:", decoded.id);
+        // Don't return here - fall through to refresh token check
+      } else {
+        // Access token is valid and user exists
+        res.status(200).json({
+          authenticated: true,
+          username: user.username,
+          email: user.email,
+          id: user.id,
+          role: user.role,
+        });
         return;
       }
-
-      res.status(200).json({
-        authenticated: true,
-        username: user.username,
-        email: user.email,
-        id: user.id,
-        role: user.role,
-      });
-      return;
+    } catch (accessTokenError: any) {
+      console.log("Access token verification failed:", accessTokenError.message);
+      // Don't return here - continue to refresh token check
+      // Log the specific error type for debugging
+      if (accessTokenError instanceof jwt.TokenExpiredError) {
+        console.log("Access token expired, trying refresh token...");
+      } else if (accessTokenError instanceof jwt.JsonWebTokenError) {
+        console.log("Access token invalid, trying refresh token...");
+      }
     }
+  }
 
-    // If no valid access token, check refresh token
-    if (refreshToken) {
+  // Step 2: Try to use refresh token (if access token failed or wasn't provided)
+  if (refreshToken) {
+    try {
       const userRepository = AppDataSource.getRepository(User);
       
       const user = await userRepository.findOne({
@@ -210,10 +222,12 @@ export const sessionCheck = async (
 
       // Generate a new access token
       const newAccessToken = jwt.sign(
-        { id: user.id },
+        { id: user.id, role: user.role },
         process.env.ACCESS_TOKEN_SECRET || '',
         { expiresIn: '15m' }
       );
+
+      console.log("New access token generated for user:", user.id);
 
       res.status(200).json({
         authenticated: true,
@@ -224,18 +238,19 @@ export const sessionCheck = async (
         accessToken: newAccessToken, // Send new access token to client
       });
       return;
-    }
-
-  } catch (error: any) {
-    console.error('Error during session validation:', error.message);
-    if (error instanceof jwt.TokenExpiredError) {
-      res.status(401).json({ authenticated: false, message: 'Access token expired, please use refresh token' });
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({ authenticated: false, message: 'Invalid token' });
-    } else {
-      res.status(500).json({ authenticated: false, message: 'Internal server error' });
+      
+    } catch (refreshTokenError: any) {
+      console.error('Error during refresh token validation:', refreshTokenError.message);
+      res.status(500).json({ authenticated: false, message: 'Internal server error during refresh' });
+      return;
     }
   }
+
+  // Step 3: If we get here, both tokens failed or were missing
+  res.status(401).json({ 
+    authenticated: false, 
+    message: 'Authentication failed - both access and refresh tokens are invalid or missing' 
+  });
 };
 
 // LOGOUT
@@ -281,9 +296,4 @@ const getUserById = async (id: string) => {
     where: { id },
     select: ['id', 'username', 'email', 'role', 'refreshToken']
   });
-};
-
-// Helper to verify JWT
-const verifyToken = (token: string) => {
-  return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || '') as JwtPayload;
 };
