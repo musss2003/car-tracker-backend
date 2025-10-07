@@ -55,6 +55,9 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
     const email = body.email;
     const phoneNumber = body.phoneNumber || body.phone_number || body.phone;
     const address = body.address;
+    const fatherName = body.fatherName || body.father_name;
+    const cityOfResidence = body.cityOfResidence || body.city_of_residence;
+    const idOfPerson = body.idOfPerson || body.id_of_person;
     const countryOfOrigin = body.countryOfOrigin || body.country_of_origin;
     const drivingLicensePhotoUrl = body.drivingLicensePhotoUrl || body.driver_license_photo_url;
     const passportPhotoUrl = body.passportPhotoUrl || body.passport_photo_url;
@@ -74,6 +77,9 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
       email: email || undefined,
       phoneNumber: phoneNumber || undefined,
       address: address || undefined,
+      fatherName: fatherName || undefined,
+      cityOfResidence: cityOfResidence || undefined,
+      idOfPerson: idOfPerson || undefined,
       countryOfOrigin: countryOfOrigin || undefined,
       drivingLicensePhotoUrl: drivingLicensePhotoUrl || undefined,
       passportPhotoUrl: passportPhotoUrl || undefined,
@@ -143,6 +149,18 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
         case 'passport_photo_url':
           convertedUpdates.passportPhotoUrl = value;
           break;
+        case 'father_name':
+          convertedUpdates.fatherName = value;
+          break;
+        case 'city_of_residence':
+          convertedUpdates.cityOfResidence = value;
+          break;
+        case 'id_of_person':
+          convertedUpdates.idOfPerson = value;
+          break;
+        case 'country_of_origin':
+          convertedUpdates.countryOfOrigin = value;
+          break;
         // Handle legacy 'phone' field that might be sent by mistake
         case 'phone':
           convertedUpdates.phoneNumber = value;
@@ -151,6 +169,9 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
         case 'driverLicenseNumber':
         case 'passportNumber':
         case 'phoneNumber':
+        case 'fatherName':
+        case 'cityOfResidence':
+        case 'idOfPerson':
         case 'countryOfOrigin':
         case 'drivingLicensePhotoUrl':
         case 'passportPhotoUrl':

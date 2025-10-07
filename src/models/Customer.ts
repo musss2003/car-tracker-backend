@@ -24,6 +24,15 @@ export class Customer {
     @Column({ name: 'passport_number', type: 'varchar', length: 50 })
     passportNumber: string;
 
+    @Column({ name: 'father_name', type: 'varchar', length: 255, nullable: true })
+    fatherName?: string; // Optional
+
+    @Column({ name: 'city_of_residence', type: 'varchar', length: 100, nullable: true })
+    cityOfResidence?: string; // Optional
+
+    @Column({ name: 'id_of_person', type: 'varchar', length: 50, nullable: true })
+    idOfPerson?: string; // Optional - personal ID number
+
     @Column({ name: 'country_of_origin', type: 'varchar', length: 100, nullable: true })
     countryOfOrigin?: string;
 
@@ -49,6 +58,9 @@ export interface ICustomer {
     address?: string;
     driverLicenseNumber: string;
     passportNumber: string;
+    fatherName?: string;
+    cityOfResidence?: string;
+    idOfPerson?: string;
     countryOfOrigin?: string;
     drivingLicensePhotoUrl?: string;
     passportPhotoUrl?: string;
