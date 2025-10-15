@@ -8,6 +8,7 @@ import carRoutes from './routes/car';
 import customerRoutes from './routes/customer';
 import notificationRoutes from './routes/notification';
 import countryRoutes from './routes/country';
+import documentsRoutes from "./routes/upload";
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -162,6 +163,7 @@ process.on('SIGINT', async () => {
 // Apply multer middleware globally
 app.use(upload.single('bookPic'));
 
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -170,6 +172,8 @@ app.use('/api/cars', carRoutes); // Register the car routes
 app.use('/api/customers', customerRoutes); // Register the customer routes
 app.use('/api/notifications', notificationRoutes); // manipulate notifications
 app.use('/api/countries', countryRoutes); // Register the countries routes
+app.use("/api", documentsRoutes);
+
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
