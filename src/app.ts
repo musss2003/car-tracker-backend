@@ -38,9 +38,28 @@ const app: Application = express();
 const server = http.createServer(app); // Create the HTTP server
 const io = new Server(server); // Attach Socket.IO to the server
 
+// CORS configuration - allow specific origins with credentials
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.BASE_URL || 'http://localhost:5173'
+];
+
 app.use(cors({
-    origin: "*", // for testing; in production, put your frontend URL
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.warn(`CORS blocked origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,  // Required for cookies, authorization headers with HTTPS
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 app.use(cookieParser());
