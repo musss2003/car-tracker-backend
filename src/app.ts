@@ -38,7 +38,7 @@ const server = http.createServer(app); // Create the HTTP server
 const io = new Server(server); // Attach Socket.IO to the server
 
 app.use(cors({
-    origin: [process.env.BASE_URL || "http://default-url.com", "http://localhost:4173"],  // Specify the exact origin
+    origin: "*", // for testing; in production, put your frontend URL
     credentials: true,  // Required for cookies, authorization headers with HTTPS
 }));
 app.use(express.json());
