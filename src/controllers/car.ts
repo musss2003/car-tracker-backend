@@ -3,9 +3,8 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/db";
 import { Car } from "../models/Car";
 import { Contract } from "../models/Contract";
-import { Customer } from "../models/Customer";
 
-// ✅ Get all cars
+
 export const getCars = async (req: Request, res: Response) => {
   try {
     const carRepository = AppDataSource.getRepository(Car);
@@ -19,7 +18,6 @@ export const getCars = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Get car by ID
 export const getCar = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -37,10 +35,34 @@ export const getCar = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Create a new car
 export const createCar = async (req: Request, res: Response) => {
   try {
-    const { manufacturer, model, year, color, license_plate, chassis_number, price_per_day } = req.body;
+    const { 
+      manufacturer, 
+      model, 
+      year, 
+      color, 
+      license_plate, 
+      chassis_number, 
+      fuel_type,
+      transmission,
+      seats,
+      doors,
+      mileage,
+      engine_power,
+      price_per_day,
+      category,
+      status,
+      current_location,
+      photo_url
+    } = req.body;
+
+    // Validate required fields
+    if (!manufacturer || !model || !year || !license_plate || !fuel_type || !transmission || !price_per_day) {
+      return res.status(400).json({ 
+        message: "Missing required fields: manufacturer, model, year, license_plate, fuel_type, transmission, price_per_day" 
+      });
+    }
 
     const carRepository = AppDataSource.getRepository(Car);
     
@@ -51,7 +73,17 @@ export const createCar = async (req: Request, res: Response) => {
       color: color || undefined,
       licensePlate: license_plate,
       chassisNumber: chassis_number || undefined,
-      pricePerDay: price_per_day || undefined,
+      fuelType: fuel_type,
+      transmission,
+      seats: seats || undefined,
+      doors: doors || undefined,
+      mileage: mileage || undefined,
+      enginePower: engine_power || undefined,
+      pricePerDay: price_per_day,
+      category: category || 'economy',
+      status: status || 'available',
+      currentLocation: current_location || undefined,
+      photoUrl: photo_url || undefined,
     });
 
     const savedCar = await carRepository.save(newCar);
@@ -62,22 +94,48 @@ export const createCar = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Update car by license plate
 export const updateCar = async (req: Request, res: Response) => {
   try {
     const { license_plate } = req.params;
-    const { manufacturer, model, year, color, chassis_number, price_per_day } = req.body;
+    const { 
+      manufacturer, 
+      model, 
+      year, 
+      color, 
+      chassis_number, 
+      fuel_type,
+      transmission,
+      seats,
+      doors,
+      mileage,
+      engine_power,
+      price_per_day,
+      category,
+      status,
+      current_location,
+      photo_url
+    } = req.body;
 
     const carRepository = AppDataSource.getRepository(Car);
     
-    const updateData: Partial<Car> = {
-      manufacturer,
-      model,
-      year,
-      color: color || undefined,
-      chassisNumber: chassis_number || undefined,
-      pricePerDay: price_per_day || undefined,
-    };
+    const updateData: Partial<Car> = {};
+    
+    if (manufacturer !== undefined) updateData.manufacturer = manufacturer;
+    if (model !== undefined) updateData.model = model;
+    if (year !== undefined) updateData.year = year;
+    if (color !== undefined) updateData.color = color;
+    if (chassis_number !== undefined) updateData.chassisNumber = chassis_number;
+    if (fuel_type !== undefined) updateData.fuelType = fuel_type;
+    if (transmission !== undefined) updateData.transmission = transmission;
+    if (seats !== undefined) updateData.seats = seats;
+    if (doors !== undefined) updateData.doors = doors;
+    if (mileage !== undefined) updateData.mileage = mileage;
+    if (engine_power !== undefined) updateData.enginePower = engine_power;
+    if (price_per_day !== undefined) updateData.pricePerDay = price_per_day;
+    if (category !== undefined) updateData.category = category;
+    if (status !== undefined) updateData.status = status;
+    if (current_location !== undefined) updateData.currentLocation = current_location;
+    if (photo_url !== undefined) updateData.photoUrl = photo_url;
 
     const updateResult = await carRepository.update(
       { licensePlate: license_plate },
@@ -96,7 +154,6 @@ export const updateCar = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Delete car by license plate
 export const deleteCar = async (req: Request, res: Response) => {
   try {
     const { license_plate } = req.params;
@@ -116,7 +173,6 @@ export const deleteCar = async (req: Request, res: Response) => {
 };
 
 
-// Fetch available cars for a given rental period
 export const getAvailableCarsForPeriod = async (req: Request, res: Response) => {
   const { startingDate, endingDate } = req.body;
 
