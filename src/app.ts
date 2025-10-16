@@ -16,23 +16,9 @@ import path from 'path';
 import http from 'http';
 import { Server } from 'socket.io'; // Using Socket.IO
 import { Notification, NotificationStatus } from './models/Notification'; // Import the TypeORM Notification model
-import multer from "multer";
 import "reflect-metadata"; // Required for TypeORM
 
-
-
-
 dotenv.config();
-
-const storage = multer.diskStorage({
-    destination: 'public/uploads/',
-    filename: function(req, file, cb){
-        cb(null, file.originalname);
-    }
-});
-
-const upload = multer({ storage: multer.memoryStorage() });
-
 
 const app: Application = express();
 const server = http.createServer(app); // Create the HTTP server
@@ -179,9 +165,8 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Apply multer middleware globally
-app.use(upload.single('bookPic'));
-
+// Note: Multer is configured per-route, not globally
+// Each route that needs file upload should configure its own multer middleware
 
 // Routes
 app.use('/api/auth', authRoutes);
