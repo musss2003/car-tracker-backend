@@ -14,7 +14,7 @@ export class Country {
   @Column({ type: 'text', nullable: true, name: 'flag' })
   flag?: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true, name: 'dial_code' })
+  @Column({ type: 'text', nullable: true, name: 'dial_code' })
   dialCode?: string;
 
   @CreateDateColumn({ name: 'created_at' })
