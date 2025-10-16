@@ -42,15 +42,15 @@ export const createCar = async (req: Request, res: Response) => {
       model, 
       year, 
       color, 
-      license_plate, 
-      chassis_number, 
-      fuel_type,
+      licensePlate, 
+      chassisNumber, 
+      fuelType,
       transmission,
       seats,
       doors,
       mileage,
-      engine_power,
-      price_per_day,
+      enginePower,
+      pricePerDay,
       category,
       status,
       current_location,
@@ -58,7 +58,7 @@ export const createCar = async (req: Request, res: Response) => {
     } = req.body;
 
     // Validate required fields
-    if (!manufacturer || !model || !year || !license_plate || !fuel_type || !transmission || !price_per_day) {
+    if (!manufacturer || !model || !year || !licensePlate || !fuelType || !transmission || !pricePerDay) {
       return res.status(400).json({ 
         message: "Missing required fields: manufacturer, model, year, license_plate, fuel_type, transmission, price_per_day" 
       });
@@ -71,15 +71,15 @@ export const createCar = async (req: Request, res: Response) => {
       model,
       year,
       color: color || undefined,
-      licensePlate: license_plate,
-      chassisNumber: chassis_number || undefined,
-      fuelType: fuel_type,
+      licensePlate: licensePlate,
+      chassisNumber: chassisNumber || undefined,
+      fuelType: fuelType,
       transmission,
       seats: seats || undefined,
       doors: doors || undefined,
       mileage: mileage || undefined,
-      enginePower: engine_power || undefined,
-      pricePerDay: price_per_day,
+      enginePower: enginePower || undefined,
+      pricePerDay: pricePerDay,
       category: category || 'economy',
       status: status || 'available',
       currentLocation: current_location || undefined,
