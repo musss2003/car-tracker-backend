@@ -60,8 +60,8 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         // 6. Send refresh token as HTTP-only cookie
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            secure: false, // Set to false for HTTP (EC2), true for HTTPS only
+            sameSite: 'lax', // Changed from 'strict' to 'lax' for cross-origin compatibility
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
@@ -119,8 +119,8 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
         // 6. Send refresh token as HTTP-only cookie
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            secure: false, // Set to false for HTTP (EC2), true for HTTPS only
+            sameSite: 'lax', // Changed from 'strict' to 'lax' for cross-origin compatibility
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
@@ -276,8 +276,8 @@ export const logout = async (req: Request, res: Response, next: NextFunction): P
         // Remove the refresh token from the user
         await userRepository.update(user.id, { refreshToken: undefined });
 
-        // Clear the cookie
-        res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'strict' });
+        // Clear the cookie (must match the same settings as when it was set)
+        res.clearCookie('refreshToken', { httpOnly: true, secure: false, sameSite: 'lax' });
 
         res.sendStatus(204); // Successfully logged out
     } catch (error: any) {
