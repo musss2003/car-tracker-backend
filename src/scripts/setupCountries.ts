@@ -1,21 +1,11 @@
 import { AppDataSource } from '../config/db';
 import { Country } from '../models/Country';
 
-interface RestCountryData {
-  name: {
-    common: string;
-    official: string;
-  };
-  cca2: string;
-  cca3: string;
-  idd?: {
-    root?: string;
-    suffixes?: string[];
-  };
-  flags: {
-    png: string;
-    svg: string;
-  };
+interface CountryData {
+  name: string;
+  code: string;
+  dial_code: string;
+  flag?: string;
 }
 
 const setupCountries = async () => {
@@ -42,30 +32,24 @@ const setupCountries = async () => {
       return;
     }
 
-    console.log('📥 Fetching countries data from REST Countries API...');
+    console.log('📥 Fetching countries data from countries-list-json...');
     
-    const response = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,cca3,idd,flags');
+    const response = await fetch('https://cdn.jsdelivr.net/npm/countries-list-json@1.1.1/countries.json');
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const countriesData: RestCountryData[] = await response.json();
+    const countriesData: CountryData[] = await response.json();
     
     console.log(`📊 Processing ${countriesData.length} countries...`);
     
     const countries = countriesData.map(country => {
       const countryEntity = new Country();
-      countryEntity.name = country.name.common;
-      countryEntity.code = country.cca2;
-      countryEntity.flagUrl = country.flags.png;
-      
-      // Handle calling code
-      if (country.idd?.root && country.idd?.suffixes && country.idd.suffixes.length > 0) {
-        countryEntity.callingCode = `${country.idd.root}${country.idd.suffixes[0]}`;
-      } else {
-        countryEntity.callingCode = '+0';
-      }
+      countryEntity.name = country.name;
+      countryEntity.code = country.code;
+      countryEntity.dialCode = country.dial_code;
+      countryEntity.flagUrl = country.flag || undefined;
       
       return countryEntity;
     });

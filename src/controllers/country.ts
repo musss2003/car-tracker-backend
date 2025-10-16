@@ -8,7 +8,7 @@ export const getCountries = async (req: Request, res: Response) => {
     const countryRepository = AppDataSource.getRepository(Country);
     
     const countries = await countryRepository.find({
-      select: ['id', 'name', 'code', 'flagUrl', 'callingCode'],
+      select: ['id', 'name', 'code', 'flagUrl', 'dialCode'],
       order: { name: 'ASC' }
     });
 
@@ -17,7 +17,7 @@ export const getCountries = async (req: Request, res: Response) => {
       name: country.name,
       code: country.code,
       flag: country.flagUrl || `https://flagcdn.com/w20/${country.code.toLowerCase()}.png`,
-      callingCode: country.callingCode || '+0'
+      dialCode: country.dialCode || '+0'
     }));
 
     res.json(transformedCountries);
