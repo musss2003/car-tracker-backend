@@ -14,7 +14,7 @@ export class Country {
   @Column({ type: 'varchar', length: 500, nullable: true, name: 'flag_url' })
   flagUrl?: string;
 
-  @Column({ type: 'varchar', length: 10, nullable: true, name: 'dial_code' })
+  @Column({ type: 'varchar', length: 20, nullable: true, name: 'dial_code' })
   dialCode?: string;
 
   @CreateDateColumn({ name: 'created_at' })
