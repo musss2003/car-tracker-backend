@@ -49,7 +49,7 @@ const setupCountries = async () => {
       countryEntity.name = country.name;
       countryEntity.code = country.code;
       countryEntity.dialCode = country.dial_code;
-      countryEntity.flagUrl = country.flag || undefined;
+      countryEntity.flag = country.flag || undefined;
       
       return countryEntity;
     });
