@@ -96,7 +96,7 @@ export const createCar = async (req: Request, res: Response) => {
 
 export const updateCar = async (req: Request, res: Response) => {
   try {
-    const { license_plate } = req.params;
+    const { licensePlate } = req.params;
     const { 
       manufacturer, 
       model, 
@@ -138,7 +138,7 @@ export const updateCar = async (req: Request, res: Response) => {
     if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
 
     const updateResult = await carRepository.update(
-      { licensePlate: license_plate },
+      { licensePlate: licensePlate },
       updateData
     );
 
@@ -146,7 +146,7 @@ export const updateCar = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Car not found" });
     }
 
-    const updatedCar = await carRepository.findOne({ where: { licensePlate: license_plate } });
+    const updatedCar = await carRepository.findOne({ where: { licensePlate: licensePlate } });
     res.status(200).json(updatedCar);
   } catch (error) {
     console.error("Error updating car:", error);
@@ -217,10 +217,10 @@ export const getAvailableCarsForPeriod = async (req: Request, res: Response) => 
 
 // Get availability for a specific car
 export const getCarAvailability = async (req: Request, res: Response) => {
-  const { license_plate } = req.params;
+  const { licensePlate } = req.params;
 
   try {
-    if (!license_plate) {
+    if (!licensePlate) {
       return res.status(400).json({ message: "License plate is required." });
     }
 
@@ -229,7 +229,7 @@ export const getCarAvailability = async (req: Request, res: Response) => {
 
     // Get the car
     const car = await carRepository.findOne({
-      where: { licensePlate: license_plate }
+      where: { licensePlate: licensePlate }
     });
 
     if (!car) {
