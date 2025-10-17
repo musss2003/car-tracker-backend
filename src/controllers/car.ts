@@ -102,14 +102,14 @@ export const updateCar = async (req: Request, res: Response) => {
       model, 
       year, 
       color, 
-      chassis_number, 
-      fuel_type,
+      chassisNumber, 
+      fuelType,
       transmission,
       seats,
       doors,
       mileage,
-      engine_power,
-      price_per_day,
+      enginePower,
+      pricePerDay,
       category,
       status,
       currentLocation,
@@ -124,14 +124,14 @@ export const updateCar = async (req: Request, res: Response) => {
     if (model !== undefined) updateData.model = model;
     if (year !== undefined) updateData.year = year;
     if (color !== undefined) updateData.color = color;
-    if (chassis_number !== undefined) updateData.chassisNumber = chassis_number;
-    if (fuel_type !== undefined) updateData.fuelType = fuel_type;
+    if (chassisNumber !== undefined) updateData.chassisNumber = chassisNumber;
+    if (fuelType !== undefined) updateData.fuelType = fuelType;
     if (transmission !== undefined) updateData.transmission = transmission;
     if (seats !== undefined) updateData.seats = seats;
     if (doors !== undefined) updateData.doors = doors;
     if (mileage !== undefined) updateData.mileage = mileage;
-    if (engine_power !== undefined) updateData.enginePower = engine_power;
-    if (price_per_day !== undefined) updateData.pricePerDay = price_per_day;
+    if (enginePower !== undefined) updateData.enginePower = enginePower;
+    if (pricePerDay !== undefined) updateData.pricePerDay = pricePerDay;
     if (category !== undefined) updateData.category = category;
     if (status !== undefined) updateData.status = status;
     if (currentLocation !== undefined) updateData.currentLocation = currentLocation;
