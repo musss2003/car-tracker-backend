@@ -28,7 +28,7 @@ router.post('/available', async (req, res) => {
 });
 
 // Route to check car availability by license plate
-router.get('/:license_plate/availability', async (req: Request, res: Response) => {
+router.get('/:licensePlate/availability', async (req: Request, res: Response) => {
   await getCarAvailability(req, res);
 });
 
@@ -42,13 +42,13 @@ router.post('/', async (req: Request, res: Response) => {
   await createCar(req, res);
 });
 
-// Route to update a car by ID
-router.put('/:license_plate', async (req: Request, res: Response) => {
+// Route to update a car by license plate
+router.put('/:licensePlate', async (req: Request, res: Response) => {
   await updateCar(req, res);
 });
 
-// Route to delete a car by ID
-router.delete('/:license_plate', async (req: Request, res: Response) => {
+// Route to delete a car by license plate
+router.delete('/:licensePlate', async (req: Request, res: Response) => {
   await deleteCar(req, res);
 });
 

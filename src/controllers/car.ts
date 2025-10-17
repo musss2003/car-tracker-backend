@@ -53,8 +53,8 @@ export const createCar = async (req: Request, res: Response) => {
       pricePerDay,
       category,
       status,
-      current_location,
-      photo_url
+      currentLocation,
+      photoUrl
     } = req.body;
 
     // Validate required fields
@@ -82,8 +82,8 @@ export const createCar = async (req: Request, res: Response) => {
       pricePerDay: pricePerDay,
       category: category || 'economy',
       status: status || 'available',
-      currentLocation: current_location || undefined,
-      photoUrl: photo_url || undefined,
+      currentLocation: currentLocation || undefined,
+      photoUrl: photoUrl || undefined,
     });
 
     const savedCar = await carRepository.save(newCar);
@@ -96,7 +96,7 @@ export const createCar = async (req: Request, res: Response) => {
 
 export const updateCar = async (req: Request, res: Response) => {
   try {
-    const { license_plate } = req.params;
+    const { licensePlate } = req.params;
     const { 
       manufacturer, 
       model, 
@@ -112,8 +112,8 @@ export const updateCar = async (req: Request, res: Response) => {
       price_per_day,
       category,
       status,
-      current_location,
-      photo_url
+      currentLocation,
+      photoUrl
     } = req.body;
 
     const carRepository = AppDataSource.getRepository(Car);
@@ -134,11 +134,11 @@ export const updateCar = async (req: Request, res: Response) => {
     if (price_per_day !== undefined) updateData.pricePerDay = price_per_day;
     if (category !== undefined) updateData.category = category;
     if (status !== undefined) updateData.status = status;
-    if (current_location !== undefined) updateData.currentLocation = current_location;
-    if (photo_url !== undefined) updateData.photoUrl = photo_url;
+    if (currentLocation !== undefined) updateData.currentLocation = currentLocation;
+    if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
 
     const updateResult = await carRepository.update(
-      { licensePlate: license_plate },
+      { licensePlate: licensePlate },
       updateData
     );
 
@@ -146,7 +146,7 @@ export const updateCar = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Car not found" });
     }
 
-    const updatedCar = await carRepository.findOne({ where: { licensePlate: license_plate } });
+    const updatedCar = await carRepository.findOne({ where: { licensePlate: licensePlate } });
     res.status(200).json(updatedCar);
   } catch (error) {
     console.error("Error updating car:", error);
@@ -156,10 +156,10 @@ export const updateCar = async (req: Request, res: Response) => {
 
 export const deleteCar = async (req: Request, res: Response) => {
   try {
-    const { license_plate } = req.params;
+    const { licensePlate } = req.params;
 
     const carRepository = AppDataSource.getRepository(Car);
-    const deleteResult = await carRepository.delete({ licensePlate: license_plate });
+    const deleteResult = await carRepository.delete({ licensePlate: licensePlate });
 
     if (deleteResult.affected === 0) {
       return res.status(404).json({ message: "Car not found" });
@@ -217,10 +217,10 @@ export const getAvailableCarsForPeriod = async (req: Request, res: Response) => 
 
 // Get availability for a specific car
 export const getCarAvailability = async (req: Request, res: Response) => {
-  const { license_plate } = req.params;
+  const { licensePlate } = req.params;
 
   try {
-    if (!license_plate) {
+    if (!licensePlate) {
       return res.status(400).json({ message: "License plate is required." });
     }
 
@@ -229,7 +229,7 @@ export const getCarAvailability = async (req: Request, res: Response) => {
 
     // Get the car
     const car = await carRepository.findOne({
-      where: { licensePlate: license_plate }
+      where: { licensePlate: licensePlate }
     });
 
     if (!car) {
