@@ -13,12 +13,15 @@ const ACCESS_TOKEN_DURATION = process.env.ACCESS_TOKEN_DURATION;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const REFRESH_TOKEN_DURATION = process.env.REFRESH_TOKEN_DURATION;
 
-const cookieOptions = {
+const isProduction = process.env.NODE_ENV === "production";
+
+const cookieOptions: import("express").CookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production" ? true : false,
-  sameSite: process.env.NODE_ENV === "production" ? 'none' as const : 'lax' as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  secure: isProduction,                // ✅ true in production, false in dev
+  sameSite: isProduction ? "none" : "lax", // ✅ works cross-origin only with "none"
+  maxAge: 7 * 24 * 60 * 60 * 1000,     // 7 days
 };
+
 
 interface JwtPayload {
   id: string;
