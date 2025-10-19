@@ -67,7 +67,7 @@ export const register = async (
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       // secure: true,
-      sameSite: "none",
+      // sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -126,8 +126,8 @@ export const login = async (
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       // secure: true,
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      // sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     // 7. Send access token and user info in response
@@ -263,7 +263,7 @@ export const sessionCheck = async (
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
         // secure: true,
-        sameSite: "none",
+        // sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -325,7 +325,7 @@ export const logout = async (
     res.clearCookie("refreshToken", {
       httpOnly: true,
       // secure: true,
-      sameSite: "none",
+      // sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
