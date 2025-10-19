@@ -13,17 +13,12 @@ const ACCESS_TOKEN_DURATION = process.env.ACCESS_TOKEN_DURATION;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const REFRESH_TOKEN_DURATION = process.env.REFRESH_TOKEN_DURATION;
 
-console.log("ACCESS_TOKEN_SECRET:", ACCESS_TOKEN_SECRET);
-console.log("REFRESH_TOKEN_SECRET:", REFRESH_TOKEN_SECRET);
-console.log("ACCESS_TOKEN_DURATION:", ACCESS_TOKEN_DURATION);
-console.log("REFRESH_TOKEN_DURATION:", REFRESH_TOKEN_DURATION); 
-console.log("dotenv loaded:", {
-  ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET ? "loaded" : "missing",
-  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET ? "loaded" : "missing",
-  ACCESS_TOKEN_DURATION: process.env.ACCESS_TOKEN_DURATION  ? "loaded" : "missing",
-  REFRESH_TOKEN_DURATION: process.env.REFRESH_TOKEN_DURATION ? "loaded" : "missing",
-});
-console.log("NODE_ENV:", process.env.NODE_ENV);
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "none" as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
 
 interface JwtPayload {
   id: string;
@@ -78,12 +73,11 @@ export const register = async (
     const accessToken = generateAccessToken(savedUser);
 
     // 6. Send refresh token as HTTP-only cookie
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+
+    console.log("[REGISTER] Setting refreshToken cookie:", cookieOptions);
+    console.log("[REGISTER] Request protocol:", req.protocol);
+    console.log("[REGISTER] Request headers:", req.headers);
+    res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.status(201).json({
       id: savedUser.id,
@@ -137,12 +131,11 @@ export const login = async (
     await storeRefreshToken(user.id, refreshToken);
 
     // 6. Send refresh token as HTTP-only cookie
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+
+    console.log("[LOGIN] Setting refreshToken cookie:", cookieOptions);
+    console.log("[LOGIN] Request protocol:", req.protocol);
+    console.log("[LOGIN] Request headers:", req.headers);
+    res.cookie("refreshToken", refreshToken, cookieOptions);
 
     // 7. Send access token and user info in response
     res.status(200).json({
@@ -274,12 +267,8 @@ export const sessionCheck = async (
       const newRefreshToken = generateRefreshToken(user);
 
       await storeRefreshToken(userId, newRefreshToken);
-      res.cookie("refreshToken", newRefreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+
+      res.cookie("refreshToken", newRefreshToken, cookieOptions);
 
       res.status(200).json({
         authenticated: true,
@@ -336,12 +325,11 @@ export const logout = async (
     await refreshTokenRepository.delete({ userId });
 
     // Clear the cookie (must match the same settings as when it was set)
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+
+    console.log("[LOGOUT] Clearing refreshToken cookie:", cookieOptions);
+    console.log("[LOGOUT] Request protocol:", req.protocol);
+    console.log("[LOGOUT] Request headers:", req.headers);
+    res.clearCookie("refreshToken", cookieOptions);
 
     res.sendStatus(204); // Successfully logged out
   } catch (error: any) {
