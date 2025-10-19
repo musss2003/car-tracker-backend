@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import * as bcrypt from "bcrypt";
-import { randomBytes } from "crypto";
 import { AppDataSource } from "../config/db";
 import { User, UserRole } from "../models/User";
 import { RefreshToken } from "../models/RefreshToken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_DURATION = process.env.ACCESS_TOKEN_DURATION;
