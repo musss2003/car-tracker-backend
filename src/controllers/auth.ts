@@ -68,6 +68,7 @@ export const register = async (
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     });
 
     res.status(201).json({
@@ -126,6 +127,7 @@ export const login = async (
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     });
 
     // 7. Send access token and user info in response
@@ -263,6 +265,7 @@ export const sessionCheck = async (
         httpOnly: true,
         secure: true,
         sameSite: "none",
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
 
       res.status(200).json({
@@ -324,6 +327,7 @@ export const logout = async (
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     });
 
     res.sendStatus(204); // Successfully logged out
