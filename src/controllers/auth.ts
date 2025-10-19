@@ -58,6 +58,8 @@ export const register = async (
 
     const savedUser = await userRepository.save(newUser);
 
+    await storeRefreshToken(savedUser.id, refreshToken);
+
     // 5. Generate access token
     const accessToken = generateAccessToken(savedUser);
 
@@ -117,6 +119,8 @@ export const login = async (
       lastLogin: new Date(),
     });
 
+    await storeRefreshToken(user.id, refreshToken);
+
     // 6. Send refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -132,6 +136,7 @@ export const login = async (
       role: user.role,
       accessToken,
     });
+
   } catch (error: any) {
     console.error("Login error:", error);
     next(error);
