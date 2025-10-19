@@ -15,7 +15,7 @@ const REFRESH_TOKEN_DURATION = process.env.REFRESH_TOKEN_DURATION;
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.NODE_ENV === "production" || false,
   sameSite: "none" as const,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
@@ -74,9 +74,6 @@ export const register = async (
 
     // 6. Send refresh token as HTTP-only cookie
 
-    console.log("[REGISTER] Setting refreshToken cookie:", cookieOptions);
-    console.log("[REGISTER] Request protocol:", req.protocol);
-    console.log("[REGISTER] Request headers:", req.headers);
     res.cookie("refreshToken", refreshToken, cookieOptions);
 
     res.status(201).json({
@@ -132,9 +129,6 @@ export const login = async (
 
     // 6. Send refresh token as HTTP-only cookie
 
-    console.log("[LOGIN] Setting refreshToken cookie:", cookieOptions);
-    console.log("[LOGIN] Request protocol:", req.protocol);
-    console.log("[LOGIN] Request headers:", req.headers);
     res.cookie("refreshToken", refreshToken, cookieOptions);
 
     // 7. Send access token and user info in response
@@ -326,9 +320,6 @@ export const logout = async (
 
     // Clear the cookie (must match the same settings as when it was set)
 
-    console.log("[LOGOUT] Clearing refreshToken cookie:", cookieOptions);
-    console.log("[LOGOUT] Request protocol:", req.protocol);
-    console.log("[LOGOUT] Request headers:", req.headers);
     res.clearCookie("refreshToken", cookieOptions);
 
     res.sendStatus(204); // Successfully logged out
