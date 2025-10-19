@@ -67,7 +67,7 @@ export const register = async (
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     res.status(201).json({
@@ -125,7 +125,7 @@ export const login = async (
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     // 7. Send access token and user info in response
@@ -262,7 +262,7 @@ export const sessionCheck = async (
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
         secure: true,
-        sameSite: "strict",
+        sameSite: "lax",
       });
 
       res.status(200).json({
@@ -323,7 +323,7 @@ export const logout = async (
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     res.sendStatus(204); // Successfully logged out
