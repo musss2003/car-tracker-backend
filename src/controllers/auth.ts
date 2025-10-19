@@ -66,9 +66,9 @@ export const register = async (
     // 6. Send refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
+      // secure: true,
       sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(201).json({
@@ -125,9 +125,9 @@ export const login = async (
     // 6. Send refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
+      // secure: true,
       sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     // 7. Send access token and user info in response
@@ -138,7 +138,6 @@ export const login = async (
       role: user.role,
       accessToken,
     });
-
   } catch (error: any) {
     console.error("Login error:", error);
     next(error);
@@ -263,9 +262,9 @@ export const sessionCheck = async (
       await storeRefreshToken(userId, newRefreshToken);
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
-        secure: true,
+        // secure: true,
         sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
       res.status(200).json({
@@ -325,9 +324,9 @@ export const logout = async (
     // Clear the cookie (must match the same settings as when it was set)
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: true,
+      // secure: true,
       sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.sendStatus(204); // Successfully logged out
