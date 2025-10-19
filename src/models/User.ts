@@ -26,9 +26,6 @@ export class User {
   @Column({ name: 'profile_photo_url', type: 'text', nullable: true })
   profilePhotoUrl?: string;
 
-  @Column({ name: 'refresh_token', type: 'text', nullable: true })
-  refreshToken?: string;
-
   @Column({ type: 'varchar', length: 255 })
   password: string; // Hashed password
 
