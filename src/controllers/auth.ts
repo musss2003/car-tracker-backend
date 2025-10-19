@@ -13,6 +13,18 @@ const ACCESS_TOKEN_DURATION = process.env.ACCESS_TOKEN_DURATION;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const REFRESH_TOKEN_DURATION = process.env.REFRESH_TOKEN_DURATION;
 
+console.log("ACCESS_TOKEN_SECRET:", ACCESS_TOKEN_SECRET);
+console.log("REFRESH_TOKEN_SECRET:", REFRESH_TOKEN_SECRET);
+console.log("ACCESS_TOKEN_DURATION:", ACCESS_TOKEN_DURATION);
+console.log("REFRESH_TOKEN_DURATION:", REFRESH_TOKEN_DURATION); 
+console.log("dotenv loaded:", {
+  ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET ? "loaded" : "missing",
+  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET ? "loaded" : "missing",
+  ACCESS_TOKEN_DURATION: process.env.ACCESS_TOKEN_DURATION  ? "loaded" : "missing",
+  REFRESH_TOKEN_DURATION: process.env.REFRESH_TOKEN_DURATION ? "loaded" : "missing",
+});
+console.log("NODE_ENV:", process.env.NODE_ENV);
+
 interface JwtPayload {
   id: string;
 }
