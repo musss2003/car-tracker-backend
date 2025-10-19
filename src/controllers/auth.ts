@@ -15,8 +15,8 @@ const REFRESH_TOKEN_DURATION = process.env.REFRESH_TOKEN_DURATION;
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production" || false,
-  sameSite: "none" as const,
+  secure: process.env.NODE_ENV === "production" ? true : false,
+  sameSite: process.env.NODE_ENV === "production" ? 'none' as const : 'lax' as const,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
