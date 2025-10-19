@@ -27,7 +27,6 @@ const io = new Server(server); // Attach Socket.IO to the server
 // CORS configuration - allow specific origins with credentials
 const allowedOrigins = [
     'http://localhost:5173',
-    'http://localhost:3000',
     process.env.BASE_URL || 'http://localhost:5173'
 ];
 

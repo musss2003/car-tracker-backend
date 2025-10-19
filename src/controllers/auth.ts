@@ -66,7 +66,7 @@ export const register = async (
     // 6. Send refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      // secure: true,
+      secure: process.env.NODE_ENV === "production",
       // sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -125,7 +125,7 @@ export const login = async (
     // 6. Send refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      // secure: true,
+      secure: process.env.NODE_ENV === "production",
       // sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
@@ -262,7 +262,7 @@ export const sessionCheck = async (
       await storeRefreshToken(userId, newRefreshToken);
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
-        // secure: true,
+        secure: process.env.NODE_ENV === "production",
         // sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
@@ -324,7 +324,7 @@ export const logout = async (
     // Clear the cookie (must match the same settings as when it was set)
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      // secure: true,
+      secure: process.env.NODE_ENV === "production",
       // sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
