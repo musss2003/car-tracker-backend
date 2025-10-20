@@ -1,101 +1,99 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Customer } from './Customer';
-import { Car } from './Car';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+} from "typeorm";
+import { Customer } from "./Customer";
+import { Car } from "./Car";
+import { User } from "./User";
 
-// Define payment method and status enums
-export enum PaymentMethod {
-  CASH = 'cash',
-  CARD = 'card',
-  BANK_TRANSFER = 'bank_transfer'
-}
-
-export enum PaymentStatus {
-  PENDING = 'pending',
-  PAID = 'paid'
-}
-
-@Entity('contracts')
+@Entity("contracts")
 export class Contract {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  // Relationship with Customer
-  @Column({ name: 'customer_id' })
+  // User who created the contract
+  @Column({ name: "created_by" })
+  createdById: string;
+
+  @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: "created_by" })
+  createdBy: User;
+
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
+
+  // Relationship with Customer (cannot be deleted)
+  @Column({ name: "customer_id" })
   customerId: string;
 
-  @ManyToOne(() => Customer, { eager: true })
-  @JoinColumn({ name: 'customer_id' })
+  @ManyToOne(() => Customer, { eager: true, onDelete: "RESTRICT" })
+  @JoinColumn({ name: "customer_id" })
   customer: Customer;
 
-  // Relationship with Car
-  @Column({ name: 'car_id' })
+  // Relationship with Car (cannot be deleted — only archived)
+  @Column({ name: "car_id" })
   carId: string;
 
-  @ManyToOne(() => Car, { eager: true })
-  @JoinColumn({ name: 'car_id' })
+  @ManyToOne(() => Car, { eager: true, onDelete: "RESTRICT" })
+  @JoinColumn({ name: "car_id" })
   car: Car;
 
   // Rental Period
-  @Column({ name: 'start_date', type: 'date' })
+  @Column({ name: "start_date", type: "date" })
   startDate: Date;
 
-  @Column({ name: 'end_date', type: 'date' })
+  @Column({ name: "end_date", type: "date" })
   endDate: Date;
 
   // Rental Price
-  @Column({ name: 'daily_rate', type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: "daily_rate", type: "decimal", precision: 10, scale: 2 })
   dailyRate: number;
 
-  @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: "total_amount", type: "decimal", precision: 10, scale: 2 })
   totalAmount: number;
 
-  // Payment Details
-  @Column({
-    name: 'payment_method',
-    type: 'enum',
-    enum: PaymentMethod
-  })
-  paymentMethod: PaymentMethod;
-
-  @Column({
-    name: 'payment_status',
-    type: 'enum',
-    enum: PaymentStatus,
-    default: PaymentStatus.PENDING
-  })
-  paymentStatus: PaymentStatus;
-
   // Additional fields
-  @Column({ name: 'additional_notes', type: 'text', nullable: true })
+  @Column({ name: "additional_notes", type: "text", nullable: true })
   additionalNotes?: string;
 
-  @Column({ name: 'contract_photo', type: 'text', nullable: true })
-  contractPhoto?: string;
+  @Column({ name: "photo_url", type: "text", nullable: true })
+  photoUrl?: string;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  @Column({ name: "updated_by", nullable: true })
+  updatedById: string;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @ManyToOne(() => User, { eager: true, nullable: true })
+  @JoinColumn({ name: "updated_by" })
+  updatedBy: User;
+
+  @UpdateDateColumn({ name: "updated_at", nullable: true })
   updatedAt: Date;
 }
 
-// Export interface for compatibility
 export interface IContract {
   id: string;
+  createdById: string;
+  createdBy: User;
+  createdAt: Date;
   customerId: string;
-  customer?: Customer;
+  customer: Customer;
   carId: string;
-  car?: Car;
+  car: Car;
   startDate: Date;
   endDate: Date;
   dailyRate: number;
   totalAmount: number;
-  paymentMethod: PaymentMethod;
-  paymentStatus: PaymentStatus;
   additionalNotes?: string;
-  contractPhoto?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  photoUrl: string;
+  updatedById?: string;
+  updatedBy?: User;
+  updatedAt?: Date;
 }
 
 export default Contract;

@@ -6,7 +6,7 @@ import authenticate from "../middlewares/verifyJWT";
 
 const router = express.Router();
 
-
+router.use(authenticate);
 
 // Configure multer for private storage
 const storage = multer.diskStorage({
@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Upload route (requires authentication)
-router.post("/upload", authenticate, upload.single("document"), (req, res) => {
+router.post("/upload", upload.single("document"), (req, res) => {
   if (!req.file) {
     res.status(400).json({ message: "No file uploaded" });
     return;
@@ -36,7 +36,7 @@ router.post("/upload", authenticate, upload.single("document"), (req, res) => {
 });
 
 // Download route (secure access)
-router.get("/documents/:filename", authenticate, (req, res) => {
+router.get("/documents/:filename", (req, res) => {
   const filePath = path.join(__dirname, "../../private_uploads", req.params.filename);
 
   if (!fs.existsSync(filePath)) {

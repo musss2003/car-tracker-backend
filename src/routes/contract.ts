@@ -6,7 +6,6 @@ import {
   deleteContract,
   getContracts,
   getActiveContracts,
-  getContractsPopulated,
   getTotalRevenue,
   downloadContractDocx,
 } from '../controllers/contract';
@@ -25,11 +24,6 @@ router.get('/', async (req: Request, res: Response) => {
 // Route to get all contracts
 router.get('/all', async (req: Request, res: Response) => {
   await getContracts(req, res);
-});
-
-// Route to get all contracts
-router.get('/populated', async (req: Request, res: Response) => {
-  await getContractsPopulated(req, res);
 });
 
 // Route to get all contracts
