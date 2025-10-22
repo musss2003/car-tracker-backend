@@ -18,6 +18,7 @@ import { Server } from 'socket.io'; // Using Socket.IO
 import { Notification, NotificationStatus } from './models/Notification'; // Import the TypeORM Notification model
 import "reflect-metadata"; // Required for TypeORM
 
+
 dotenv.config();
 
 const app: Application = express();
