@@ -5,7 +5,7 @@ import authenticate from '../middlewares/verifyJWT';
 const router = express.Router();
 
 // Middleware to verify JWT for all routes
-// router.use(authenticate);
+router.use(authenticate);
 
 
 // Route to search customers by name

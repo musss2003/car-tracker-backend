@@ -1,17 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { pool } from '../config/db'; // your PostgreSQL pool
+import { AppDataSource, pool } from '../config/db'; // your PostgreSQL pool
+import User from '../models/User';
 
-export interface AuthenticateRequest extends Request {
-    user?: {
-        id: string;
-        username: string;
-        email: string;
-        role: string;
-    };
-}
 
-const authenticate = async (req: AuthenticateRequest, res: Response, next: NextFunction): Promise<void> => {
+const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const authHeader = req.headers.authorization;
         const token = authHeader?.split(' ')[1]; // Bearer <token>
@@ -24,17 +17,18 @@ const authenticate = async (req: AuthenticateRequest, res: Response, next: NextF
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || '') as { id: string };
 
         // Query user from PostgreSQL
-        const result = await pool.query(
-            'SELECT id, username, email, role FROM users WHERE id = $1',
-            [decoded.id]
-        );
 
-        if (result.rowCount === 0) {
+        const userRepository = AppDataSource.getRepository(User);
+
+        const user = await userRepository.findOneBy({ id: decoded.id });
+
+        if (!user) {
             res.status(404).json({ message: "User not found" });
             return;
         }
 
-        req.user = result.rows[0]; // Attach user info to request
+        req.user = user; // Attach user info to request
+
         next();
     } catch (error: any) {
         if (error instanceof jwt.JsonWebTokenError) {

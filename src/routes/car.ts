@@ -15,7 +15,7 @@ import authenticate from '../middlewares/verifyJWT';
 const router = express.Router();
 
 // Middleware to verify JWT for all car routes
-// router.use(authenticate);
+router.use(authenticate);
 
 // Route to get all cars
 router.get('/', async (req: Request, res: Response) => {

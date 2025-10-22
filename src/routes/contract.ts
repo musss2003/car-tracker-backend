@@ -6,7 +6,6 @@ import {
   deleteContract,
   getContracts,
   getActiveContracts,
-  getContractsPopulated,
   getTotalRevenue,
   downloadContractDocx,
 } from '../controllers/contract';
@@ -17,6 +16,12 @@ const router = express.Router();
 // Middleware to verify JWT for all contract routes
 router.use(authenticate);
 
+// Route to create a new contract
+router.post('/', async (req: Request, res: Response) => {
+  await createContract(req, res);
+});
+
+
 // Route to get all contracts
 router.get('/', async (req: Request, res: Response) => {
   await getContract(req, res);
@@ -25,11 +30,6 @@ router.get('/', async (req: Request, res: Response) => {
 // Route to get all contracts
 router.get('/all', async (req: Request, res: Response) => {
   await getContracts(req, res);
-});
-
-// Route to get all contracts
-router.get('/populated', async (req: Request, res: Response) => {
-  await getContractsPopulated(req, res);
 });
 
 // Route to get all contracts
@@ -53,11 +53,6 @@ router.get('/download/:id', async (req: Request, res: Response) => {
   await downloadContractDocx(req, res);
 });
 
-
-// Route to create a new contract
-router.post('/', async (req: Request, res: Response) => {
-  await createContract(req, res);
-});
 
 // Route to update contract by ID
 router.put('/:id', async (req: Request, res: Response) => {
