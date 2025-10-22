@@ -16,6 +16,7 @@ export const getContracts = async (req: Request, res: Response) => {
     const contractRepository = AppDataSource.getRepository(Contract);
     const contracts = await contractRepository.find({
       order: { createdAt: "DESC" },
+      relations: ["customer", "car"]
     });
     res.status(200).json(contracts);
   } catch (error) {
@@ -48,6 +49,7 @@ export const getContract = async (req: Request, res: Response) => {
     const contractRepository = AppDataSource.getRepository(Contract);
     const contract = await contractRepository.findOne({
       where: { id: contractId },
+      relations: ["customer", "car", "createdBy"]
     });
 
     if (!contract) {
@@ -97,7 +99,7 @@ export const createContract = async (req: Request, res: Response) => {
         endDate,
         dailyRate,
         totalAmount,
-        photoUrl
+        photoUrl,
       });
       return res
         .status(400)
@@ -138,8 +140,19 @@ export const createContract = async (req: Request, res: Response) => {
     const savedContract = await contractRepository.save(newContract);
     console.log("Saved contract:", savedContract);
 
-    const base64Docx = generateDocxFile(savedContract);
-    res.status(201).json({ contract: savedContract, docx: base64Docx });
+    const contractWithRelations = await contractRepository.findOne({
+      where: { id: savedContract.id },
+      relations: ["customer", "car", "createdBy"],
+    });
+    console.log("Contract With Relations:", contractWithRelations);
+
+    if (!contractWithRelations) {
+      console.error("Error: Contract with relations not found after save.");
+      return res.status(500).json({ message: "Error retrieving contract after creation" });
+    }
+
+    const base64Docx = generateDocxFile(contractWithRelations);
+    res.status(201).json({ contract: contractWithRelations, docx: base64Docx });
   } catch (error) {
     console.error("Error creating contract:", error);
     res.status(500).json({ message: "Error creating contract", error });
