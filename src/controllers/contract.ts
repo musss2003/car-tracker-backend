@@ -10,24 +10,6 @@ import PizZip from "pizzip";
 import fs from "fs";
 import path from "path";
 
-interface ContractForDocx {
-  customer: {
-    name: string;
-    passportNumber: string;
-    driverLicenseNumber: string;
-    address?: string;
-  };
-  car: {
-    manufacturer: string;
-    model: string;
-    licensePlate: string;
-  };
-  startDate: Date | string;
-  endDate: Date | string;
-  dailyRate: number;
-  totalAmount: number;
-}
-
 // ✅ Get all contracts
 export const getContracts = async (req: Request, res: Response) => {
   try {
@@ -80,9 +62,9 @@ export const getContract = async (req: Request, res: Response) => {
 
 // ✅ Create a new contract
 export const createContract = async (req: Request, res: Response) => {
-
   console.log("CREATING CONTRACT:");
-  console.log("user:", JSON.stringify(req.user, null, 2));
+  console.log("Request user:", JSON.stringify(req.user, null, 2));
+  console.log("Request body:", JSON.stringify(req.body, null, 2));
 
   const user = req.user;
 
@@ -98,6 +80,7 @@ export const createContract = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
+    // Only check required fields (photoUrl is optional)
     if (
       !customerId ||
       !carId ||
@@ -105,27 +88,37 @@ export const createContract = async (req: Request, res: Response) => {
       !endDate ||
       !dailyRate ||
       !totalAmount ||
-      photoUrl
+      !photoUrl
     ) {
+      console.log("Missing required fields", {
+        customerId,
+        carId,
+        startDate,
+        endDate,
+        dailyRate,
+        totalAmount,
+        photoUrl
+      });
       return res
         .status(400)
         .json({ message: "All required fields must be provided" });
     }
 
     const contractRepository = AppDataSource.getRepository(Contract);
-
     const customerRepository = AppDataSource.getRepository(Customer);
-
     const carRepository = AppDataSource.getRepository(Car);
 
     // Verify customer and car exist
     const customer = await customerRepository.findOne({
       where: { id: customerId },
     });
+    console.log("Customer lookup result:", customer);
 
     const car = await carRepository.findOne({ where: { id: carId } });
+    console.log("Car lookup result:", car);
 
     if (!customer || !car) {
+      console.log("Invalid customer or car ID", { customerId, carId });
       return res.status(400).json({ message: "Invalid customer or car ID" });
     }
 
@@ -140,40 +133,13 @@ export const createContract = async (req: Request, res: Response) => {
       additionalNotes,
       photoUrl,
     });
+    console.log("New contract entity:", newContract);
 
     const savedContract = await contractRepository.save(newContract);
+    console.log("Saved contract:", savedContract);
 
-    // Load the contract with relations for document generation
-    const contractWithRelations = await contractRepository.findOne({
-      where: { id: savedContract.id },
-      relations: ["customer", "car"],
-    });
-
-    if (contractWithRelations) {
-      const contractForDocx: ContractForDocx = {
-        customer: {
-          name: contractWithRelations.customer.name,
-          passportNumber: contractWithRelations.customer.passportNumber,
-          driverLicenseNumber:
-            contractWithRelations.customer.driverLicenseNumber,
-          address: contractWithRelations.customer.address,
-        },
-        car: {
-          manufacturer: contractWithRelations.car.manufacturer,
-          model: contractWithRelations.car.model,
-          licensePlate: contractWithRelations.car.licensePlate,
-        },
-        startDate: contractWithRelations.startDate,
-        endDate: contractWithRelations.endDate,
-        dailyRate: contractWithRelations.dailyRate,
-        totalAmount: contractWithRelations.totalAmount,
-      };
-
-      const base64Docx = generateDocxFile(contractForDocx);
-      res.status(201).json({ contract: savedContract, docx: base64Docx });
-    } else {
-      res.status(201).json({ contract: savedContract });
-    }
+    const base64Docx = generateDocxFile(savedContract);
+    res.status(201).json({ contract: savedContract, docx: base64Docx });
   } catch (error) {
     console.error("Error creating contract:", error);
     res.status(500).json({ message: "Error creating contract", error });
@@ -275,25 +241,7 @@ export const downloadContractDocx = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Contract not found" });
     }
 
-    const contractData: ContractForDocx = {
-      customer: {
-        name: contract.customer.name,
-        passportNumber: contract.customer.passportNumber,
-        driverLicenseNumber: contract.customer.driverLicenseNumber,
-        address: contract.customer.address,
-      },
-      car: {
-        manufacturer: contract.car.manufacturer,
-        model: contract.car.model,
-        licensePlate: contract.car.licensePlate,
-      },
-      startDate: contract.startDate,
-      endDate: contract.endDate,
-      dailyRate: contract.dailyRate,
-      totalAmount: contract.totalAmount,
-    };
-
-    const base64Docx = generateDocxFile(contractData);
+    const base64Docx = generateDocxFile(contract);
 
     res.status(201).json({ docx: base64Docx });
   } catch (error) {
@@ -303,7 +251,7 @@ export const downloadContractDocx = async (req: Request, res: Response) => {
 };
 
 // ✅ Generate DOCX file
-export const generateDocxFile = (contract: ContractForDocx): string => {
+export const generateDocxFile = (contract: Contract): string => {
   const filePath = path.join(__dirname, "../assets/contract_template.docx");
   const templateData = fs.readFileSync(filePath, "binary");
   const zip = new PizZip(templateData);
