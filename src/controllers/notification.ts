@@ -3,15 +3,6 @@ import { User } from '../models/User';
 import { Request, Response } from 'express';
 import { AppDataSource } from '../config/db';
 
-// Extend Request interface to include user property
-interface AuthenticatedRequest extends Request {
-    user?: {
-        id: string;
-        role: string;
-    };
-}
-
-
 // Get notification by ID
 export const getNotification = async (req: Request, res: Response) => {
     try {
@@ -32,7 +23,7 @@ export const getNotification = async (req: Request, res: Response) => {
 };
 
 // Get all notifications
-export const getNotifications = async (req: AuthenticatedRequest, res: Response) => {
+export const getNotifications = async (req: Request, res: Response) => {
     const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
@@ -53,7 +44,7 @@ export const getNotifications = async (req: AuthenticatedRequest, res: Response)
 };
 
 // Get all new notifications
-export const getUnreadNotifications = async (req: AuthenticatedRequest, res: Response) => {
+export const getUnreadNotifications = async (req: Request, res: Response) => {
     const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
@@ -122,7 +113,7 @@ export const updateNotification = async (req: Request, res: Response) => {
     }
 };
 
-export const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res: Response) => {
+export const markAllNotificationsAsRead = async (req: Request, res: Response) => {
     const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
@@ -148,7 +139,7 @@ export const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res:
 };
 
 // Endpoint to mark notifications as read
-export const markNotificationAsRead = async (req: AuthenticatedRequest, res: Response) => {
+export const markNotificationAsRead = async (req: Request, res: Response) => {
     const userId = req.user?.id; // Using the extended interface
 
     if (!userId) {
