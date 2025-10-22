@@ -62,18 +62,18 @@ export class Contract {
   @Column({ name: "additional_notes", type: "text", nullable: true })
   additionalNotes?: string;
 
-  @Column({ name: "photo_url", type: "text", nullable: true })
-  photoUrl?: string;
+  @Column({ name: "photo_url", type: "text" })
+  photoUrl: string;
 
   @Column({ name: "updated_by", nullable: true })
-  updatedById: string;
+  updatedById?: string;
 
   @ManyToOne(() => User, { eager: true, nullable: true })
   @JoinColumn({ name: "updated_by" })
-  updatedBy: User;
+  updatedBy?: User;
 
   @UpdateDateColumn({ name: "updated_at", nullable: true })
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface IContract {

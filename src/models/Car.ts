@@ -97,15 +97,15 @@ export class Car {
   @Column({ name: "photo_url", type: "text", nullable: true })
   photoUrl?: string;
 
-  @UpdateDateColumn({ name: "updated_at" })
-  updatedAt: Date;
+  @UpdateDateColumn({ name: "updated_at", nullable: true})
+  updatedAt?: Date;
 
-  @Column({ name: "updated_by" })
-  updatedById: string;
+  @Column({ name: "updated_by", nullable: true })
+  updatedById?: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, nullable: true })
   @JoinColumn({ name: "updated_by" })
-  updatedBy: User;
+  updatedBy?: User;
 
   // ✅ Archiving (instead of deleting)
   @Column({ name: "is_archived", type: "boolean", default: false })
@@ -114,12 +114,12 @@ export class Car {
   @Column({ name: "archived_at", type: "timestamp", nullable: true })
   archivedAt?: Date;
 
-  @Column({ name: "archived_by" })
-  archivedById: string;
+  @Column({ name: "archived_by", nullable: true })
+  archivedById?: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, nullable: true })
   @JoinColumn({ name: "archived_by" })
-  archivedBy: User;
+  archivedBy?: User;
 
   // ✅ Archiving (instead of deleting)
   @Column({ name: "is_deleted", type: "boolean", default: false })
@@ -128,12 +128,12 @@ export class Car {
   @Column({ name: "deleted_at", type: "timestamp", nullable: true })
   deletedAt?: Date;
 
-  @Column({ name: "deleted_by" })
-  deletedById: string;
+  @Column({ name: "deleted_by", nullable: true })
+  deletedById?: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, nullable: true })
   @JoinColumn({ name: "deleted_by" })
-  deletedBy: User;
+  deletedBy?: User;
 }
 
 // Export interface for compatibility

@@ -59,26 +59,25 @@ export class Customer {
   @Column({
     name: "country_of_origin",
     type: "varchar",
-    length: 100,
-    nullable: true,
+    length: 100
   })
   countryOfOrigin?: string;
 
   @Column({ name: "driver_license_photo_url", type: "text", nullable: true })
-  drivingLicensePhotoUrl?: string;
+  drivingLicensePhotoUrl: string;
 
   @Column({ name: "passport_photo_url", type: "text", nullable: true })
-  passportPhotoUrl?: string;
+  passportPhotoUrl: string;
 
-  @Column({ name: "updated_by" })
-  updatedById: string;
+  @Column({ name: "updated_by", nullable: true })
+  updatedById?: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, nullable: true })
   @JoinColumn({ name: "updated_by" })
-  updatedBy: User;
+  updatedBy?: User;
 
-  @UpdateDateColumn({ name: "updated_at" })
-  updatedAt: Date;
+  @UpdateDateColumn({ name: "updated_at", nullable: true })
+  updatedAt?: Date;
 
   // ✅ Archiving (instead of deleting)
   @Column({ name: "is_deleted", type: "boolean", default: false })
@@ -87,19 +86,19 @@ export class Customer {
   @Column({ name: "deleted_at", type: "timestamp", nullable: true })
   deletedAt?: Date;
 
-  @Column({ name: "deleted_by" })
-  deletedById: string;
+  @Column({ name: "deleted_by", nullable: true })
+  deletedById?: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User, { eager: true, nullable: true })
   @JoinColumn({ name: "deleted_by" })
-  deletedBy: User;
+  deletedBy?: User;
 }
 
 // Export interface for compatibility
 export interface ICustomer {
   id: string;
-  createdById?: string;
-  createdBy?: User;
+  createdById: string;
+  createdBy: User;
   createdAt: Date;
   name: string;
   email?: string;
