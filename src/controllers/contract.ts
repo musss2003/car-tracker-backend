@@ -81,7 +81,8 @@ export const getContract = async (req: Request, res: Response) => {
 // ✅ Create a new contract
 export const createContract = async (req: Request, res: Response) => {
 
-  console.log("CREATING CONTRACT:" + req.user);
+  console.log("CREATING CONTRACT:");
+  console.log("user:", JSON.stringify(req.user, null, 2));
 
   const user = req.user;
 
