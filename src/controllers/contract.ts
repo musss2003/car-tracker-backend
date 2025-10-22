@@ -60,11 +60,12 @@ export const getTotalRevenue = async (req: Request, res: Response) => {
 
 // ✅ Get single contract by ID
 export const getContract = async (req: Request, res: Response) => {
+  const contractId = decodeURIComponent(req.params.id);
+
   try {
     const contractRepository = AppDataSource.getRepository(Contract);
     const contract = await contractRepository.findOne({
-      where: { id: req.params.id },
-      relations: ["customer", "car"],
+      where: { id: contractId },
     });
 
     if (!contract) {
@@ -79,6 +80,9 @@ export const getContract = async (req: Request, res: Response) => {
 
 // ✅ Create a new contract
 export const createContract = async (req: Request, res: Response) => {
+
+  console.log("CREATING CONTRACT:" + req.user);
+
   const {
     customerId,
     carId,
@@ -184,10 +188,12 @@ export const updateContract = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "No fields to update" });
     }
 
+    const contractId = decodeURIComponent(req.params.id);
+
     const contractRepository = AppDataSource.getRepository(Contract);
 
     const existingContract = await contractRepository.findOne({
-      where: { id: req.params.id },
+      where: { id: contractId },
     });
 
     if (!existingContract) {
@@ -241,7 +247,6 @@ export const getActiveContracts = async (req: Request, res: Response) => {
         startDate: LessThanOrEqual(today),
         endDate: MoreThanOrEqual(today),
       },
-      relations: ["customer", "car"],
       order: { createdAt: "DESC" },
     });
 
@@ -253,7 +258,7 @@ export const getActiveContracts = async (req: Request, res: Response) => {
 };
 
 export const downloadContractDocx = async (req: Request, res: Response) => {
-  const contractId = req.params.id;
+  const contractId = decodeURIComponent(req.params.id);
 
   try {
     const contractRepository = AppDataSource.getRepository(Contract);
