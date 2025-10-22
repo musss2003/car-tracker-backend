@@ -36,6 +36,8 @@ export const getCar = async (req: Request, res: Response) => {
 };
 
 export const createCar = async (req: Request, res: Response) => {
+  const user = req.user;
+
   try {
     const { 
       manufacturer, 
@@ -67,6 +69,7 @@ export const createCar = async (req: Request, res: Response) => {
     const carRepository = AppDataSource.getRepository(Car);
     
     const newCar = carRepository.create({
+      createdById: user?.id || "",
       manufacturer,
       model,
       year,

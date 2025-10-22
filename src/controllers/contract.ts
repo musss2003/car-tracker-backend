@@ -83,6 +83,8 @@ export const createContract = async (req: Request, res: Response) => {
 
   console.log("CREATING CONTRACT:" + req.user);
 
+  const user = req.user;
+
   const {
     customerId,
     carId,
@@ -127,7 +129,7 @@ export const createContract = async (req: Request, res: Response) => {
     }
 
     const newContract = contractRepository.create({
-      createdById: req.user?.id,
+      createdById: user?.id,
       customerId,
       carId,
       startDate: new Date(startDate),
