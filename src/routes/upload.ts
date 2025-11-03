@@ -37,14 +37,37 @@ router.post("/upload", upload.single("document"), (req, res) => {
 
 // Download route (secure access)
 router.get("/documents/:filename", (req, res) => {
-  const filePath = path.join(__dirname, "../../private_uploads", req.params.filename);
+  const filename = req.params.filename;
+  
+  // Basic validation to prevent directory traversal
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    res.status(400).json({ message: "Invalid filename" });
+    return;
+  }
+
+  const filePath = path.join(__dirname, "../../private_uploads", filename);
 
   if (!fs.existsSync(filePath)) {
     res.status(404).json({ message: "File not found" });
     return;
   }
 
-  res.download(filePath); // Forces secure download
+  // Send file with proper content type for images
+  const ext = path.extname(filename).toLowerCase();
+  const contentTypeMap: Record<string, string> = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.pdf': 'application/pdf',
+  };
+  
+  const contentType = contentTypeMap[ext] || 'application/octet-stream';
+  res.setHeader('Content-Type', contentType);
+  
+  // For inline viewing (not forcing download)
+  res.sendFile(filePath);
 });
 
 export default router;

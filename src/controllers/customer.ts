@@ -70,6 +70,13 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
 
     const customerRepository = AppDataSource.getRepository(Customer);
     
+    // Get the authenticated user's ID from the request
+    const createdById = req.user?.id;
+    
+    if (!createdById) {
+      return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+    }
+    
     const newCustomer = customerRepository.create({
       name,
       driverLicenseNumber,
@@ -83,6 +90,7 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
       countryOfOrigin: countryOfOrigin || undefined,
       drivingLicensePhotoUrl: drivingLicensePhotoUrl || undefined,
       passportPhotoUrl: passportPhotoUrl || undefined,
+      createdById: createdById,
     });
 
     const savedCustomer = await customerRepository.save(newCustomer);
@@ -184,6 +192,12 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
           // For any other fields, pass through directly
           convertedUpdates[key] = value;
       }
+    }
+
+    // Add the authenticated user's ID as updatedById
+    const updatedById = req.user?.id;
+    if (updatedById) {
+      convertedUpdates.updatedById = updatedById;
     }
 
     const updateResult = await customerRepository.update(customerId, convertedUpdates);

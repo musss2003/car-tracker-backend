@@ -16,7 +16,7 @@ export const getContracts = async (req: Request, res: Response) => {
     const contractRepository = AppDataSource.getRepository(Contract);
     const contracts = await contractRepository.find({
       order: { createdAt: "DESC" },
-      relations: ["customer", "car"]
+      relations: ["customer", "car"],
     });
     res.status(200).json(contracts);
   } catch (error) {
@@ -41,15 +41,20 @@ export const getTotalRevenue = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Get single contract by ID
 export const getContract = async (req: Request, res: Response) => {
   const contractId = decodeURIComponent(req.params.id);
+
+  // Guard clause: check for valid contractId
+  if (!contractId || contractId === "undefined") {
+    console.error("Invalid contract ID received:", contractId);
+    return res.status(400).json({ message: "Invalid contract ID" });
+  }
 
   try {
     const contractRepository = AppDataSource.getRepository(Contract);
     const contract = await contractRepository.findOne({
       where: { id: contractId },
-      relations: ["customer", "car", "createdBy"]
+      relations: ["customer", "car"],
     });
 
     if (!contract) {
@@ -64,10 +69,6 @@ export const getContract = async (req: Request, res: Response) => {
 
 // ✅ Create a new contract
 export const createContract = async (req: Request, res: Response) => {
-  console.log("CREATING CONTRACT:");
-  console.log("Request user:", JSON.stringify(req.user, null, 2));
-  console.log("Request body:", JSON.stringify(req.body, null, 2));
-
   const user = req.user;
 
   const {
@@ -92,15 +93,6 @@ export const createContract = async (req: Request, res: Response) => {
       !totalAmount ||
       !photoUrl
     ) {
-      console.log("Missing required fields", {
-        customerId,
-        carId,
-        startDate,
-        endDate,
-        dailyRate,
-        totalAmount,
-        photoUrl,
-      });
       return res
         .status(400)
         .json({ message: "All required fields must be provided" });
@@ -114,10 +106,8 @@ export const createContract = async (req: Request, res: Response) => {
     const customer = await customerRepository.findOne({
       where: { id: customerId },
     });
-    console.log("Customer lookup result:", customer);
 
     const car = await carRepository.findOne({ where: { id: carId } });
-    console.log("Car lookup result:", car);
 
     if (!customer || !car) {
       console.log("Invalid customer or car ID", { customerId, carId });
@@ -135,20 +125,19 @@ export const createContract = async (req: Request, res: Response) => {
       additionalNotes,
       photoUrl,
     });
-    console.log("New contract entity:", newContract);
 
     const savedContract = await contractRepository.save(newContract);
-    console.log("Saved contract:", savedContract);
 
     const contractWithRelations = await contractRepository.findOne({
       where: { id: savedContract.id },
       relations: ["customer", "car", "createdBy"],
     });
-    console.log("Contract With Relations:", contractWithRelations);
 
     if (!contractWithRelations) {
       console.error("Error: Contract with relations not found after save.");
-      return res.status(500).json({ message: "Error retrieving contract after creation" });
+      return res
+        .status(500)
+        .json({ message: "Error retrieving contract after creation" });
     }
 
     const base64Docx = generateDocxFile(contractWithRelations);
@@ -201,7 +190,6 @@ export const updateContract = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Delete contract
 export const deleteContract = async (req: Request, res: Response) => {
   try {
     const contractRepository = AppDataSource.getRepository(Contract);
@@ -218,7 +206,6 @@ export const deleteContract = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Active contracts (where today is between start and end)
 export const getActiveContracts = async (req: Request, res: Response) => {
   try {
     const today = new Date();
