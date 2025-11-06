@@ -28,8 +28,10 @@ const io = new Server(server); // Attach Socket.IO to the server
 // CORS configuration - allow specific origins with credentials
 const allowedOrigins = [
     'https://car-tracker-frontend-lime.vercel.app',
-    process.env.BASE_URL || 'http://localhost:5173'
-];
+    'http://localhost:5173',
+    'http://localhost:5174',
+    process.env.BASE_URL
+].filter(Boolean); // Remove undefined values
 
 
 app.use(cors({
@@ -38,9 +40,10 @@ app.use(cors({
         if (!origin) return callback(null, true);
         
         if (allowedOrigins.indexOf(origin) !== -1) {
+            console.log(`✅ CORS allowed origin: ${origin}`);
             callback(null, true);
         } else {
-            console.warn(`CORS blocked origin: ${origin}`);
+            console.warn(`❌ CORS blocked origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
