@@ -5,41 +5,43 @@ import { Customer } from "../models/Customer";
 import { Like } from "typeorm";
 
 // ✅ Get a single customer by ID
-export const getCustomer = async (req: Request, res: Response): Promise<Response> => {
+export const getCustomer = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
   try {
-    const id = req.params.id;
     const customerRepository = AppDataSource.getRepository(Customer);
-
-    const customer = await customerRepository.findOne({ where: { id } });
+    const customer = await customerRepository.findOne({
+      where: { id: id as any },
+      relations: ["createdBy", "updatedBy"]
+    });
 
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    return res.json(customer);
-  } catch (error: any) {
+    res.status(200).json(customer);
+  } catch (error) {
     console.error("Error fetching customer:", error);
-    return res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Error fetching customer", error });
   }
 };
 
 // ✅ Get all customers
-export const getCustomers = async (req: Request, res: Response): Promise<Response> => {
+export const getCustomers = async (req: Request, res: Response) => {
   try {
     const customerRepository = AppDataSource.getRepository(Customer);
-    
+
     const customers = await customerRepository.find({
-      order: { createdAt: "DESC" }
+      order: {
+        createdAt: 'DESC'
+      },
+      relations: ["createdBy", "updatedBy"]
     });
 
-    if (customers.length === 0) {
-      return res.status(404).json({ message: "No customers found" });
-    }
-
-    return res.json(customers);
-  } catch (error: any) {
+    res.status(200).json(customers);
+  } catch (error) {
     console.error("Error fetching customers:", error);
-    return res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Error fetching customers", error });
   }
 };
 
@@ -104,23 +106,25 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
 
 // ✅ Search customers by name (case-insensitive)
 export const searchCustomersByName = async (req: Request, res: Response) => {
-  const { name } = req.query;
-
-  if (!name) {
-    return res.status(400).json({ error: "Name query parameter is required" });
-  }
-
   try {
-    const customerRepository = AppDataSource.getRepository(Customer);
-    
-    const customers = await customerRepository.find({
-      where: { name: Like(`%${name}%`) }
-    });
+    const { name } = req.query;
 
-    return res.json(customers);
+    if (!name) {
+      return res.status(400).json({ message: "Name query parameter is required" });
+    }
+
+    const customerRepository = AppDataSource.getRepository(Customer);
+    const customers = await customerRepository
+      .createQueryBuilder("customer")
+      .leftJoinAndSelect("customer.createdBy", "createdBy")
+      .leftJoinAndSelect("customer.updatedBy", "updatedBy")
+      .where("customer.firstName ILIKE :name OR customer.lastName ILIKE :name", { name: `%${name}%` })
+      .getMany();
+
+    res.status(200).json(customers);
   } catch (error) {
     console.error("Error searching customers:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ message: "Error searching customers", error });
   }
 };
 

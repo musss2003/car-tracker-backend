@@ -16,7 +16,7 @@ export const getContracts = async (req: Request, res: Response) => {
     const contractRepository = AppDataSource.getRepository(Contract);
     const contracts = await contractRepository.find({
       order: { createdAt: "DESC" },
-      relations: ["customer", "car"],
+      relations: ["customer", "car", "createdBy", "updatedBy"],
     });
     res.status(200).json(contracts);
   } catch (error) {
@@ -54,7 +54,7 @@ export const getContract = async (req: Request, res: Response) => {
     const contractRepository = AppDataSource.getRepository(Contract);
     const contract = await contractRepository.findOne({
       where: { id: contractId },
-      relations: ["customer", "car"],
+      relations: ["customer", "car", "createdBy", "updatedBy"],
     });
 
     if (!contract) {
@@ -151,6 +151,7 @@ export const createContract = async (req: Request, res: Response) => {
 // ✅ Update contract
 export const updateContract = async (req: Request, res: Response) => {
   try {
+    const user = req.user;
     const fields = req.body;
 
     const keys = Object.keys(fields);
@@ -179,6 +180,11 @@ export const updateContract = async (req: Request, res: Response) => {
       } else {
         updateData[key] = value;
       }
+    }
+
+    // Add updatedBy user ID
+    if (user?.id) {
+      updateData.updatedById = user.id;
     }
 
     await contractRepository.update(req.params.id, updateData);
@@ -217,6 +223,7 @@ export const getActiveContracts = async (req: Request, res: Response) => {
         endDate: MoreThanOrEqual(today),
       },
       order: { createdAt: "DESC" },
+      relations: ["customer", "car", "createdBy", "updatedBy"],
     });
 
     res.status(200).json(activeContracts);
@@ -234,7 +241,7 @@ export const downloadContractDocx = async (req: Request, res: Response) => {
 
     const contract = await contractRepository.findOne({
       where: { id: contractId },
-      relations: ["customer", "car"],
+      relations: ["customer", "car", "createdBy", "updatedBy"],
     });
 
     if (!contract) {
@@ -250,7 +257,6 @@ export const downloadContractDocx = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Generate DOCX file
 export const generateDocxFile = (contract: Contract): string => {
   const filePath = path.join(__dirname, "../assets/contract_template.docx");
   const templateData = fs.readFileSync(filePath, "binary");

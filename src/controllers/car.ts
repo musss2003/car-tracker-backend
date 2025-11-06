@@ -9,7 +9,8 @@ export const getCars = async (req: Request, res: Response) => {
   try {
     const carRepository = AppDataSource.getRepository(Car);
     const cars = await carRepository.find({
-      order: { createdAt: "ASC" }
+      order: { createdAt: "ASC" },
+      relations: ["createdBy", "updatedBy", "archivedBy", "deletedBy"]
     });
     res.status(200).json(cars);
   } catch (error) {
@@ -22,7 +23,10 @@ export const getCar = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const carRepository = AppDataSource.getRepository(Car);
-    const car = await carRepository.findOne({ where: { id } });
+    const car = await carRepository.findOne({ 
+      where: { id },
+      relations: ["createdBy", "updatedBy", "archivedBy", "deletedBy"]
+    });
 
     if (!car) {
       return res.status(404).json({ message: "Car not found" });
@@ -99,6 +103,7 @@ export const createCar = async (req: Request, res: Response) => {
 
 export const updateCar = async (req: Request, res: Response) => {
   try {
+    const user = req.user;
     const { licensePlate } = req.params;
     const { 
       manufacturer, 
@@ -140,6 +145,11 @@ export const updateCar = async (req: Request, res: Response) => {
     if (currentLocation !== undefined) updateData.currentLocation = currentLocation;
     if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
 
+    // Add updatedBy user ID
+    if (user?.id) {
+      updateData.updatedById = user.id;
+    }
+
     const updateResult = await carRepository.update(
       { licensePlate: licensePlate },
       updateData
@@ -149,7 +159,10 @@ export const updateCar = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Car not found" });
     }
 
-    const updatedCar = await carRepository.findOne({ where: { licensePlate: licensePlate } });
+    const updatedCar = await carRepository.findOne({ 
+      where: { licensePlate: licensePlate },
+      relations: ["createdBy", "updatedBy", "archivedBy", "deletedBy"]
+    });
     res.status(200).json(updatedCar);
   } catch (error) {
     console.error("Error updating car:", error);
@@ -159,19 +172,28 @@ export const updateCar = async (req: Request, res: Response) => {
 
 export const deleteCar = async (req: Request, res: Response) => {
   try {
+    const user = req.user;
     const { licensePlate } = req.params;
-
     const carRepository = AppDataSource.getRepository(Car);
-    const deleteResult = await carRepository.delete({ licensePlate: licensePlate });
-
-    if (deleteResult.affected === 0) {
+    
+    const car = await carRepository.findOne({ where: { licensePlate: licensePlate } });
+    
+    if (!car) {
       return res.status(404).json({ message: "Car not found" });
     }
-
+    
+    // Soft delete: set isDeleted, deletedAt, and deletedBy
+    car.isDeleted = true;
+    car.deletedAt = new Date();
+    if (user?.id) {
+      car.deletedById = user.id;
+    }
+    
+    await carRepository.save(car);
     res.status(200).json({ message: "Car deleted successfully" });
   } catch (error) {
     console.error("Error deleting car:", error);
-    res.status(500).json({ message: "Error deleting car" });
+    res.status(400).json({ message: "Error deleting car" });
   }
 };
 
@@ -206,6 +228,10 @@ export const getAvailableCarsForPeriod = async (req: Request, res: Response) => 
     // Then get all cars that are NOT in the conflicting list
     const availableCars = await carRepository
       .createQueryBuilder("car")
+      .leftJoinAndSelect("car.createdBy", "createdBy")
+      .leftJoinAndSelect("car.updatedBy", "updatedBy")
+      .leftJoinAndSelect("car.archivedBy", "archivedBy")
+      .leftJoinAndSelect("car.deletedBy", "deletedBy")
       .where(conflictingCarIds.length > 0 ? "car.id NOT IN (:...conflictingCarIds)" : "1=1", {
         conflictingCarIds,
       })
@@ -232,7 +258,8 @@ export const getCarAvailability = async (req: Request, res: Response) => {
 
     // Get the car
     const car = await carRepository.findOne({
-      where: { licensePlate: licensePlate }
+      where: { licensePlate: licensePlate },
+      relations: ["createdBy", "updatedBy", "archivedBy", "deletedBy"]
     });
 
     if (!car) {
