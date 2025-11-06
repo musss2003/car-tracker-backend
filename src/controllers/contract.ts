@@ -34,7 +34,7 @@ export const getTotalRevenue = async (req: Request, res: Response) => {
       .select("SUM(contract.totalAmount)", "total")
       .getRawOne();
 
-    res.status(200).json({ totalRevenue: result.total || 0 });
+    res.status(200).json(result.total || 0);
   } catch (error) {
     console.error("Error calculating revenue:", error);
     res.status(500).json({ message: "Error calculating revenue", error });

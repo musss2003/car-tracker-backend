@@ -27,9 +27,10 @@ const io = new Server(server); // Attach Socket.IO to the server
 
 // CORS configuration - allow specific origins with credentials
 const allowedOrigins = [
-    'http://localhost:5173',
+    'https://car-tracker-frontend-lime.vercel.app',
     process.env.BASE_URL || 'http://localhost:5173'
 ];
+
 
 app.use(cors({
     origin: function (origin, callback) {
