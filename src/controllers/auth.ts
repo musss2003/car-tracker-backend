@@ -18,6 +18,7 @@ const cookieOptions = {
   secure: process.env.NODE_ENV === "production" ? true : false,
   sameSite: process.env.NODE_ENV === "production" ? 'none' as const : 'lax' as const,
   maxAge: 7 * 24 * 60 * 60 * 1000,
+  partitioned: process.env.NODE_ENV === "production" ? true : false, // Fix for cross-site cookie warning
 };
 
 interface JwtPayload {
