@@ -253,10 +253,12 @@ export const sessionCheck = async (
         }
       }
 
-      if (!valid)
+      if (!valid) {
         res
           .status(403)
           .json({ authenticated: false, message: "Invalid refresh token" });
+        return;
+      }
 
       const newAccessToken = generateAccessToken(user);
       const newRefreshToken = generateRefreshToken(user);
@@ -282,6 +284,7 @@ export const sessionCheck = async (
         authenticated: false,
         message: "Internal server error during refresh",
       });
+      return;
     }
   }
 
