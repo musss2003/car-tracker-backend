@@ -36,8 +36,15 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
+        // In production, require origin header for security
+        // In development, allow no origin for testing (curl, Postman, etc.)
+        if (!origin) {
+            if (process.env.NODE_ENV === 'production') {
+                console.warn(`❌ CORS blocked: No origin header in production`);
+                return callback(new Error('Origin header required'));
+            }
+            return callback(null, true); // Allow in development
+        }
         
         if (allowedOrigins.indexOf(origin) !== -1) {
             console.log(`✅ CORS allowed origin: ${origin}`);
@@ -49,7 +56,7 @@ app.use(cors({
     },
     credentials: true,  // Required for cookies, authorization headers with HTTPS
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Forwarded-For'],
 }));
 app.use(express.json());
 app.use(cookieParser());
