@@ -275,6 +275,7 @@ export const sessionCheck = async (
         role: user.role,
         accessToken: newAccessToken,
       });
+      return;
     } catch (refreshTokenError: any) {
       console.error(
         "Error during refresh token validation:",
