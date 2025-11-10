@@ -1,16 +1,13 @@
 import express from 'express';
-import { updateActivity, getUsersWithStatus, getOnlineUsers } from '../controllers/activity';
+import { getUsersWithStatus, getOnlineUsers } from '../controllers/activity';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();
 
-// Update user activity (heartbeat - fallback for non-WebSocket clients)
-router.post('/heartbeat', authenticate, updateActivity);
-
-// Get all users with online status
+// Get all users with online status (real-time via WebSocket)
 router.get('/users-status', authenticate, getUsersWithStatus);
 
-// Get currently online user IDs
+// Get currently online user IDs (useful for debugging)
 router.get('/online', authenticate, getOnlineUsers);
 
 export default router;
