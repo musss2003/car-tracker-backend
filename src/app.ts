@@ -85,8 +85,6 @@ app.use(auditLogMiddleware);
 
 // Handle WebSocket connections
 io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.id}`);
-
     // Handle user going online
     socket.on('user:online', async (userId: string) => {
         try {
@@ -108,9 +106,6 @@ io.on('connection', (socket) => {
 
             // Broadcast to all clients that this user is online
             io.emit('user:status', { userId, isOnline: true });
-
-            console.log(`User ${userId} is now online (socket: ${socket.id})`);
-            console.log(`Total online users: ${onlineUsers.size}`);
         } catch (err) {
             console.error('Error marking user online:', err);
         }
@@ -119,7 +114,6 @@ io.on('connection', (socket) => {
     // Handle joining a specific room for a user (kept for backward compatibility)
     socket.on('join', (userId: string) => {
         socket.join(userId); // Join a room with the user's ID
-        console.log(`User ${userId} joined room`);
     });
 
     // Emit a notification to a specific user
@@ -180,8 +174,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', async () => {
-        console.log('User disconnected:', socket.id);
-        
         // Handle user going offline
         const userId = (socket as any).userId;
         if (userId && onlineUsers.has(userId)) {
@@ -202,11 +194,8 @@ io.on('connection', (socket) => {
 
                 // Broadcast to all clients that this user is offline
                 io.emit('user:status', { userId, isOnline: false });
-                
-                console.log(`User ${userId} is now offline`);
             }
         }
-        console.log(`Total online users: ${onlineUsers.size}`);
     });
 });
 // Middleware to serve static files
