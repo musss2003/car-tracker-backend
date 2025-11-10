@@ -363,7 +363,7 @@ const getUserById = async (id: string): Promise<User> => {
 
 export function generateAccessToken(user: User) {
   return jwt.sign(
-    { id: user.id, username: user.username },
+    { id: user.id, username: user.username, role: user.role },
     ACCESS_TOKEN_SECRET || "",
     { expiresIn: ACCESS_TOKEN_DURATION || "15m" }
   );
