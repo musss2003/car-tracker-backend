@@ -219,7 +219,7 @@ export const resetUserPassword = async (
     await userRepository.update(userId, { password: hashedPassword });
 
     // Invalidate existing refresh tokens so old sessions can't be used
-    await refreshTokenRepository.delete(userId);
+    await refreshTokenRepository.delete({ userId: userId });
 
     // Send password reset email if requested
     if (sendEmail) {
