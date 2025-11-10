@@ -58,13 +58,13 @@ export const getUsersWithStatus = async (
       ]
     });
 
-    // Consider user online if active within last 5 minutes
-    const ONLINE_THRESHOLD = 5 * 60 * 1000; // 5 minutes in milliseconds
-    const now = new Date().getTime();
+    // Get online users from the request (passed from Socket.IO middleware)
+    // This will be populated by the real-time Socket.IO connection
+    const onlineUserIds = (req as any).onlineUsers || new Set<string>();
 
     const usersWithStatus = users.map(user => {
-      const lastActive = user.lastActiveAt ? new Date(user.lastActiveAt).getTime() : 0;
-      const isOnline = (now - lastActive) < ONLINE_THRESHOLD;
+      // Check if user is in the real-time online users set
+      const isOnline = onlineUserIds.has(user.id);
 
       return {
         id: user.id,
@@ -88,6 +88,28 @@ export const getUsersWithStatus = async (
     res.status(500).json({ 
       success: false, 
       message: "Error fetching users" 
+    });
+  }
+};
+
+// Get list of currently online user IDs (for real-time status)
+export const getOnlineUsers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // This will be populated by Socket.IO middleware
+    const onlineUserIds = (req as any).onlineUsers || new Set<string>();
+    
+    res.json({ 
+      success: true,
+      onlineUsers: Array.from(onlineUserIds)
+    });
+  } catch (error) {
+    console.error('Error fetching online users:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching online users" 
     });
   }
 };

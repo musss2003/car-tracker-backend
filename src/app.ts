@@ -19,6 +19,7 @@ import path from 'path';
 import http from 'http';
 import { Server } from 'socket.io'; // Using Socket.IO
 import { Notification, NotificationStatus } from './models/Notification'; // Import the TypeORM Notification model
+import { User } from './models/User'; // Import User model for online status tracking
 import "reflect-metadata"; // Required for TypeORM
 import { testEmailConfiguration } from './services/emailService';
 
@@ -61,6 +62,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 
+// Store online users in memory (userId -> socketId mapping)
+const onlineUsers = new Map<string, Set<string>>();
+
+// Middleware to attach online users to request object
+app.use((req, res, next) => {
+  (req as any).onlineUsers = onlineUsers;
+  next();
+});
+
 // Audit logging middleware (place after authentication routes but before other routes)
 app.use(auditLogMiddleware);
 
@@ -68,7 +78,36 @@ app.use(auditLogMiddleware);
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // Handle joining a specific room for a user
+    // Handle user going online
+    socket.on('user:online', async (userId: string) => {
+        try {
+            // Add user to online users map
+            if (!onlineUsers.has(userId)) {
+                onlineUsers.set(userId, new Set());
+            }
+            onlineUsers.get(userId)!.add(socket.id);
+
+            // Update last_active_at in database
+            const userRepository = AppDataSource.getRepository(User);
+            await userRepository.update(userId, { lastActiveAt: new Date() });
+
+            // Join user's personal room
+            socket.join(userId);
+            
+            // Store userId in socket for later use
+            (socket as any).userId = userId;
+
+            // Broadcast to all clients that this user is online
+            io.emit('user:status', { userId, isOnline: true });
+
+            console.log(`User ${userId} is now online (socket: ${socket.id})`);
+            console.log(`Total online users: ${onlineUsers.size}`);
+        } catch (err) {
+            console.error('Error marking user online:', err);
+        }
+    });
+
+    // Handle joining a specific room for a user (kept for backward compatibility)
     socket.on('join', (userId: string) => {
         socket.join(userId); // Join a room with the user's ID
         console.log(`User ${userId} joined room`);
@@ -131,8 +170,34 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         console.log('User disconnected:', socket.id);
+        
+        // Handle user going offline
+        const userId = (socket as any).userId;
+        if (userId && onlineUsers.has(userId)) {
+            const userSockets = onlineUsers.get(userId)!;
+            userSockets.delete(socket.id);
+
+            // If user has no more active sockets, mark as offline
+            if (userSockets.size === 0) {
+                onlineUsers.delete(userId);
+                
+                // Update last_active_at in database
+                try {
+                    const userRepository = AppDataSource.getRepository(User);
+                    await userRepository.update(userId, { lastActiveAt: new Date() });
+                } catch (err) {
+                    console.error('Error updating last active:', err);
+                }
+
+                // Broadcast to all clients that this user is offline
+                io.emit('user:status', { userId, isOnline: false });
+                
+                console.log(`User ${userId} is now offline`);
+            }
+        }
+        console.log(`Total online users: ${onlineUsers.size}`);
     });
 });
 // Middleware to serve static files
