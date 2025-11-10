@@ -9,6 +9,7 @@ import { Contract } from "../models/Contract";
 import { Notification } from "../models/Notification";
 import { Country } from "../models/Country";
 import { RefreshToken } from "../models/RefreshToken";
+import { AuditLog } from "../models/Auditlog";
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ export const AppDataSource = new DataSource({
   ssl: {
     rejectUnauthorized: false,
   },
-  entities: [User, Customer, Car, Contract, Notification, Country, RefreshToken],
+  entities: [User, Customer, Car, Contract, Notification, Country, RefreshToken, AuditLog],
   synchronize: process.env.NODE_ENV !== "production", // Only in development
   logging: process.env.NODE_ENV === "development",
   extra: {
