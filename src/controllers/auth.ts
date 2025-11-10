@@ -126,9 +126,11 @@ export const login = async (
     // 4. Generate refresh token
     const refreshToken = generateRefreshToken(user);
 
-    // 5. Update user with new refresh token and last login
+    // 5. Update user with new refresh token, last login, and activity timestamp
+    const now = new Date();
     await userRepository.update(user.id, {
-      lastLogin: new Date(),
+      lastLogin: now,
+      lastActiveAt: now,
     });
 
     await storeRefreshToken(user.id, refreshToken);

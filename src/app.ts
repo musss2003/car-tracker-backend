@@ -10,6 +10,7 @@ import notificationRoutes from './routes/notification';
 import countryRoutes from './routes/country';
 import documentsRoutes from "./routes/upload";
 import auditLogRoutes from './routes/auditLog';
+import activityRoutes from './routes/activity';
 import { auditLogMiddleware } from './middlewares/auditLog';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
@@ -196,6 +197,7 @@ app.use('/api/customers', customerRoutes); // Register the customer routes
 app.use('/api/notifications', notificationRoutes); // manipulate notifications
 app.use('/api/countries', countryRoutes); // Register the countries routes
 app.use('/api/audit-logs', auditLogRoutes); // Register audit log routes
+app.use('/api/activity', activityRoutes); // Register activity tracking routes
 app.use("/api", documentsRoutes);
 
 

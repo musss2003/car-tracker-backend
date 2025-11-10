@@ -39,6 +39,9 @@ export class User {
   @Column({ name: 'last_login', type: 'timestamp', nullable: true })
   lastLogin?: Date;
 
+  @Column({ name: 'last_active_at', type: 'timestamp', nullable: true })
+  lastActiveAt?: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
@@ -58,6 +61,7 @@ export interface IUser {
   password: string;
   role: UserRole;
   lastLogin?: Date;
+  lastActiveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
