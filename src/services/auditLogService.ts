@@ -151,7 +151,6 @@ export class AuditLogService {
 
     const queryBuilder = this.auditLogRepository
       .createQueryBuilder('audit_log')
-      .leftJoinAndSelect('audit_log.user', 'user')
       .orderBy('audit_log.created_at', 'DESC')
       .skip(skip)
       .take(limit);
