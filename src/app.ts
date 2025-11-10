@@ -39,14 +39,9 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) {
-        // In production, require origin header for security
-        // In development, allow no origin for testing (curl, Postman, etc.)
+        // Allow requests with no origin (same-origin, server-to-server, health checks)
         if (!origin) {
-            if (process.env.NODE_ENV === 'production') {
-                console.warn(`❌ CORS blocked: No origin header in production`);
-                return callback(new Error('Origin header required'));
-            }
-            return callback(null, true); // Allow in development
+            return callback(null, true);
         }
         
         if (allowedOrigins.indexOf(origin) !== -1) {
