@@ -5,6 +5,7 @@ import { AppDataSource } from "../config/db";
 import { User, UserRole } from "../models/User";
 import { RefreshToken } from "../models/RefreshToken";
 import dotenv from "dotenv";
+import { logAudit } from "../middlewares/auditLog";
 
 dotenv.config();
 
@@ -104,6 +105,8 @@ export const login = async (
     // 1. Find user by username
     const user = await userRepository.findOne({ where: { username } });
     if (!user) {
+      // Log failed login attempt
+      await logAudit.loginFailed(username, "User not found", req);
       res.status(404).json({ message: "User not found" });
       return;
     }
@@ -111,6 +114,8 @@ export const login = async (
     // 2. Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      // Log failed login attempt
+      await logAudit.loginFailed(username, "Invalid credentials", req);
       res.status(401).json({ message: "Invalid credentials" });
       return;
     }
@@ -132,7 +137,10 @@ export const login = async (
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
 
-    // 7. Send access token and user info in response
+    // 7. Log successful login
+    await logAudit.login(user.id, user.username, req);
+
+    // 8. Send access token and user info in response
     res.status(200).json({
       id: user.id,
       username: user.username,
@@ -320,12 +328,21 @@ export const logout = async (
 
     const userId = decoded.id;
 
+    // Get user for audit logging
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({ where: { id: userId } });
+
     // Delete refresh tokens
     await refreshTokenRepository.delete({ userId });
 
     // Clear the cookie (must match the same settings as when it was set)
 
     res.clearCookie("refreshToken", cookieOptions);
+
+    // Log logout
+    if (user) {
+      await logAudit.logout(user.id, user.username, req);
+    }
 
     res.sendStatus(204); // Successfully logged out
   } catch (error: any) {
