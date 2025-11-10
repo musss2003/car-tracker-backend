@@ -232,9 +232,10 @@ const startServer = async () => {
     // Start the server only after successful database connection
     const PORT = parseInt(process.env.PORT || '5001', 10);
 
-    app.listen(PORT, "0.0.0.0", () => {
+    server.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Database connected and ready`);
+      console.log(`🔌 Socket.IO server initialized and ready`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
