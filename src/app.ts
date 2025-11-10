@@ -28,7 +28,6 @@ dotenv.config();
 
 const app: Application = express();
 const server = http.createServer(app); // Create the HTTP server
-const io = new Server(server); // Attach Socket.IO to the server
 
 // CORS configuration - allow specific origins with credentials
 const allowedOrigins = [
@@ -38,6 +37,16 @@ const allowedOrigins = [
     process.env.BASE_URL
 ].filter(Boolean); // Remove undefined values
 
+// Initialize Socket.IO with CORS configuration
+const io = new Server(server, {
+    cors: {
+        origin: allowedOrigins.filter((origin): origin is string => origin !== undefined),
+        methods: ['GET', 'POST'],
+        credentials: true
+    },
+    // Allow WebSocket transport
+    transports: ['websocket', 'polling']
+});
 
 app.use(cors({
     origin: function (origin, callback) {
