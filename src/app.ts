@@ -19,6 +19,7 @@ import http from 'http';
 import { Server } from 'socket.io'; // Using Socket.IO
 import { Notification, NotificationStatus } from './models/Notification'; // Import the TypeORM Notification model
 import "reflect-metadata"; // Required for TypeORM
+import { testEmailConfiguration } from './services/emailService';
 
 
 dotenv.config();
@@ -151,6 +152,12 @@ const startServer = async () => {
   try {
     // Only initialize TypeORM (PostgreSQL)
     await initializeTypeORM();
+    
+    // Test email configuration (non-blocking)
+    console.log('📧 Testing email configuration...');
+    testEmailConfiguration().catch(err => {
+      console.warn('⚠️  Email service not configured or failed:', err.message);
+    });
     
     // Start the server only after successful database connection
     const PORT = parseInt(process.env.PORT || '5001', 10);

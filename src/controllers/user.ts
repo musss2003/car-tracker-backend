@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/db";
 import { User } from "../models/User";
 import bcrypt from "bcrypt";
+import { RefreshToken } from "../models/RefreshToken";
+import { sendCredentialsEmail, sendPasswordResetEmail } from "../services/emailService";
 
 // Get a single user by ID
 export const getUser = async (
@@ -158,11 +160,14 @@ export const createUser = async (
 
     const savedUser = await userRepository.save(newUser);
 
-    // TODO: If sendCredentials is true, send email with credentials
-    // You'll need to implement email service for this
+    // Send credentials email if requested
     if (sendCredentials) {
-      console.log(`Send credentials email to ${email} with password: ${password}`);
-      // await emailService.sendCredentials(email, username, password);
+      try {
+        await sendCredentialsEmail(email, username, password, name);
+      } catch (emailError) {
+        console.error('Failed to send credentials email:', emailError);
+        // Don't fail the user creation if email fails, just log it
+      }
     }
 
     // Remove password from response
@@ -199,6 +204,7 @@ export const resetUserPassword = async (
     }
 
     const userRepository = AppDataSource.getRepository(User);
+    const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
     const user = await userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
@@ -212,10 +218,17 @@ export const resetUserPassword = async (
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await userRepository.update(userId, { password: hashedPassword });
 
-    // TODO: If sendEmail is true, send email with new password
+    // Invalidate existing refresh tokens so old sessions can't be used
+    await refreshTokenRepository.delete(userId);
+
+    // Send password reset email if requested
     if (sendEmail) {
-      console.log(`Send password reset email to ${user.email} with password: ${newPassword}`);
-      // await emailService.sendPasswordReset(user.email, user.username, newPassword);
+      try {
+        await sendPasswordResetEmail(user.email, user.username, newPassword, user.name);
+      } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError);
+        // Don't fail the password reset if email fails, just log it
+      }
     }
 
     return res.json({ 
