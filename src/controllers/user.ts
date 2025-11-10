@@ -244,6 +244,80 @@ export const resetUserPassword = async (
   }
 };
 
+// Change user password (with current password verification)
+export const changeUserPassword = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const userId = req.params.id;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate inputs
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Current password and new password are required" 
+      });
+    }
+
+    // Validate new password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "New password must be at least 6 characters long" 
+      });
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Current password is incorrect" 
+      });
+    }
+
+    // Check if new password is different from current
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "New password must be different from current password" 
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await userRepository.update(userId, { password: hashedPassword });
+
+    // Invalidate existing refresh tokens for security
+    const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
+    await refreshTokenRepository.delete({ userId: userId });
+
+    return res.json({ 
+      success: true, 
+      message: "Password changed successfully" 
+    });
+  } catch (error: any) {
+    console.error("Error changing password:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
 // Delete a user by ID
 export const deleteUser = async (
   req: Request,

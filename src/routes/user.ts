@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getUser, updateUser, deleteUser, getUsers, createUser, resetUserPassword } from '../controllers/user';
+import { getUser, updateUser, deleteUser, getUsers, createUser, resetUserPassword, changeUserPassword } from '../controllers/user';
 import authenticate from '../middlewares/verifyJWT';
 import verifyRole from '../middlewares/verifyRole';
 
@@ -26,6 +26,11 @@ router.post('/', verifyRole(['admin']), async (req: Request, res: Response) => {
 // Route to reset user password (admin only)
 router.post('/:id/reset-password', verifyRole(['admin']), async (req: Request, res: Response) => {
   await resetUserPassword(req, res);
+});
+
+// Route to change user password (user must verify current password)
+router.put('/:id/password', async (req: Request, res: Response) => {
+  await changeUserPassword(req, res);
 });
 
 // Route to update user by ID
