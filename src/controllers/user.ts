@@ -67,7 +67,7 @@ export const updateUser = async (
 ): Promise<Response> => {
   try {
     const userId = req.params.id;
-    const { username, email, name, profilePhotoUrl, citizenshipId } = req.body;
+    const { username, email, name, profilePhotoUrl, citizenshipId, phone, address } = req.body;
 
     const userRepository = AppDataSource.getRepository(User);
 
@@ -79,6 +79,8 @@ export const updateUser = async (
     if (profilePhotoUrl !== undefined)
       updateData.profilePhotoUrl = profilePhotoUrl;
     if (citizenshipId !== undefined) updateData.citizenshipId = citizenshipId;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
 
     if (Object.keys(updateData).length === 0) {
       return res
@@ -102,6 +104,8 @@ export const updateUser = async (
         "name",
         "citizenshipId",
         "profilePhotoUrl",
+        "phone",
+        "address",
         "role",
         "lastLogin",
         "createdAt",

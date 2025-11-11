@@ -26,6 +26,12 @@ export class User {
   @Column({ name: 'profile_photo_url', type: 'text', nullable: true })
   profilePhotoUrl?: string;
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string;
+
+  @Column({ type: 'text', nullable: true })
+  address?: string;
+
   @Column({ type: 'varchar', length: 255 })
   password: string; // Hashed password
 
@@ -57,6 +63,8 @@ export interface IUser {
   email: string;
   citizenshipId?: string;
   profilePhotoUrl?: string;
+  phone?: string;
+  address?: string;
   refreshToken?: string;
   password: string;
   role: UserRole;
