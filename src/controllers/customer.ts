@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/db";
 import { Customer } from "../models/Customer";
 import { Like } from "typeorm";
+import { notifyAdmins } from "../services/notificationService";
+import { io } from "../app";
 
 // ✅ Get a single customer by ID
 export const getCustomer = async (req: Request, res: Response) => {
@@ -96,6 +98,18 @@ export const createCustomer = async (req: Request, res: Response): Promise<Respo
     });
 
     const savedCustomer = await customerRepository.save(newCustomer);
+
+    // Send notification about new customer
+    try {
+      await notifyAdmins(
+        `Novi kupac: ${name}`,
+        'customer-new',
+        createdById,
+        io
+      );
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
 
     return res.status(201).json(savedCustomer);
   } catch (error: any) {
@@ -211,6 +225,19 @@ export const updateCustomer = async (req: Request, res: Response): Promise<Respo
     }
 
     const updatedCustomer = await customerRepository.findOne({ where: { id: customerId } });
+    // Send notification about customer update
+    try {
+      if (updatedCustomer) {
+        await notifyAdmins(
+          `Podaci kupca ažurirani: ${updatedCustomer.name}`,
+          'customer-updated',
+          updatedById,
+          io
+        );
+      }
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
     return res.json(updatedCustomer);
   } catch (error: any) {
     console.error("Error updating customer:", error);

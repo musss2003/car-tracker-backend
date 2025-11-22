@@ -22,6 +22,7 @@ import { Notification, NotificationStatus } from './models/Notification'; // Imp
 import { User } from './models/User'; // Import User model for online status tracking
 import "reflect-metadata"; // Required for TypeORM
 import { testEmailConfiguration } from './services/emailService';
+import { scheduleExpiringContractsCheck, scheduleExpiredContractsCheck, setSocketIO } from './scripts/contractScheduler';
 
 
 dotenv.config();
@@ -225,6 +226,14 @@ const startServer = async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Database connected and ready`);
       console.log(`🔌 Socket.IO server initialized and ready`);
+      
+      // Initialize Socket.IO for schedulers
+      setSocketIO(io);
+      
+      // Start scheduled tasks
+      scheduleExpiringContractsCheck();
+      scheduleExpiredContractsCheck();
+      console.log(`⏰ Scheduled tasks initialized`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
@@ -289,6 +298,9 @@ app.get('/health', async (req: Request, res: Response) => {
 app.get('/routes', (req: Request, res: Response) => {
     res.status(200).send(endPoints(app));
 });
+
+// Export io for use in other modules
+export { io };
 
 // Start the server
 startServer();

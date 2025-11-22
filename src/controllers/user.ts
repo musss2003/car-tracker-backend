@@ -4,6 +4,8 @@ import { User } from "../models/User";
 import bcrypt from "bcrypt";
 import { RefreshToken } from "../models/RefreshToken";
 import { sendCredentialsEmail, sendPasswordResetEmail } from "../services/emailService";
+import { notifyAdmins } from "../services/notificationService";
+import { io } from "../app";
 
 // Get a single user by ID
 export const getUser = async (
@@ -112,7 +114,19 @@ export const updateUser = async (
         "updatedAt",
       ],
     });
-
+    // Send notification about user update
+    try {
+      if (updatedUser) {
+        await notifyAdmins(
+          `Podaci korisnika ažurirani: ${updatedUser.username}`,
+          'user-updated',
+          req.user?.id,
+          io
+        );
+      }
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
     return res.json({ success: true, data: updatedUser });
   } catch (error: any) {
     console.error("Error updating user:", error);
@@ -173,7 +187,17 @@ export const createUser = async (
         // Don't fail the user creation if email fails, just log it
       }
     }
-
+    // Send notification about new user
+    try {
+      await notifyAdmins(
+        `Novi korisnik: ${username}`,
+        'user-new',
+        req.user?.id,
+        io
+      );
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
     // Remove password from response
     const { password: _, ...userResponse } = savedUser;
 

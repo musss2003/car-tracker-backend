@@ -9,6 +9,8 @@ import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import fs from "fs";
 import path from "path";
+import { createNotification, sendNotificationToUser, notifyAdmins } from "../services/notificationService";
+import { io } from "../app";
 
 // ✅ Get all contracts
 export const getContracts = async (req: Request, res: Response) => {
@@ -141,6 +143,21 @@ export const createContract = async (req: Request, res: Response) => {
     }
 
     const base64Docx = generateDocxFile(contractWithRelations);
+
+    // Send notification to admins about new contract
+    try {
+      const contractNumber = `${car.manufacturer} ${car.model} - ${customer.name}`;
+      await notifyAdmins(
+        `Novi ugovor kreiran: ${contractNumber} (${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()})`,
+        'contract-new',
+        user?.id,
+        io
+      );
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+      // Don't fail the request if notification fails
+    }
+
     res.status(201).json({ contract: contractWithRelations, docx: base64Docx });
   } catch (error) {
     console.error("Error creating contract:", error);
@@ -188,6 +205,25 @@ export const updateContract = async (req: Request, res: Response) => {
     }
 
     await contractRepository.update(req.params.id, updateData);
+
+    // Send notification about contract update
+    try {
+      const updatedContract = await contractRepository.findOne({
+        where: { id: contractId },
+        relations: ["customer", "car"]
+      });
+      if (updatedContract) {
+        const contractNumber = `${updatedContract.car.manufacturer} ${updatedContract.car.model} - ${updatedContract.customer.name}`;
+        await notifyAdmins(
+          `Ugovor ažuriran: ${contractNumber}`,
+          'contract-updated',
+          user?.id,
+          io
+        );
+      }
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
 
     res.status(200).json({ message: "Contract updated successfully" });
   } catch (error) {

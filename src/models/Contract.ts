@@ -65,6 +65,9 @@ export class Contract {
   @Column({ name: "photo_url", type: "text" })
   photoUrl: string;
 
+  @Column({ name: "notification_sent", type: "boolean", default: false })
+  notificationSent: boolean;
+
   @Column({ name: "updated_by", nullable: true })
   updatedById?: string;
 

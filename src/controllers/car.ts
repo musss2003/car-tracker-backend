@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/db";
 import { Car } from "../models/Car";
 import { Contract } from "../models/Contract";
+import { notifyAdmins } from "../services/notificationService";
+import { io } from "../app";
 
 
 export const getCars = async (req: Request, res: Response) => {
@@ -94,6 +96,19 @@ export const createCar = async (req: Request, res: Response) => {
     });
 
     const savedCar = await carRepository.save(newCar);
+
+    // Send notification about new car
+    try {
+      await notifyAdmins(
+        `Novo vozilo dodato: ${manufacturer} ${model} (${licensePlate})`,
+        'car-new',
+        user?.id,
+        io
+      );
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
+
     res.status(201).json(savedCar);
   } catch (error) {
     console.error("Error creating car:", error);
