@@ -6,8 +6,12 @@ import {
   UpdateDateColumn,
   JoinColumn,
   ManyToOne,
+  OneToMany,
 } from "typeorm";
 import User from "./User";
+import CarRegistration from "./CarRegistration";
+import CarInsurance from "./CarInsurance";
+import CarServiceHistory from "./CarServiceHistory";
 
 export type FuelType = "petrol" | "diesel" | "hybrid" | "electric";
 export type TransmissionType = "manual" | "automatic";
@@ -97,7 +101,16 @@ export class Car {
   @Column({ name: "photo_url", type: "text", nullable: true })
   photoUrl?: string;
 
-  @UpdateDateColumn({ name: "updated_at", nullable: true})
+  @OneToMany(() => CarRegistration, (registration) => registration.car)
+  registrations: CarRegistration[];
+
+  @OneToMany(() => CarInsurance, (insurance) => insurance.car)
+  insurances: CarInsurance[];
+
+  @OneToMany(() => CarServiceHistory, (service) => service.car)
+  serviceHistory: CarServiceHistory[];
+
+  @UpdateDateColumn({ name: "updated_at", nullable: true })
   updatedAt?: Date;
 
   @Column({ name: "updated_by", nullable: true })

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/app.js",
     "dev": "nodemon --ext ts --exec ts-node src/app.ts",
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/assets && cp -r src/assets/* dist/assets/",
     "setup-countries": "ts-node src/scripts/setupCountries.ts"
   },
   "keywords": [],
