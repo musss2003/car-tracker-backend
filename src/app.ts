@@ -269,9 +269,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/cars', carRoutes); // Register the car routes
-app.use('/api/cars/registration', carRegistrationRoutes); // Register the car registrations routes
-app.use('/api/cars/insurance', carInsuranceRoutes); // Register the car insurances routes
-app.use('/api/cars/service-history', carServiceRoutes); // Register the car services routes
+app.use('/api/car-registration', carRegistrationRoutes); // Register the car registrations routes
+app.use('/api/car-insurance', carInsuranceRoutes); // Register the car insurances routes
+app.use('/api/car-service-history', carServiceRoutes); // Register the car services routes
 app.use('/api/customers', customerRoutes); // Register the customer routes
 app.use('/api/notifications', notificationRoutes); // manipulate notifications
 app.use('/api/countries', countryRoutes); // Register the countries routes

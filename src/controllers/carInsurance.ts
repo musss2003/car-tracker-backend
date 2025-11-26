@@ -79,6 +79,39 @@ export const getLatestInsurance = async (req: Request, res: Response) => {
   }
 };
 
+export const updateCarInsuranceRecord = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { policyNumber, provider, insuranceExpiry, price, carId } = req.body;
+
+        const record = await insuranceRepo.findOne({ where: { id } });
+        if (!record) {
+            return res.status(404).json({ message: "Insurance record not found" });
+        }
+
+        if (carId !== undefined && carId !== record.carId) {
+            const car = await carRepo.findOne({ where: { id: carId } });
+            if (!car) {
+                return res.status(404).json({ message: "Provided car not found" });
+            }
+            record.carId = carId;
+            record.car = car;
+        }
+
+        if (policyNumber !== undefined) record.policyNumber = policyNumber;
+        if (provider !== undefined) record.provider = provider;
+        if (insuranceExpiry !== undefined) record.insuranceExpiry = insuranceExpiry;
+        if (price !== undefined) record.price = price;
+
+        await insuranceRepo.save(record);
+
+        return res.json({ message: "Insurance record updated", record });
+    } catch (error) {
+        console.error("Error updating insurance record:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 /**
  * Delete a specific record
  */
