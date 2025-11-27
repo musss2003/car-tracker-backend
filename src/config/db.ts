@@ -13,6 +13,7 @@ import { AuditLog } from "../models/Auditlog";
 import CarRegistration from "../models/CarRegistration";
 import CarInsurance from "../models/CarInsurance";
 import CarServiceHistory from "../models/CarServiceHistory";
+import CarIssueReport from "../models/CarIssueReport";
 
 dotenv.config();
 
@@ -41,7 +42,7 @@ export const AppDataSource = new DataSource({
   ssl: {
     rejectUnauthorized: false,
   },
-  entities: [User, Customer, Car, CarRegistration, CarInsurance, CarServiceHistory, Contract, Notification, Country, RefreshToken, AuditLog],
+  entities: [User, Customer, Car, CarRegistration, CarInsurance, CarServiceHistory, CarIssueReport, Contract, Notification, Country, RefreshToken, AuditLog],
   synchronize: process.env.NODE_ENV !== "production", // Only in development
   logging: process.env.NODE_ENV === "development",
   extra: {
