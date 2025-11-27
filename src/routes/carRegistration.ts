@@ -6,7 +6,8 @@ import {
   getCarRegistrations,
   getLatestCarRegistration,
   deleteCarRegistration,
-  getCarRegistrationById
+  getCarRegistrationById,
+  getRegistrationDaysRemaining
 } from "../controllers/carRegistration";
 
 const router = express.Router();
@@ -22,6 +23,9 @@ router.get("/car/:carId", async (req, res) => {
   await getCarRegistrations(req, res);
 });
 
+router.get("/car/:carId/registration-days-remaining", async (req, res) => {
+  await getRegistrationDaysRemaining(req, res);
+});
 // -------------------------------------------------------------
 // 📌 GET: Latest registration for a car
 // GET /api/car-registrations/car/:carId/latest

@@ -92,6 +92,44 @@ export const getLatestCarRegistration = async (req: Request, res: Response) => {
   }
 };
 
+export const getRegistrationDaysRemaining = async (req: Request, res: Response) => {
+  try {
+    const { carId } = req.params;
+
+    const repo = AppDataSource.getRepository(CarRegistration);
+
+    const latest = await repo.findOne({
+      where: { car: { id: carId } },
+      order: { registrationExpiry: "DESC" },
+    });
+
+    if (!latest || !latest.registrationExpiry) {
+      return res
+        .status(404)
+        .json({ message: "No registration expiry found for this car." });
+    }
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const expiry = new Date(latest.registrationExpiry);
+
+    // Normalize to UTC midnight to avoid timezone partial-day issues
+    const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const utcExpiry = Date.UTC(expiry.getUTCFullYear(), expiry.getUTCMonth(), expiry.getUTCDate());
+
+    const daysRemaining = Math.ceil((utcExpiry - utcNow) / msPerDay);
+
+    return res.json({
+      daysRemaining,
+      expiry: latest.registrationExpiry,
+      expired: daysRemaining < 0,
+    });
+  } catch (error) {
+    console.error("Error calculating days remaining:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 // -------------------------------------------------------------
 // 🟢 Get single registration by ID
 // -------------------------------------------------------------
