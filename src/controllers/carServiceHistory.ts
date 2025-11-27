@@ -88,6 +88,26 @@ export const getLatestServiceRecord = async (req: Request, res: Response) => {
   }
 };
 
+export const getRemainingKm = async (req: Request, res: Response) => {
+  const { carId } = req.params;
+
+  const car = await carRepo.findOne({ where: { id: carId } });
+  if (!car) return res.status(404).json({ error: "Car not found" });
+
+  const latestService = await serviceRepo.findOne({
+    where: { carId },
+    order: { serviceDate: "DESC" }
+  });
+
+  if (!latestService || latestService.nextServiceKm == null) {
+    return res.status(404).json({ error: "No service info" });
+  }
+
+  const remainingKm = latestService.nextServiceKm - (car.mileage || 0);
+
+  return res.json({ remainingKm });
+}
+
 /**
  * Delete specific service record
  */

@@ -12,6 +12,7 @@ import User from "./User";
 import CarRegistration from "./CarRegistration";
 import CarInsurance from "./CarInsurance";
 import CarServiceHistory from "./CarServiceHistory";
+import CarIssueReport from "./CarIssueReport";
 
 export type FuelType = "petrol" | "diesel" | "hybrid" | "electric";
 export type TransmissionType = "manual" | "automatic";
@@ -109,6 +110,9 @@ export class Car {
 
   @OneToMany(() => CarServiceHistory, (service) => service.car)
   serviceHistory: CarServiceHistory[];
+
+  @OneToMany(() => CarIssueReport, (service) => service.car)
+  issueReports: CarIssueReport[];
 
   @UpdateDateColumn({ name: "updated_at", nullable: true })
   updatedAt?: Date;

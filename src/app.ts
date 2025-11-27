@@ -8,6 +8,7 @@ import carRoutes from './routes/car';
 import carRegistrationRoutes from './routes/carRegistration';
 import carInsuranceRoutes from './routes/carInsurance';
 import carServiceRoutes from './routes/carServiceHistory';
+import carIssueReportRoutes from "./routes/carIssueReport";
 import customerRoutes from './routes/customer';
 import notificationRoutes from './routes/notification';
 import countryRoutes from './routes/country';
@@ -272,6 +273,7 @@ app.use('/api/cars', carRoutes); // Register the car routes
 app.use('/api/car-registration', carRegistrationRoutes); // Register the car registrations routes
 app.use('/api/car-insurance', carInsuranceRoutes); // Register the car insurances routes
 app.use('/api/car-service-history', carServiceRoutes); // Register the car services routes
+app.use("/api/car-issue-report", carIssueReportRoutes);
 app.use('/api/customers', customerRoutes); // Register the customer routes
 app.use('/api/notifications', notificationRoutes); // manipulate notifications
 app.use('/api/countries', countryRoutes); // Register the countries routes
