@@ -150,44 +150,81 @@ export class AuditLogService {
     const limit = filters.limit || 50;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.auditLogRepository
-      .createQueryBuilder('audit_log')
-      .leftJoinAndSelect('audit_log.user', 'user')
-      .skip(skip)
-      .take(limit);
+    const where: any = {};
 
     if (filters.userId) {
-      queryBuilder.andWhere('audit_log.user_id = :userId', { userId: filters.userId });
+      where.userId = filters.userId;
     }
 
     if (filters.action) {
-      queryBuilder.andWhere('audit_log.action = :action', { action: filters.action });
+      where.action = filters.action;
     }
 
     if (filters.resource) {
-      queryBuilder.andWhere('audit_log.resource = :resource', { resource: filters.resource });
+      where.resource = filters.resource;
     }
 
     if (filters.resourceId) {
-      queryBuilder.andWhere('audit_log.resource_id = :resourceId', { resourceId: filters.resourceId });
+      where.resourceId = filters.resourceId;
     }
 
     if (filters.status) {
-      queryBuilder.andWhere('audit_log.status = :status', { status: filters.status });
+      where.status = filters.status;
     }
 
-    if (filters.startDate) {
-      queryBuilder.andWhere('audit_log.created_at >= :startDate', { startDate: filters.startDate });
+    // Use find instead of query builder for simpler approach
+    const queryOptions: any = {
+      where,
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    };
+
+    // Handle date filters with query builder if needed
+    if (filters.startDate || filters.endDate) {
+      const queryBuilder = this.auditLogRepository
+        .createQueryBuilder('audit_log')
+        .leftJoinAndSelect('audit_log.user', 'user');
+
+      if (filters.userId) {
+        queryBuilder.andWhere('audit_log.user_id = :userId', { userId: filters.userId });
+      }
+
+      if (filters.action) {
+        queryBuilder.andWhere('audit_log.action = :action', { action: filters.action });
+      }
+
+      if (filters.resource) {
+        queryBuilder.andWhere('audit_log.resource = :resource', { resource: filters.resource });
+      }
+
+      if (filters.resourceId) {
+        queryBuilder.andWhere('audit_log.resource_id = :resourceId', { resourceId: filters.resourceId });
+      }
+
+      if (filters.status) {
+        queryBuilder.andWhere('audit_log.status = :status', { status: filters.status });
+      }
+
+      if (filters.startDate) {
+        queryBuilder.andWhere('audit_log.created_at >= :startDate', { startDate: filters.startDate });
+      }
+
+      if (filters.endDate) {
+        queryBuilder.andWhere('audit_log.created_at <= :endDate', { endDate: filters.endDate });
+      }
+
+      queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('"audit_log"."created_at"', 'DESC');
+
+      const [logs, total] = await queryBuilder.getManyAndCount();
+      return { logs, total };
     }
 
-    if (filters.endDate) {
-      queryBuilder.andWhere('audit_log.created_at <= :endDate', { endDate: filters.endDate });
-    }
-
-    // Add orderBy after all where clauses
-    queryBuilder.orderBy('audit_log.created_at', 'DESC');
-
-    const [logs, total] = await queryBuilder.getManyAndCount();
+    const [logs, total] = await this.auditLogRepository.findAndCount(queryOptions);
 
     return { logs, total };
   }
