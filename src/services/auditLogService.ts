@@ -139,6 +139,7 @@ export class AuditLogService {
     userId?: string;
     action?: AuditAction;
     resource?: AuditResource;
+    resourceId?: string;
     status?: AuditStatus;
     startDate?: Date;
     endDate?: Date;
@@ -151,6 +152,7 @@ export class AuditLogService {
 
     const queryBuilder = this.auditLogRepository
       .createQueryBuilder('audit_log')
+      .leftJoinAndSelect('audit_log.user', 'user')
       .orderBy('audit_log.created_at', 'DESC')
       .skip(skip)
       .take(limit);
@@ -165,6 +167,10 @@ export class AuditLogService {
 
     if (filters.resource) {
       queryBuilder.andWhere('audit_log.resource = :resource', { resource: filters.resource });
+    }
+
+    if (filters.resourceId) {
+      queryBuilder.andWhere('audit_log.resource_id = :resourceId', { resourceId: filters.resourceId });
     }
 
     if (filters.status) {

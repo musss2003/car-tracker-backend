@@ -85,7 +85,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Audit logging middleware (place after authentication routes but before other routes)
+// Audit logging middleware
 app.use(auditLogMiddleware);
 
 // Handle WebSocket connections

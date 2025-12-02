@@ -7,7 +7,8 @@ import {
   updateIssueReportStatus,
   deleteIssueReport,
   getNewCarIssueReports,
-  getNewCarIssueReportsByCar
+  getNewCarIssueReportsByCar,
+  getIssueReportAuditLogs
 } from "../controllers/carIssueReport";
 import authenticate from "../middlewares/verifyJWT";
 
@@ -28,6 +29,11 @@ router.get("/", async (req, res) => {
 // GET all issues for specific car
 router.get("/car/:carId", async (req, res) => {
   await getIssueReportsForCar(req, res);
+});
+
+// GET audit logs for a specific issue report
+router.get("/:id/audit-logs", async (req, res) => {
+  await getIssueReportAuditLogs(req, res);
 });
 
 // GET single issue report

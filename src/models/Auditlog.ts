@@ -30,6 +30,7 @@ export enum AuditResource {
   AUTH = 'auth',
   NOTIFICATION = 'notification',
   COUNTRY = 'country',
+  CAR_ISSUE_REPORT = 'car_issue_report',
 }
 
 export enum AuditStatus {

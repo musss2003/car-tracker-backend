@@ -31,6 +31,9 @@ export class CarIssueReport {
   @Column({ name: "reported_by", nullable: true })
   reportedById: string;
 
+  @CreateDateColumn({ name: "created_at" })
+  reportedAt: Date;
+
   // ----- Description of the issue -----
   @Column({ type: "text" })
   description: string;
@@ -62,9 +65,13 @@ export class CarIssueReport {
   @Column({ name: "resolved_at", type: "timestamp", nullable: true })
   resolvedAt?: Date;
 
-  // ----- Created / Updated timestamps -----
-  @CreateDateColumn({ name: "created_at" })
-  createdAt: Date;
+  // ----- Who last updated this report -----
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: "updated_by" })
+  updatedBy?: User;
+
+  @Column({ name: "updated_by", nullable: true })
+  updatedById?: string;
 
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt: Date;
