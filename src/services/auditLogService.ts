@@ -153,7 +153,6 @@ export class AuditLogService {
     const queryBuilder = this.auditLogRepository
       .createQueryBuilder('audit_log')
       .leftJoinAndSelect('audit_log.user', 'user')
-      .orderBy('audit_log.created_at', 'DESC')
       .skip(skip)
       .take(limit);
 
@@ -184,6 +183,9 @@ export class AuditLogService {
     if (filters.endDate) {
       queryBuilder.andWhere('audit_log.created_at <= :endDate', { endDate: filters.endDate });
     }
+
+    // Add orderBy after all where clauses
+    queryBuilder.orderBy('audit_log.created_at', 'DESC');
 
     const [logs, total] = await queryBuilder.getManyAndCount();
 
