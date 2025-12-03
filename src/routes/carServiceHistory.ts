@@ -1,6 +1,6 @@
 import express from 'express';
 import authenticate from '../middlewares/verifyJWT';
-import { createServiceRecord, deleteServiceRecord, getLatestServiceRecord, getRemainingKm, getServiceHistory } from '../controllers/carServiceHistory';
+import { createServiceRecord, deleteServiceRecord, getLatestServiceRecord, getRemainingKm, getServiceHistory, getServiceHistoryAuditLogs } from '../controllers/carServiceHistory';
 
 
 const router = express.Router();
@@ -37,6 +37,13 @@ router.get("/:carId/remaining-km", async (req, res) => {
   await getRemainingKm(req, res);
 });
 
+/**
+ * GET /api/car-service/record/:id/audit-logs
+ * Get audit logs for specific service record
+ */
+router.get('/record/:id/audit-logs', async (req, res) => {
+  await getServiceHistoryAuditLogs(req, res);
+});
 
 /**
  * DELETE /api/car-service/record/:id

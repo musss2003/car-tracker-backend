@@ -7,7 +7,8 @@ import {
   getLatestCarRegistration,
   deleteCarRegistration,
   getCarRegistrationById,
-  getRegistrationDaysRemaining
+  getRegistrationDaysRemaining,
+  getRegistrationAuditLogs
 } from "../controllers/carRegistration";
 
 const router = express.Router();
@@ -32,6 +33,14 @@ router.get("/car/:carId/registration-days-remaining", async (req, res) => {
 // -------------------------------------------------------------
 router.get("/car/:carId/latest", async (req, res) => {
   await getLatestCarRegistration(req, res);
+});
+
+// -------------------------------------------------------------
+// 📌 GET: Audit logs for specific registration
+// GET /api/car-registrations/:id/audit-logs
+// -------------------------------------------------------------
+router.get("/:id/audit-logs", async (req, res) => {
+  await getRegistrationAuditLogs(req, res);
 });
 
 // -------------------------------------------------------------

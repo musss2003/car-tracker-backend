@@ -31,6 +31,9 @@ export enum AuditResource {
   NOTIFICATION = 'notification',
   COUNTRY = 'country',
   CAR_ISSUE_REPORT = 'car_issue_report',
+  CAR_INSURANCE = 'car_insurance',
+  CAR_REGISTRATION = 'car_registration',
+  CAR_SERVICE_HISTORY = 'car_service_history',
 }
 
 export enum AuditStatus {

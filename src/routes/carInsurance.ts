@@ -1,6 +1,6 @@
 import express from "express";
 import authenticate from "../middlewares/verifyJWT";
-import { createInsuranceRecord, deleteInsuranceRecord, getCarInsuranceHistory, getLatestInsurance, updateCarInsuranceRecord } from "../controllers/carInsurance";
+import { createInsuranceRecord, deleteInsuranceRecord, getCarInsuranceHistory, getLatestInsurance, updateCarInsuranceRecord, getInsuranceAuditLogs } from "../controllers/carInsurance";
 
 
 const router = express.Router();
@@ -35,6 +35,14 @@ router.get("/:carId/latest", async (req, res) => {
 
 router.put("/:carId", async (req, res) => {
   await updateCarInsuranceRecord(req, res);
+});
+
+/**
+ * GET /api/car-insurance/record/:id/audit-logs
+ * Get audit logs for specific insurance record
+ */
+router.get("/record/:id/audit-logs", async (req, res) => {
+  await getInsuranceAuditLogs(req, res);
 });
 
 /**
