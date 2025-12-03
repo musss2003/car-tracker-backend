@@ -17,7 +17,7 @@ import {
   getPendingNotification,
   markNotificationSent,
   downloadContractDocx
-} from '../controllers/contract.refactored';
+} from '../controllers/contract.controller';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();

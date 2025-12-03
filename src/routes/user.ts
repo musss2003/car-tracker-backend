@@ -1,5 +1,14 @@
-import express, { Request, Response } from 'express';
-import { getUser, updateUser, deleteUser, getUsers, createUser, resetUserPassword, changeUserPassword } from '../controllers/user';
+import express from 'express';
+import {
+  getUsers,
+  getUser,
+  createUser,
+  updateUser,
+  changeUserPassword,
+  resetUserPassword,
+  deleteUser,
+  searchUsers,
+} from '../controllers/user.refactored';
 import authenticate from '../middlewares/verifyJWT';
 import verifyRole from '../middlewares/verifyRole';
 
@@ -8,39 +17,28 @@ const router = express.Router();
 // Middleware to verify JWT for all routes
 router.use(authenticate);
 
-// Route to get all users
-router.get('/', async (req: Request, res: Response) => {
-  await getUsers(req, res);
-});
+// Search users
+router.get('/search', searchUsers);
 
-// Route to get user by ID
-router.get('/:id', async (req: Request, res: Response) => {
-  await getUser(req, res);
-});
+// Get all users
+router.get('/', getUsers);
 
-// Route to create a new user (admin only)
-router.post('/', verifyRole(['admin']), async (req: Request, res: Response) => {
-  await createUser(req, res);
-});
+// Get user by ID
+router.get('/:id', getUser);
 
-// Route to reset user password (admin only)
-router.post('/:id/reset-password', verifyRole(['admin']), async (req: Request, res: Response) => {
-  await resetUserPassword(req, res);
-});
+// Create a new user (admin only)
+router.post('/', verifyRole(['admin']), createUser);
 
-// Route to change user password (user must verify current password)
-router.put('/:id/password', async (req: Request, res: Response) => {
-  await changeUserPassword(req, res);
-});
+// Reset user password (admin only)
+router.post('/:id/reset-password', verifyRole(['admin']), resetUserPassword);
 
-// Route to update user by ID
-router.put('/:id', async (req: Request, res: Response) => {
-  await updateUser(req, res);
-});
+// Change user password (user must verify current password)
+router.put('/:id/password', changeUserPassword);
 
-// Route to delete user by ID (admin only)
-router.delete('/:id', verifyRole(['admin']), async (req: Request, res: Response) => {
-  await deleteUser(req, res);
-});
+// Update user by ID
+router.put('/:id', updateUser);
+
+// Delete user by ID (admin only)
+router.delete('/:id', verifyRole(['admin']), deleteUser);
 
 export default router;

@@ -20,7 +20,7 @@ import {
   unarchiveCar,
   updateCarMileage,
   getCarsWithLowMileage
-} from '../controllers/car.refactored';
+} from '../controllers/car.controller';
 import authenticate from '../middlewares/verifyJWT';
 
 

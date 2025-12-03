@@ -11,7 +11,7 @@ import {
   getServicesDueSoon,
   getTotalServiceCost,
   getServiceHistoryAuditLogs
-} from '../controllers/carServiceHistory.refactored';
+} from '../controllers/carServiceHistory.controller';
 
 
 const router = express.Router();

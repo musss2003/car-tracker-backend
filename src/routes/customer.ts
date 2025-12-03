@@ -14,7 +14,7 @@ import {
   getCustomersByCountry,
   getCustomersByCity,
   getRecentCustomers
-} from '../controllers/customer.refactored';
+} from '../controllers/customer.controller';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();

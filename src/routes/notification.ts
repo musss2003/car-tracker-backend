@@ -1,55 +1,51 @@
-import express, { Request, Response } from "express";
-
-import authenticate from "../middlewares/verifyJWT";
+import express from 'express';
+import authenticate from '../middlewares/verifyJWT';
 import {
-  createNotification,
-  deleteNotification,
-  getNotification,
   getNotifications,
   getUnreadNotifications,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
+  getNotification,
+  createNotification,
   updateNotification,
-} from "../controllers/notification";
-import { notifyAdmins } from "../services/notificationService";
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
+  getUnreadCount,
+  getRecentNotifications,
+} from '../controllers/notification.refactored';
 
 const router = express.Router();
 
 // Middleware to verify JWT for all routes
 router.use(authenticate);
 
+// Mark all notifications as read
+router.patch('/mark-all-seen', markAllNotificationsAsRead);
 
-router.patch("/mark-all-seen", async (req: Request, res: Response) => {
-  await markAllNotificationsAsRead(req, res);
-});
+// Mark notification as read
+router.patch('/:id/seen', markNotificationAsRead);
 
-router.patch("/:id/seen", async (req: Request, res: Response) => {
-  await markNotificationAsRead(req, res);
-});
+// Get unread count
+router.get('/unread/count', getUnreadCount);
 
-// Route to get new (unseen) notifications
-router.get("/unread", async (req: Request, res: Response) => {
-  await getUnreadNotifications(req, res);
-});
+// Get unread notifications
+router.get('/unread', getUnreadNotifications);
 
-// Route to get notification by ID
-router.get("/:id", async (req: Request, res: Response) => {
-  await getNotification(req, res);
-});
+// Get recent notifications
+router.get('/recent', getRecentNotifications);
 
-// Route to get all notifications
-router.get("/", async (req: Request, res: Response) => {
-  await getNotifications(req, res);
-});
+// Get notification by ID
+router.get('/:id', getNotification);
 
-// Route to update notification by ID
-router.put("/:id", async (req: Request, res: Response) => {
-  await updateNotification(req, res);
-});
+// Get all notifications
+router.get('/', getNotifications);
 
-// Route to delete notification by ID
-router.delete("/:id", async (req: Request, res: Response) => {
-  await deleteNotification(req, res);
-});
+// Create notification (system/admin)
+router.post('/', createNotification);
+
+// Update notification by ID
+router.put('/:id', updateNotification);
+
+// Delete notification by ID
+router.delete('/:id', deleteNotification);
 
 export default router;

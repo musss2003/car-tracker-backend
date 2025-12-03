@@ -11,7 +11,7 @@ import {
   getIssueReportsByStatus,
   getIssueReportsBySeverity,
   getIssueReportAuditLogs
-} from "../controllers/carIssueReport.refactored";
+} from "../controllers/carIssueReport.controller";
 import authenticate from "../middlewares/verifyJWT";
 
 const router = Router();

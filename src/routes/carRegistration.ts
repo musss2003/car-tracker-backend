@@ -10,7 +10,7 @@ import {
   getActiveRegistration,
   getExpiringRegistrations,
   getRegistrationAuditLogs
-} from "../controllers/carRegistration.refactored";
+} from "../controllers/carRegistration.controller";
 
 const router = express.Router();
 
