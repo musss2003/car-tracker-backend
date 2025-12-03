@@ -1,15 +1,17 @@
 import { Router } from "express";
 import {
-  createIssueReport,
-  getAllIssueReports,
-  getIssueReportsForCar,
-  getSingleIssueReport,
-  updateIssueReportStatus,
-  deleteIssueReport,
+  createCarIssueReport,
+  getAllCarIssueReports,
+  getCarIssueReportsForCar,
+  getSingleCarIssueReport,
+  updateCarIssueReportStatus,
+  deleteCarIssueReport,
   getNewCarIssueReports,
   getNewCarIssueReportsByCar,
+  getIssueReportsByStatus,
+  getIssueReportsBySeverity,
   getIssueReportAuditLogs
-} from "../controllers/carIssueReport";
+} from "../controllers/carIssueReport.refactored";
 import authenticate from "../middlewares/verifyJWT";
 
 const router = Router();
@@ -17,49 +19,36 @@ const router = Router();
 router.use(authenticate);
 
 // CREATE new issue report
-router.post("/", async (req, res) => {
-  await createIssueReport(req, res);
-});
+router.post("/", createCarIssueReport);
 
 // GET all issue reports
-router.get("/", async (req, res) => {
-  await getAllIssueReports(req, res);
-});
+router.get("/", getAllCarIssueReports);
+
+// GET all new issue reports (must be before /:id)
+router.get("/reports/new", getNewCarIssueReports);
+
+// GET issues by status
+router.get("/status/:status", getIssueReportsByStatus);
+
+// GET issues by severity
+router.get("/severity/:severity", getIssueReportsBySeverity);
 
 // GET all issues for specific car
-router.get("/car/:carId", async (req, res) => {
-  await getIssueReportsForCar(req, res);
-});
+router.get("/car/:carId", getCarIssueReportsForCar);
+
+// GET all new issue reports for specific car
+router.get("/car/:carId/new", getNewCarIssueReportsByCar);
 
 // GET audit logs for a specific issue report
-router.get("/:id/audit-logs", async (req, res) => {
-  await getIssueReportAuditLogs(req, res);
-});
+router.get("/:id/audit-logs", getIssueReportAuditLogs);
 
 // GET single issue report
-router.get("/:id", async (req, res) => {
-  await getSingleIssueReport(req, res);
-});
-
-// GET all new issue reports
-router.get("/car/:carId/new", async (req, res) => {
-  await getNewCarIssueReportsByCar(req, res);
-});
-
-// GET all new issue reports
-router.get("/reports/new", async (req, res) => {
-  await getNewCarIssueReports(req, res);
-});
-
+router.get("/:id", getSingleCarIssueReport);
 
 // UPDATE issue report status OR severity OR description
-router.patch("/:id", async (req, res) => {
-  await updateIssueReportStatus(req, res);
-});
+router.patch("/:id", updateCarIssueReportStatus);
 
 // DELETE issue report
-router.delete("/:id", async (req, res) => {
-  await deleteIssueReport(req, res);
-});
+router.delete("/:id", deleteCarIssueReport);
 
 export default router;

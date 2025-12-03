@@ -4,12 +4,13 @@ import authenticate from "../middlewares/verifyJWT";
 import {
   createCarRegistration,
   getCarRegistrations,
-  getLatestCarRegistration,
+  getRegistrationRecord,
+  updateCarRegistration,
   deleteCarRegistration,
-  getCarRegistrationById,
-  getRegistrationDaysRemaining,
+  getActiveRegistration,
+  getExpiringRegistrations,
   getRegistrationAuditLogs
-} from "../controllers/carRegistration";
+} from "../controllers/carRegistration.refactored";
 
 const router = express.Router();
 
@@ -17,54 +18,51 @@ const router = express.Router();
 router.use(authenticate);
 
 // -------------------------------------------------------------
-// 📌 GET: All registrations for a car
-// GET /api/car-registrations/car/:carId
+// 📌 POST: Create new registration renewal
+// POST /api/car-registrations
 // -------------------------------------------------------------
-router.get("/car/:carId", async (req, res) => {
-  await getCarRegistrations(req, res);
-});
+router.post("/", createCarRegistration);
 
-router.get("/car/:carId/registration-days-remaining", async (req, res) => {
-  await getRegistrationDaysRemaining(req, res);
-});
 // -------------------------------------------------------------
-// 📌 GET: Latest registration for a car
-// GET /api/car-registrations/car/:carId/latest
+// 📌 GET: Registrations expiring soon
+// GET /api/car-registrations/expiring
 // -------------------------------------------------------------
-router.get("/car/:carId/latest", async (req, res) => {
-  await getLatestCarRegistration(req, res);
-});
+router.get("/expiring", getExpiringRegistrations);
 
 // -------------------------------------------------------------
 // 📌 GET: Audit logs for specific registration
 // GET /api/car-registrations/:id/audit-logs
 // -------------------------------------------------------------
-router.get("/:id/audit-logs", async (req, res) => {
-  await getRegistrationAuditLogs(req, res);
-});
+router.get("/:id/audit-logs", getRegistrationAuditLogs);
 
 // -------------------------------------------------------------
 // 📌 GET: Specific registration by ID
 // GET /api/car-registrations/:id
 // -------------------------------------------------------------
-router.get("/:id", async (req, res) => {
-  await getCarRegistrationById(req, res);
-});
+router.get("/:id", getRegistrationRecord);
 
 // -------------------------------------------------------------
-// 📌 POST: Create new registration renewal
-// POST /api/car-registrations
+// 📌 PUT: Update a registration record
+// PUT /api/car-registrations/:id
 // -------------------------------------------------------------
-router.post("/", async (req, res) => {
-  await createCarRegistration(req, res);
-});
+router.put("/:id", updateCarRegistration);
 
 // -------------------------------------------------------------
 // 📌 DELETE: Delete a registration record
 // DELETE /api/car-registrations/:id
 // -------------------------------------------------------------
-router.delete("/:id", async (req, res) => {
-  await deleteCarRegistration(req, res);
-});
+router.delete("/:id", deleteCarRegistration);
+
+// -------------------------------------------------------------
+// 📌 GET: All registrations for a car
+// GET /api/car-registrations/car/:carId
+// -------------------------------------------------------------
+router.get("/car/:carId", getCarRegistrations);
+
+// -------------------------------------------------------------
+// 📌 GET: Active registration for a car
+// GET /api/car-registrations/car/:carId/active
+// -------------------------------------------------------------
+router.get("/car/:carId/active", getActiveRegistration);
 
 export default router;

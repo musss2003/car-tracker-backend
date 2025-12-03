@@ -16,6 +16,7 @@ import documentsRoutes from "./routes/upload";
 import auditLogRoutes from './routes/auditLog';
 import activityRoutes from './routes/activity';
 import { auditLogMiddleware } from './middlewares/auditLog';
+import { errorHandler, notFoundHandler } from './common/errors/error-handler';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -306,6 +307,10 @@ app.get('/health', async (req: Request, res: Response) => {
 app.get('/routes', (req: Request, res: Response) => {
     res.status(200).send(endPoints(app));
 });
+
+// Error handling middleware - must be last
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Export io for use in other modules
 export { io };

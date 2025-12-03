@@ -1,6 +1,17 @@
 import express from 'express';
 import authenticate from '../middlewares/verifyJWT';
-import { createServiceRecord, deleteServiceRecord, getLatestServiceRecord, getRemainingKm, getServiceHistory, getServiceHistoryAuditLogs } from '../controllers/carServiceHistory';
+import {
+  createServiceRecord,
+  getServiceHistory,
+  getServiceRecord,
+  updateServiceRecord,
+  deleteServiceRecord,
+  getLatestService,
+  getServicesByType,
+  getServicesDueSoon,
+  getTotalServiceCost,
+  getServiceHistoryAuditLogs
+} from '../controllers/carServiceHistory.refactored';
 
 
 const router = express.Router();
@@ -12,45 +23,60 @@ router.use(authenticate);
  * POST /api/car-service/:carId
  * Create a new service record
  */
-router.post('/:carId', async (req, res) => {
-  await createServiceRecord(req, res);
-});
+router.post('/:carId', createServiceRecord);
 
 /**
- * GET /api/car-service/:carId
- * Get full service history for a car
+ * GET /api/car-service/due-soon
+ * Get services due soon (by interval)
  */
-router.get('/:carId', async (req, res) => {
-  await getServiceHistory(req, res);
-});
-
-/**
- * GET /api/car-service/:carId/latest
- * Get the latest service entry
- */
-router.get('/:carId/latest', async (req, res) => {
-  await getLatestServiceRecord(req, res);
-});
-
-
-router.get("/:carId/remaining-km", async (req, res) => {
-  await getRemainingKm(req, res);
-});
+router.get('/due-soon', getServicesDueSoon);
 
 /**
  * GET /api/car-service/record/:id/audit-logs
  * Get audit logs for specific service record
  */
-router.get('/record/:id/audit-logs', async (req, res) => {
-  await getServiceHistoryAuditLogs(req, res);
-});
+router.get('/record/:id/audit-logs', getServiceHistoryAuditLogs);
+
+/**
+ * GET /api/car-service/record/:id
+ * Get single service record
+ */
+router.get('/record/:id', getServiceRecord);
+
+/**
+ * PUT /api/car-service/record/:id
+ * Update service record
+ */
+router.put('/record/:id', updateServiceRecord);
 
 /**
  * DELETE /api/car-service/record/:id
  * Delete specific service entry
  */
-router.delete('/record/:id', async (req, res) => {
-  await deleteServiceRecord(req, res);
-});
+router.delete('/record/:id', deleteServiceRecord);
+
+/**
+ * GET /api/car-service/:carId
+ * Get full service history for a car
+ */
+router.get('/:carId', getServiceHistory);
+
+/**
+ * GET /api/car-service/:carId/latest
+ * Get the latest service entry
+ */
+router.get('/:carId/latest', getLatestService);
+
+/**
+ * GET /api/car-service/:carId/total-cost
+ * Get total cost of services for a car
+ */
+router.get('/:carId/total-cost', getTotalServiceCost);
+
+/**
+ * GET /api/car-service/:carId/by-type/:serviceType
+ * Get services by type for a car
+ */
+router.get('/:carId/by-type/:serviceType', getServicesByType);
 
 export default router;

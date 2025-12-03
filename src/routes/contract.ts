@@ -1,14 +1,23 @@
 import express, { Request, Response } from 'express';
 import {
+  getContracts,
   getContract,
   createContract,
   updateContract,
   deleteContract,
-  getContracts,
+  getContractsByCustomer,
+  getContractsByCar,
   getActiveContracts,
+  getExpiringContracts,
+  getExpiredContracts,
+  getContractsByDateRange,
+  checkCarAvailability,
   getTotalRevenue,
-  downloadContractDocx,
-} from '../controllers/contract';
+  getRevenueByDateRange,
+  getPendingNotification,
+  markNotificationSent,
+  downloadContractDocx
+} from '../controllers/contract.refactored';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();
@@ -16,52 +25,55 @@ const router = express.Router();
 // Middleware to verify JWT for all contract routes
 router.use(authenticate);
 
+// Route to get all contracts
+router.get('/', getContracts);
+
 // Route to create a new contract
-router.post('/', async (req: Request, res: Response) => {
-  await createContract(req, res);
-});
+router.post('/', createContract);
 
+// POST: Check car availability
+router.post('/check-availability', checkCarAvailability);
 
-// Route to get all contracts
-router.get('/', async (req: Request, res: Response) => {
-  await getContract(req, res);
-});
+// POST: Get contracts by date range
+router.post('/date-range', getContractsByDateRange);
 
-// Route to get all contracts
-router.get('/all', async (req: Request, res: Response) => {
-  await getContracts(req, res);
-});
+// POST: Get revenue by date range
+router.post('/revenue/date-range', getRevenueByDateRange);
 
-// Route to get all contracts
-router.get('/active', async (req: Request, res: Response) => {
-  await getActiveContracts(req, res);
-});
+// GET: Active contracts
+router.get('/active', getActiveContracts);
 
-// Route to get all contracts
-router.get('/revenue', async (req: Request, res: Response) => {
-  await getTotalRevenue(req, res);
-});
+// GET: Expiring contracts
+router.get('/expiring', getExpiringContracts);
 
+// GET: Expired contracts
+router.get('/expired', getExpiredContracts);
 
-// Route to get contract by ID
-router.get('/:id', async (req: Request, res: Response) => {
-  await getContract(req, res);
-});
+// GET: Pending notification contracts
+router.get('/pending-notification', getPendingNotification);
 
-// Route to download the generated DOCX file
-router.get('/download/:id', async (req: Request, res: Response) => {
-  await downloadContractDocx(req, res);
-});
+// GET: Total revenue
+router.get('/revenue/total', getTotalRevenue);
 
+// GET: Contracts by customer
+router.get('/customer/:customerId', getContractsByCustomer);
 
-// Route to update contract by ID
-router.put('/:id', async (req: Request, res: Response) => {
-  await updateContract(req, res);
-});
+// GET: Contracts by car
+router.get('/car/:carId', getContractsByCar);
 
-// Route to delete contract by ID
-router.delete('/:id', async (req: Request, res: Response) => {
-  await deleteContract(req, res);
-});
+// POST: Mark notification as sent
+router.post('/:id/mark-notification-sent', markNotificationSent);
+
+// GET: Download contract document
+router.get('/download/:id', downloadContractDocx);
+
+// GET: Get contract by ID
+router.get('/:id', getContract);
+
+// PUT: Update contract by ID
+router.put('/:id', updateContract);
+
+// DELETE: Delete contract by ID
+router.delete('/:id', deleteContract);
 
 export default router;
