@@ -7,12 +7,19 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
+  Index,
 } from "typeorm";
 import { Customer } from "./Customer";
 import { Car } from "./Car";
 import { User } from "./User";
 
 @Entity("contracts")
+@Index(['customerId']) // Index for customer's contracts
+@Index(['carId']) // Index for car's contracts
+@Index(['startDate']) // Index for date range queries
+@Index(['endDate']) // Index for expiring contracts
+@Index(['startDate', 'endDate']) // Composite index for date range overlaps
+@Index(['carId', 'startDate', 'endDate']) // Composite index for car availability
 export class Contract {
   @PrimaryGeneratedColumn("uuid")
   id: string;

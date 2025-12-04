@@ -6,6 +6,7 @@ import { User, UserRole } from "../models/User";
 import { RefreshToken } from "../models/RefreshToken";
 import dotenv from "dotenv";
 import { logAudit } from "../middlewares/auditLog";
+import { captureException, setUserContext, clearUserContext } from "../config/monitoring";
 
 dotenv.config();
 
@@ -87,6 +88,10 @@ export const register = async (
     });
   } catch (error: any) {
     console.error("Register error:", error);
+    captureException(error, {
+      tags: { operation: 'register' },
+      extra: { username: req.body.username, email: req.body.email }
+    });
     next(error);
   }
 };
@@ -150,8 +155,20 @@ export const login = async (
       role: user.role,
       accessToken,
     });
+
+    // Set user context for Sentry monitoring
+    setUserContext({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    });
   } catch (error: any) {
     console.error("Login error:", error);
+    captureException(error, {
+      tags: { operation: 'login' },
+      extra: { username: req.body.username }
+    });
     next(error);
   }
 };
@@ -174,6 +191,10 @@ export const updateUserRole = async (
 
     return res.send("User role updated successfully");
   } catch (error: any) {
+    captureException(error, {
+      tags: { operation: 'update-user-role' },
+      extra: { userId: req.body.userId, newRole: req.body.newRole }
+    });
     return res.status(500).send(error.message);
   }
 };

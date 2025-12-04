@@ -8,7 +8,7 @@ import { CreateUserDto, UpdateUserDto, ChangePasswordDto, ResetPasswordDto } fro
 import { ConflictError, NotFoundError, ValidationError, UnauthorizedError } from '../common/errors';
 import { RefreshToken } from '../models/RefreshToken';
 import { AppDataSource } from '../config/db';
-import { sendCredentialsEmail, sendPasswordResetEmail } from './emailService';
+import { queueCredentialsEmail, queuePasswordResetEmail } from '../queues/email.queue';
 import { logAudit } from '../common/decorators/audit.decorator';
 import { notifyAdmins } from './notificationService';
 import { Server as SocketIOServer } from 'socket.io';
@@ -58,12 +58,13 @@ export class UserService extends BaseService<User> {
       context
     );
 
-    // Send credentials email if requested
+    // Queue credentials email if requested (async background job)
     if ((data as any).sendCredentials) {
       try {
-        await sendCredentialsEmail(data.email, data.username, data.password, data.name);
+        await queueCredentialsEmail(data.email, data.username, data.password, data.name);
+        console.log(`✅ Credentials email queued for ${data.email}`);
       } catch (error) {
-        console.error('Failed to send credentials email:', error);
+        console.error('Failed to queue credentials email:', error);
       }
     }
 
@@ -215,12 +216,13 @@ export class UserService extends BaseService<User> {
     const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
     await refreshTokenRepository.delete({ userId });
 
-    // Send password reset email if requested
+    // Queue password reset email if requested (async background job)
     if (data.sendEmail) {
       try {
-        await sendPasswordResetEmail(user.email, user.username, data.newPassword, user.name);
+        await queuePasswordResetEmail(user.email, user.username, data.newPassword, user.name);
+        console.log(`✅ Password reset email queued for ${user.email}`);
       } catch (error) {
-        console.error('Failed to send password reset email:', error);
+        console.error('Failed to queue password reset email:', error);
       }
     }
 

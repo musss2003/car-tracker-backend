@@ -8,7 +8,7 @@ import {
   resetUserPassword,
   deleteUser,
   searchUsers,
-} from '../controllers/user.refactored';
+} from '../controllers/user.controller';
 import authenticate from '../middlewares/verifyJWT';
 import verifyRole from '../middlewares/verifyRole';
 

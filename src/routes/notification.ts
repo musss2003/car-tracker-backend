@@ -11,7 +11,7 @@ import {
   deleteNotification,
   getUnreadCount,
   getRecentNotifications,
-} from '../controllers/notification.refactored';
+} from '../controllers/notification.controller';
 
 const router = express.Router();
 

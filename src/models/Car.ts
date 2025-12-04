@@ -7,6 +7,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  Index,
 } from "typeorm";
 import User from "./User";
 import CarRegistration from "./CarRegistration";
@@ -26,6 +27,12 @@ export type CarCategory =
   | "business";
 
 @Entity("cars")
+@Index(['licensePlate']) // Index for license plate lookups
+@Index(['status']) // Index for filtering by status
+@Index(['manufacturer']) // Index for filtering by manufacturer
+@Index(['category']) // Index for filtering by category
+@Index(['status', 'isArchived']) // Composite index for available cars queries
+@Index(['manufacturer', 'model']) // Composite index for car search
 export class Car {
   @PrimaryGeneratedColumn("uuid")
   id: string;

@@ -1,6 +1,10 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { initializeTypeORM, AppDataSource } from './config/db';
+import { initializeSentry } from './config/monitoring';
+import { closeRedis } from './config/redis';
+import { apiLimiter, authLimiter } from './middlewares/rateLimit';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import contractRoutes from './routes/contract';
@@ -17,6 +21,7 @@ import auditLogRoutes from './routes/auditLog';
 import activityRoutes from './routes/activity';
 import { auditLogMiddleware } from './middlewares/auditLog';
 import { errorHandler, notFoundHandler } from './common/errors/error-handler';
+import { closeEmailQueue } from './queues/email.queue';
 import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -28,9 +33,12 @@ import { User } from './models/User'; // Import User model for online status tra
 import "reflect-metadata"; // Required for TypeORM
 import { testEmailConfiguration } from './services/emailService';
 import { scheduleExpiringContractsCheck, scheduleExpiredContractsCheck, setSocketIO } from './scripts/contractScheduler';
-
+import * as Sentry from '@sentry/node';
 
 dotenv.config();
+
+// ✅ Initialize Sentry for error tracking
+initializeSentry();
 
 const app: Application = express();
 const server = http.createServer(app); // Create the HTTP server
@@ -53,6 +61,17 @@ const io = new Server(server, {
     // Allow WebSocket transport
     transports: ['websocket', 'polling']
 });
+
+// ✅ Response compression (gzip)
+app.use(compression({
+  filter: (req: Request, res: Response) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6, // Compression level (0-9)
+}));
 
 app.use(cors({
     origin: function (origin, callback) {
@@ -246,41 +265,81 @@ const startServer = async () => {
   }
 };
 
-// Handle graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('📴 SIGTERM received, shutting down gracefully...');
-  if (AppDataSource.isInitialized) {
-    await AppDataSource.destroy();
-  }
-  process.exit(0);
+// ✅ Graceful shutdown handler
+const gracefulShutdown = async (signal: string) => {
+  console.log(`\n${signal} received, starting graceful shutdown...`);
+  
+  // Stop accepting new connections
+  server.close(async () => {
+    console.log('✅ HTTP server closed');
+    
+    try {
+      // Close Socket.IO
+      io.close(() => {
+        console.log('✅ Socket.IO closed');
+      });
+      
+      // Close database connections
+      if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+        console.log('✅ Database connections closed');
+      }
+      
+      // Close Redis connections
+      await closeRedis();
+      
+      // Close email queue
+      await closeEmailQueue();
+      
+      console.log('✅ Graceful shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error);
+      process.exit(1);
+    }
+  });
+  
+  // Force shutdown after 35 seconds
+  setTimeout(() => {
+    console.error('⚠️  Forced shutdown after timeout');
+    process.exit(1);
+  }, 35000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  Sentry.captureException(reason);
 });
 
-process.on('SIGINT', async () => {
-  console.log('📴 SIGINT received, shutting down gracefully...');
-  if (AppDataSource.isInitialized) {
-    await AppDataSource.destroy();
-  }
-  process.exit(0);
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  Sentry.captureException(error);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
 
 // Note: Multer is configured per-route, not globally
 // Each route that needs file upload should configure its own multer middleware
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/contracts', contractRoutes);
-app.use('/api/cars', carRoutes); // Register the car routes
-app.use('/api/car-registration', carRegistrationRoutes); // Register the car registrations routes
-app.use('/api/car-insurance', carInsuranceRoutes); // Register the car insurances routes
-app.use('/api/car-service-history', carServiceRoutes); // Register the car services routes
-app.use("/api/car-issue-report", carIssueReportRoutes);
-app.use('/api/customers', customerRoutes); // Register the customer routes
-app.use('/api/notifications', notificationRoutes); // manipulate notifications
-app.use('/api/countries', countryRoutes); // Register the countries routes
-app.use('/api/audit-logs', auditLogRoutes); // Register audit log routes
-app.use('/api/activity', activityRoutes); // Register activity tracking routes
-app.use("/api", documentsRoutes);
+// Routes with rate limiting
+app.use('/api/auth', authLimiter, authRoutes); // ✅ Strict rate limit for auth
+app.use('/api/users', apiLimiter, userRoutes);
+app.use('/api/contracts', apiLimiter, contractRoutes);
+app.use('/api/cars', apiLimiter, carRoutes);
+app.use('/api/car-registration', apiLimiter, carRegistrationRoutes);
+app.use('/api/car-insurance', apiLimiter, carInsuranceRoutes);
+app.use('/api/car-service-history', apiLimiter, carServiceRoutes);
+app.use("/api/car-issue-report", apiLimiter, carIssueReportRoutes);
+app.use('/api/customers', apiLimiter, customerRoutes);
+app.use('/api/notifications', apiLimiter, notificationRoutes);
+app.use('/api/countries', apiLimiter, countryRoutes);
+app.use('/api/audit-logs', apiLimiter, auditLogRoutes);
+app.use('/api/activity', apiLimiter, activityRoutes);
+app.use("/api", apiLimiter, documentsRoutes);
 
 
 // Health check endpoint

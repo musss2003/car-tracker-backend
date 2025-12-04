@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import auditLogService from '../services/auditLogService';
 import { AuditAction, AuditResource, AuditStatus } from '../models/Auditlog';
+import { Cache } from '../common/decorators/cache.decorator';
 
 /**
  * Get audit logs with filters and pagination

@@ -46,15 +46,16 @@ export const AppDataSource = new DataSource({
   synchronize: process.env.NODE_ENV !== "production", // Only in development
   logging: process.env.NODE_ENV === "development",
   extra: {
-    // Connection pool settings for better stability
-    max: 10,
-    min: 1,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000, // Increased timeout
+    // ✅ Optimized Connection pool settings for scalability
+    max: parseInt(process.env.DB_POOL_MAX || '100'), // Maximum pool size (increased for high traffic)
+    min: parseInt(process.env.DB_POOL_MIN || '20'), // Minimum pool size
+    idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
+    connectionTimeoutMillis: 5000, // Fail fast if no connection available
     acquireTimeoutMillis: 60000,
-    statement_timeout: 60000,
-    query_timeout: 60000,
+    statement_timeout: 30000, // Query timeout: 30 seconds
+    query_timeout: 30000,
   },
+  poolSize: parseInt(process.env.DB_POOL_SIZE || '50'), // TypeORM pool size
   connectTimeoutMS: 10000, // Add connection timeout at root level
 });
 
