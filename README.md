@@ -916,7 +916,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Team
 
-- **Backend Lead:** [Your Name](https://github.com/musss2003)
+- **Backend Lead:** [Mustafa Sinanovic](https://github.com/musss2003)
 - **Contributors:** [View all contributors](https://github.com/musss2003/car-tracker-backend/graphs/contributors)
 
 ---
