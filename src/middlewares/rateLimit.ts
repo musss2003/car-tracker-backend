@@ -1,17 +1,29 @@
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import redis from '../config/redis';
+import { redis } from '../config/redis';
+
+/**
+ * Create Redis store with error handling
+ */
+const createRedisStore = (prefix: string) => {
+  try {
+    return new RedisStore({
+      // @ts-expect-error - Known typing issue with rate-limit-redis
+      sendCommand: (...args: string[]) => redis.call(...args),
+      prefix,
+    });
+  } catch (error) {
+    console.warn(`⚠️  Redis store creation failed for ${prefix}, using memory store`);
+    return undefined; // Falls back to memory store
+  }
+};
 
 /**
  * General API rate limiter
  * 100 requests per 15 minutes per IP
  */
 export const apiLimiter = rateLimit({
-  store: new RedisStore({
-    // @ts-expect-error - Known typing issue with rate-limit-redis
-    sendCommand: (...args: string[]) => redis.call(...args),
-    prefix: 'rl:api:',
-  }),
+  store: createRedisStore('rl:api:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Max 100 requests per window
   message: {
@@ -33,11 +45,7 @@ export const apiLimiter = rateLimit({
  * 5 requests per 15 minutes per IP
  */
 export const authLimiter = rateLimit({
-  store: new RedisStore({
-    // @ts-expect-error - Known typing issue with rate-limit-redis
-    sendCommand: (...args: string[]) => redis.call(...args),
-    prefix: 'rl:auth:',
-  }),
+  store: createRedisStore('rl:auth:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Max 5 login attempts
   message: {
@@ -55,11 +63,7 @@ export const authLimiter = rateLimit({
  * 50 requests per 15 minutes per IP
  */
 export const writeLimiter = rateLimit({
-  store: new RedisStore({
-    // @ts-expect-error - Known typing issue with rate-limit-redis
-    sendCommand: (...args: string[]) => redis.call(...args),
-    prefix: 'rl:write:',
-  }),
+  store: createRedisStore('rl:write:'),
   windowMs: 15 * 60 * 1000,
   max: 50,
   message: {
@@ -76,11 +80,7 @@ export const writeLimiter = rateLimit({
  * 200 requests per 15 minutes per IP
  */
 export const readLimiter = rateLimit({
-  store: new RedisStore({
-    // @ts-expect-error - Known typing issue with rate-limit-redis
-    sendCommand: (...args: string[]) => redis.call(...args),
-    prefix: 'rl:read:',
-  }),
+  store: createRedisStore('rl:read:'),
   windowMs: 15 * 60 * 1000,
   max: 200,
   message: {
