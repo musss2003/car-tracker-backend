@@ -20,12 +20,12 @@ const createRedisStore = (prefix: string) => {
 
 /**
  * General API rate limiter
- * 100 requests per 15 minutes per IP
+ * 1000 requests per 15 minutes per IP (reasonable for normal usage)
  */
 export const apiLimiter = rateLimit({
   store: createRedisStore('rl:api:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Max 100 requests per window
+  max: 1000, // Max 1000 requests per window
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
@@ -42,12 +42,12 @@ export const apiLimiter = rateLimit({
 
 /**
  * Strict rate limiter for authentication endpoints
- * 5 requests per 15 minutes per IP
+ * 10 requests per 15 minutes per IP (allows for typos/retries)
  */
 export const authLimiter = rateLimit({
   store: createRedisStore('rl:auth:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Max 5 login attempts
+  max: 10, // Max 10 login attempts
   message: {
     success: false,
     message: 'Too many authentication attempts, please try again later.',
@@ -60,12 +60,12 @@ export const authLimiter = rateLimit({
 
 /**
  * Moderate rate limiter for write operations
- * 50 requests per 15 minutes per IP
+ * 300 requests per 15 minutes per IP
  */
 export const writeLimiter = rateLimit({
   store: createRedisStore('rl:write:'),
   windowMs: 15 * 60 * 1000,
-  max: 50,
+  max: 300,
   message: {
     success: false,
     message: 'Too many write requests, please slow down.',
@@ -77,12 +77,12 @@ export const writeLimiter = rateLimit({
 
 /**
  * Lenient rate limiter for read operations
- * 200 requests per 15 minutes per IP
+ * 2000 requests per 15 minutes per IP
  */
 export const readLimiter = rateLimit({
   store: createRedisStore('rl:read:'),
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 2000,
   message: {
     success: false,
     message: 'Too many read requests, please slow down.',
