@@ -4,6 +4,7 @@ import { ContractRepository } from '../repositories/contract.repository';
 import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
+import { validate as isUUID } from 'uuid';
 import path from 'path';
 import fs from 'fs';
 
@@ -25,6 +26,16 @@ export const getContracts = asyncHandler(async (req: Request, res: Response) => 
  */
 export const getContract = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid contract ID format',
+      data: null
+    });
+  }
+  
   const contract = await contractService.getById(id);
   res.json(createSuccessResponse(contract, 'Contract retrieved successfully'));
 });
@@ -45,6 +56,16 @@ export const createContract = asyncHandler(async (req: Request, res: Response) =
  */
 export const updateContract = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid contract ID format',
+      data: null
+    });
+  }
+  
   const context = extractAuditContext(req);
   const contract = await contractService.update(id, req.body, context);
   res.json(createSuccessResponse(contract, 'Contract updated successfully'));
@@ -56,6 +77,16 @@ export const updateContract = asyncHandler(async (req: Request, res: Response) =
  */
 export const deleteContract = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid contract ID format',
+      data: null
+    });
+  }
+  
   const context = extractAuditContext(req);
   await contractService.delete(id, context);
   res.json(createSuccessResponse(null, 'Contract deleted successfully'));
@@ -67,6 +98,16 @@ export const deleteContract = asyncHandler(async (req: Request, res: Response) =
  */
 export const getContractsByCustomer = asyncHandler(async (req: Request, res: Response) => {
   const { customerId } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(customerId)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid customer ID format',
+      data: null
+    });
+  }
+  
   const contracts = await contractService.getByCustomerId(customerId);
   res.json(createSuccessResponse(contracts, 'Contracts retrieved successfully'));
 });
@@ -77,6 +118,16 @@ export const getContractsByCustomer = asyncHandler(async (req: Request, res: Res
  */
 export const getContractsByCar = asyncHandler(async (req: Request, res: Response) => {
   const { carId } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(carId)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid car ID format',
+      data: null
+    });
+  }
+  
   const contracts = await contractService.getByCarId(carId);
   res.json(createSuccessResponse(contracts, 'Contracts retrieved successfully'));
 });
@@ -167,6 +218,16 @@ export const getPendingNotification = asyncHandler(async (req: Request, res: Res
  */
 export const markNotificationSent = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid contract ID format',
+      data: null
+    });
+  }
+  
   await contractService.markNotificationSent(id);
   res.json(createSuccessResponse(null, 'Notification marked as sent'));
 });
@@ -177,6 +238,16 @@ export const markNotificationSent = asyncHandler(async (req: Request, res: Respo
  */
 export const downloadContractDocx = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid contract ID format',
+      data: null
+    });
+  }
+  
   const contract = await contractService.getById(id);
   
   // Assuming photoUrl contains the path to the generated contract file
