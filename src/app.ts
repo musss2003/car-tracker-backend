@@ -19,10 +19,10 @@ import countryRoutes from './routes/country';
 import documentsRoutes from "./routes/upload";
 import auditLogRoutes from './routes/auditLog';
 import activityRoutes from './routes/activity';
+import { getRoutesJSON, getAPIDocs } from './routes/docs';
 import { auditLogMiddleware } from './middlewares/auditLog';
 import { errorHandler, notFoundHandler } from './common/errors/error-handler';
 import { closeEmailQueue } from './queues/email.queue';
-import endPoints from 'express-list-endpoints';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import path from 'path';
@@ -362,10 +362,9 @@ app.get('/health', async (req: Request, res: Response) => {
   }
 });
 
-// List all routes
-app.get('/routes', (req: Request, res: Response) => {
-    res.status(200).send(endPoints(app));
-});
+// Documentation routes (public in development, can add auth for production)
+app.get('/routes', getRoutesJSON(app));
+app.get('/api-docs', getAPIDocs(app));
 
 // Error handling middleware - must be last
 app.use(notFoundHandler);
