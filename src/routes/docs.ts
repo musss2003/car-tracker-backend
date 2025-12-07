@@ -29,6 +29,23 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
         groupedRoutes[basePath].push(route);
     });
 
+    // Helper function to map routes to TypeORM models
+    const getModelFromPath = (path: string): string => {
+        if (path.includes('/users')) return 'User';
+        if (path.includes('/cars') && path.includes('/insurance')) return 'CarInsurance';
+        if (path.includes('/cars') && path.includes('/issues')) return 'CarIssueReport';
+        if (path.includes('/cars') && path.includes('/registrations')) return 'CarRegistration';
+        if (path.includes('/cars') && path.includes('/service')) return 'CarServiceHistory';
+        if (path.includes('/cars')) return 'Car';
+        if (path.includes('/contracts')) return 'Contract';
+        if (path.includes('/customers')) return 'Customer';
+        if (path.includes('/notifications')) return 'Notification';
+        if (path.includes('/countries')) return 'Country';
+        if (path.includes('/audit-logs')) return 'AuditLog';
+        if (path.includes('/auth')) return 'Auth';
+        return 'Other';
+    };
+
     // Helper function to determine response format based on path
     const getResponseFormat = (path: string, method: string): string => {
         // Auth endpoints return direct format
@@ -653,6 +670,7 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                         <span class="filter-label">Sort:</span>
                         <button class="filter-btn active" data-filter="sort" data-value="group">By Group</button>
                         <button class="filter-btn" data-filter="sort" data-value="alpha">Alphabetical</button>
+                        <button class="filter-btn" data-filter="sort" data-value="model">By Model</button>
                     </div>
                 </div>
             </div>
@@ -677,8 +695,10 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                             
                             const cardClass = isAdminOnly ? 'admin-only' : isNoAuth ? 'no-auth' : isAuthRequired ? 'auth-required' : '';
                             
+                            const modelName = getModelFromPath(route.path);
+                            
                             return `
-                                <div class="route-card ${cardClass}" data-path="${route.path}" data-methods="${route.methods.join(' ')}" data-auth="${isAdminOnly ? 'admin' : isNoAuth ? 'public' : isAuthRequired ? 'authenticated' : 'public'}">
+                                <div class="route-card ${cardClass}" data-path="${route.path}" data-methods="${route.methods.join(' ')}" data-auth="${isAdminOnly ? 'admin' : isNoAuth ? 'public' : isAuthRequired ? 'authenticated' : 'public'}" data-model="${modelName}">
                                     <div class="route-path">
                                         <span>${route.path}</span>
                                         <button class="copy-btn" onclick="copyToClipboard('${route.path}')">📋 Copy</button>
@@ -727,13 +747,30 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
             search: ''
         };
         
+        // Store original HTML for restoration
+        const routeGroupsContainer = document.getElementById('routeGroups');
+        const originalGroupsHTML = routeGroupsContainer.innerHTML;
+        
         // Elements
         const searchInput = document.getElementById('searchInput');
-        const groups = document.querySelectorAll('.group');
         const filterButtons = document.querySelectorAll('.filter-btn');
         
         // Apply all filters
         function applyFilters() {
+            // First, restore original grouping or apply sort
+            if (filters.sort === 'alpha') {
+                applySortAlphabetical();
+            } else if (filters.sort === 'model') {
+                applySortByModel();
+            } else {
+                // Restore original grouping if currently showing custom sort
+                if (routeGroupsContainer.querySelector('[data-group="all"]') || routeGroupsContainer.querySelector('[data-group="model-"]')) {
+                    routeGroupsContainer.innerHTML = originalGroupsHTML;
+                }
+            }
+            
+            // Now apply search and filters
+            const groups = document.querySelectorAll('.group');
             groups.forEach(group => {
                 let visibleCards = 0;
                 const cards = group.querySelectorAll('.route-card');
@@ -776,37 +813,91 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                     group.classList.remove('hidden');
                 }
             });
+        }
+        
+        // Apply alphabetical sorting
+        function applySortAlphabetical() {
+            const groups = routeGroupsContainer.querySelectorAll('.group');
+            const allCards = [];
             
-            // Sort functionality
-            if (filters.sort === 'alpha') {
-                const routeGroupsContainer = document.getElementById('routeGroups');
-                const groupsArray = Array.from(groups);
-                const allCards = [];
-                
-                groupsArray.forEach(group => {
-                    const cards = Array.from(group.querySelectorAll('.route-card'));
-                    allCards.push(...cards);
-                });
-                
-                // Sort cards alphabetically by path
-                allCards.sort((a, b) => {
-                    return a.dataset.path.localeCompare(b.dataset.path);
-                });
-                
-                // Create a single group with sorted cards
-                routeGroupsContainer.innerHTML = \`
-                    <div class="group" data-group="all">
+            groups.forEach(group => {
+                const cards = Array.from(group.querySelectorAll('.route-card'));
+                allCards.push(...cards);
+            });
+            
+            // Sort cards alphabetically by path
+            allCards.sort((a, b) => {
+                return a.dataset.path.localeCompare(b.dataset.path);
+            });
+            
+            // Create a single group with sorted cards
+            routeGroupsContainer.innerHTML = \`
+                <div class="group" data-group="all">
+                    <h2 class="group-title">
+                        <span>📋 All Routes (Alphabetical)</span>
+                        <span class="count">\${allCards.length}</span>
+                    </h2>
+                    \${allCards.map(card => card.outerHTML).join('')}
+                </div>
+            \`;
+        }
+        
+        // Apply model-based sorting
+        function applySortByModel() {
+            const groups = routeGroupsContainer.querySelectorAll('.group');
+            const allCards = [];
+            
+            groups.forEach(group => {
+                const cards = Array.from(group.querySelectorAll('.route-card'));
+                allCards.push(...cards);
+            });
+            
+            // Group by model
+            const modelGroups = {};
+            allCards.forEach(card => {
+                const model = card.dataset.model || 'Other';
+                if (!modelGroups[model]) {
+                    modelGroups[model] = [];
+                }
+                modelGroups[model].push(card);
+            });
+            
+            // Sort models alphabetically
+            const sortedModels = Object.keys(modelGroups).sort();
+            
+            // Model icons
+            const modelIcons = {
+                'User': '👤',
+                'Car': '🚗',
+                'CarInsurance': '🛡️',
+                'CarIssueReport': '⚠️',
+                'CarRegistration': '📋',
+                'CarServiceHistory': '🔧',
+                'Contract': '📄',
+                'Customer': '👥',
+                'Notification': '🔔',
+                'Country': '🌍',
+                'AuditLog': '📊',
+                'Auth': '🔐',
+                'Other': '📦'
+            };
+            
+            // Create groups by model
+            const html = sortedModels.map(model => {
+                const cards = modelGroups[model];
+                const icon = modelIcons[model] || '📦';
+                return \`
+                    <div class="group" data-group="model-\${model}">
                         <h2 class="group-title">
-                            <span>📋 All Routes (Alphabetical)</span>
-                            <span class="count">\${allCards.filter(c => !c.classList.contains('hidden')).length}</span>
+                            <span>\${icon} \${model} Model</span>
+                            <span class="count">\${cards.length}</span>
                         </h2>
-                        \${allCards.map(card => card.outerHTML).join('')}
+                        \${cards.map(card => card.outerHTML).join('')}
                     </div>
                 \`;
-            } else {
-                // Restore original grouping if needed
-                location.reload();
-            }
+            }).join('');
+            
+            routeGroupsContainer.innerHTML = html;
         }
         
         // Search functionality
