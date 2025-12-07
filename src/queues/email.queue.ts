@@ -1,12 +1,12 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
-import redis from '../config/redis';
+import { bullMQConnection } from '../config/redis';
 import { sendCredentialsEmail, sendPasswordResetEmail } from '../services/emailService';
 
 /**
  * Email queue for background processing
  */
 export const emailQueue = new Queue('emails', {
-  connection: redis,
+  connection: bullMQConnection,
   defaultJobOptions: {
     attempts: 3, // Retry failed jobs up to 3 times
     backoff: {
@@ -93,7 +93,7 @@ const emailWorker = new Worker<EmailJobData>(
     }
   },
   {
-    connection: redis,
+    connection: bullMQConnection,
     concurrency: 5, // Process up to 5 emails concurrently
     limiter: {
       max: 10, // Max 10 jobs per duration
@@ -105,7 +105,7 @@ const emailWorker = new Worker<EmailJobData>(
 /**
  * Queue events for monitoring
  */
-const queueEvents = new QueueEvents('emails', { connection: redis });
+const queueEvents = new QueueEvents('emails', { connection: bullMQConnection });
 
 queueEvents.on('completed', ({ jobId }) => {
   console.log(`✅ Email job ${jobId} completed`);

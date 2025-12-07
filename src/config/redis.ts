@@ -4,20 +4,35 @@ import Redis from 'ioredis';
  * Redis client configuration
  * Used for caching, rate limiting, and job queues
  */
-export const redis = new Redis({
+// Base Redis configuration
+const redisConfig = {
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
   password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || '0'),
-  retryStrategy: (times) => {
+  retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
     console.log(`Redis connection retry attempt ${times}, waiting ${delay}ms`);
     return delay;
   },
-  maxRetriesPerRequest: 3,
   enableReadyCheck: true,
   lazyConnect: false,
+};
+
+// Main Redis client for caching and rate limiting
+export const redis = new Redis({
+  ...redisConfig,
+  maxRetriesPerRequest: 3,
 });
+
+// Redis connection for BullMQ (requires maxRetriesPerRequest: null)
+export const bullMQConnection = {
+  host: process.env.REDIS_HOST || 'localhost',
+  port: parseInt(process.env.REDIS_PORT || '6379'),
+  password: process.env.REDIS_PASSWORD || undefined,
+  db: parseInt(process.env.REDIS_DB || '0'),
+  maxRetriesPerRequest: null,
+};
 
 // Event listeners
 redis.on('connect', () => {
