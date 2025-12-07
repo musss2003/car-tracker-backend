@@ -122,19 +122,33 @@ export class CarServiceHistoryService extends BaseService<
    * Get km remaining until next service for a car
    */
   async getKmRemaining(carId: string, context?: AuditContext): Promise<number> {
-    const latestService = await this.getLatestByCarId(carId);
-    
-    if (!latestService || !latestService.nextServiceKm || !latestService.mileage) {
-      return 0;
-    }
-
     // Get current car mileage
     const car = await this.carRepository.findOne({ where: { id: carId } });
     if (!car || !car.mileage) {
       return 0;
     }
 
-    const remainingKm = latestService.nextServiceKm - car.mileage;
+    const currentMileage = car.mileage;
+
+    // Get all service records for this car
+    const allServices = await this.getByCarId(carId);
+    if (!allServices || allServices.length === 0) {
+      return 0;
+    }
+
+    // Filter services that have nextServiceKm set and are in the future (nextServiceKm > current mileage)
+    const upcomingServices = allServices
+      .filter(service => service.nextServiceKm && service.nextServiceKm > currentMileage)
+      .sort((a, b) => a.nextServiceKm! - b.nextServiceKm!); // Sort ascending by nextServiceKm
+
+    // If no upcoming services, return 0
+    if (upcomingServices.length === 0) {
+      return 0;
+    }
+
+    // Get the closest upcoming service
+    const nextService = upcomingServices[0];
+    const remainingKm = nextService.nextServiceKm! - currentMileage;
     return Math.max(0, remainingKm);
   }
 }
