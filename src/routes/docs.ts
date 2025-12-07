@@ -29,6 +29,301 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
         groupedRoutes[basePath].push(route);
     });
 
+    // Helper function to determine response format based on path
+    const getResponseFormat = (path: string, method: string): string => {
+        // Auth endpoints return direct format
+        if (path.includes('/auth/login') || path.includes('/auth/register')) {
+            return JSON.stringify({
+                id: 'string (UUID)',
+                username: 'string',
+                email: 'string',
+                role: 'string ("user" | "admin" | "employee")',
+                accessToken: 'string (JWT)'
+            }, null, 2);
+        }
+        
+        // Determine data type based on path
+        let dataFormat = '{}';
+        
+        if (path.includes('/users')) {
+            if (method === 'GET' && !path.includes(':id')) {
+                dataFormat = JSON.stringify([{
+                    id: 'string',
+                    username: 'string',
+                    email: 'string',
+                    role: 'string',
+                    name: 'string',
+                    profilePhotoUrl: 'string (optional)',
+                    lastActiveAt: 'string (ISO date)',
+                    createdAt: 'string (ISO date)'
+                }], null, 2);
+            } else {
+                dataFormat = JSON.stringify({
+                    id: 'string',
+                    username: 'string',
+                    email: 'string',
+                    role: 'string',
+                    name: 'string',
+                    phone: 'string (optional)',
+                    address: 'string (optional)',
+                    profilePhotoUrl: 'string (optional)',
+                    lastActiveAt: 'string (ISO date)',
+                    createdAt: 'string (ISO date)',
+                    updatedAt: 'string (ISO date)'
+                }, null, 2);
+            }
+        } else if (path.includes('/cars')) {
+            if (method === 'GET' && !path.includes(':id')) {
+                dataFormat = JSON.stringify([{
+                    id: 'string',
+                    licensePlate: 'string',
+                    manufacturer: 'string',
+                    model: 'string',
+                    year: 'number',
+                    color: 'string',
+                    mileage: 'number',
+                    status: 'string ("available" | "rented" | "maintenance")',
+                    pricePerDay: 'number',
+                    category: 'string',
+                    fuelType: 'string',
+                    transmission: 'string',
+                    seats: 'number',
+                    photoUrl: 'string (optional)',
+                    createdAt: 'string (ISO date)'
+                }], null, 2);
+            } else {
+                dataFormat = JSON.stringify({
+                    id: 'string',
+                    licensePlate: 'string',
+                    manufacturer: 'string',
+                    model: 'string',
+                    year: 'number',
+                    color: 'string',
+                    mileage: 'number',
+                    status: 'string',
+                    pricePerDay: 'number',
+                    category: 'string',
+                    fuelType: 'string',
+                    transmission: 'string',
+                    seats: 'number',
+                    photoUrl: 'string (optional)',
+                    createdAt: 'string (ISO date)',
+                    updatedAt: 'string (ISO date)'
+                }, null, 2);
+            }
+        } else if (path.includes('/contracts')) {
+            if (method === 'GET' && !path.includes(':id')) {
+                dataFormat = JSON.stringify([{
+                    id: 'string',
+                    carId: 'string',
+                    customerId: 'string',
+                    startDate: 'string (ISO date)',
+                    endDate: 'string (ISO date)',
+                    totalAmount: 'number',
+                    status: 'string ("active" | "completed" | "cancelled")',
+                    notes: 'string (optional)',
+                    documentUrl: 'string (optional)',
+                    createdAt: 'string (ISO date)'
+                }], null, 2);
+            } else {
+                dataFormat = JSON.stringify({
+                    id: 'string',
+                    carId: 'string',
+                    customerId: 'string',
+                    startDate: 'string (ISO date)',
+                    endDate: 'string (ISO date)',
+                    totalAmount: 'number',
+                    status: 'string',
+                    notes: 'string (optional)',
+                    documentUrl: 'string (optional)',
+                    createdAt: 'string (ISO date)',
+                    updatedAt: 'string (ISO date)'
+                }, null, 2);
+            }
+        } else if (path.includes('/customers')) {
+            if (method === 'GET' && !path.includes(':id')) {
+                dataFormat = JSON.stringify([{
+                    id: 'string',
+                    name: 'string',
+                    email: 'string',
+                    phone: 'string',
+                    address: 'string',
+                    city: 'string',
+                    country: 'string',
+                    idOfPerson: 'string (optional)',
+                    createdAt: 'string (ISO date)'
+                }], null, 2);
+            } else {
+                dataFormat = JSON.stringify({
+                    id: 'string',
+                    name: 'string',
+                    email: 'string',
+                    phone: 'string',
+                    address: 'string',
+                    city: 'string',
+                    country: 'string',
+                    passportNumber: 'string (optional)',
+                    driverLicenseNumber: 'string (optional)',
+                    idOfPerson: 'string (optional)',
+                    createdAt: 'string (ISO date)',
+                    updatedAt: 'string (ISO date)'
+                }, null, 2);
+            }
+        } else if (path.includes('/notifications')) {
+            dataFormat = JSON.stringify([{
+                id: 'string',
+                recipientId: 'string',
+                senderId: 'string (optional)',
+                type: 'string',
+                message: 'string',
+                status: 'string ("unread" | "read")',
+                createdAt: 'string (ISO date)'
+            }], null, 2);
+        } else if (path.includes('/audit-logs')) {
+            dataFormat = JSON.stringify({
+                logs: [{
+                    id: 'string',
+                    userId: 'string',
+                    action: 'string',
+                    resourceType: 'string',
+                    resourceId: 'string (optional)',
+                    details: 'object (optional)',
+                    ipAddress: 'string',
+                    userAgent: 'string',
+                    createdAt: 'string (ISO date)'
+                }],
+                pagination: {
+                    page: 'number',
+                    limit: 'number',
+                    total: 'number',
+                    totalPages: 'number'
+                }
+            }, null, 2);
+        } else if (method === 'DELETE') {
+            dataFormat = JSON.stringify({
+                message: 'string',
+                deletedId: 'string'
+            }, null, 2);
+        } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+            dataFormat = JSON.stringify({
+                id: 'string',
+                message: 'string (optional)',
+                createdAt: 'string (ISO date, optional)',
+                updatedAt: 'string (ISO date, optional)'
+            }, null, 2);
+        }
+        
+        // Wrap in standard API response format (except auth endpoints)
+        if (path.includes('/auth/login') || path.includes('/auth/register')) {
+            return dataFormat;
+        }
+        
+        return JSON.stringify({
+            success: 'boolean',
+            data: JSON.parse(dataFormat),
+            message: 'string (optional)',
+            timestamp: 'string (ISO 8601)'
+        }, null, 2);
+    };
+
+    // Response format mappings with basic data types
+    const responseFormats: Record<string, any> = {
+        // Standard API Response
+        'standard': {
+            success: 'boolean',
+            data: 'T (varies by endpoint)',
+            message: 'string (optional)',
+            timestamp: 'string (ISO 8601)'
+        },
+        // Auth endpoints
+        'auth': {
+            id: 'string (UUID)',
+            username: 'string',
+            email: 'string',
+            role: 'string ("user" | "admin" | "employee")',
+            accessToken: 'string (JWT)'
+        },
+        // User object
+        'user': {
+            id: 'string (UUID)',
+            username: 'string',
+            email: 'string',
+            name: 'string',
+            role: 'string',
+            profilePhotoUrl: 'string (optional)',
+            phone: 'string (optional)',
+            address: 'string (optional)',
+            lastActiveAt: 'string (ISO date)',
+            createdAt: 'string (ISO date)',
+            updatedAt: 'string (ISO date)'
+        },
+        // Car object
+        'car': {
+            id: 'string (UUID)',
+            licensePlate: 'string',
+            manufacturer: 'string',
+            model: 'string',
+            year: 'number',
+            color: 'string',
+            mileage: 'number',
+            status: 'string ("available" | "rented" | "maintenance")',
+            pricePerDay: 'number',
+            category: 'string',
+            fuelType: 'string',
+            transmission: 'string',
+            seats: 'number',
+            photoUrl: 'string (optional)',
+            createdAt: 'string (ISO date)',
+            updatedAt: 'string (ISO date)'
+        },
+        // Contract object
+        'contract': {
+            id: 'string (UUID)',
+            carId: 'string (UUID)',
+            customerId: 'string (UUID)',
+            startDate: 'string (ISO date)',
+            endDate: 'string (ISO date)',
+            totalAmount: 'number',
+            status: 'string ("active" | "completed" | "cancelled")',
+            notes: 'string (optional)',
+            documentUrl: 'string (optional)',
+            createdAt: 'string (ISO date)',
+            updatedAt: 'string (ISO date)'
+        },
+        // Customer object
+        'customer': {
+            id: 'string (UUID)',
+            name: 'string',
+            email: 'string',
+            phone: 'string',
+            address: 'string',
+            city: 'string',
+            country: 'string',
+            passportNumber: 'string (optional)',
+            driverLicenseNumber: 'string (optional)',
+            idOfPerson: 'string (optional)',
+            createdAt: 'string (ISO date)',
+            updatedAt: 'string (ISO date)'
+        },
+        // Notification object
+        'notification': {
+            id: 'string (UUID)',
+            recipientId: 'string (UUID)',
+            senderId: 'string (UUID, optional)',
+            type: 'string',
+            message: 'string',
+            status: 'string ("unread" | "read")',
+            createdAt: 'string (ISO date)'
+        },
+        // Pagination format
+        'pagination': {
+            page: 'number',
+            limit: 'number',
+            total: 'number',
+            totalPages: 'number'
+        }
+    };
+
     const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -108,11 +403,73 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
             border: 2px solid #dee2e6;
             border-radius: 8px;
             transition: all 0.3s;
+            margin-bottom: 15px;
         }
         .search-input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .filter-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .filter-btn:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .response-format {
+            margin-top: 15px;
+            padding: 12px;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        .response-format-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .response-format pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
         }
         .group {
             margin-bottom: 40px;
@@ -272,6 +629,32 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                     id="searchInput" 
                     placeholder="🔍 Search routes, methods, or paths... (e.g., 'GET /api/cars' or 'authentication')"
                 >
+                
+                <div class="filters">
+                    <div class="filter-group">
+                        <span class="filter-label">Method:</span>
+                        <button class="filter-btn active" data-filter="method" data-value="all">All</button>
+                        <button class="filter-btn" data-filter="method" data-value="get">GET</button>
+                        <button class="filter-btn" data-filter="method" data-value="post">POST</button>
+                        <button class="filter-btn" data-filter="method" data-value="put">PUT</button>
+                        <button class="filter-btn" data-filter="method" data-value="patch">PATCH</button>
+                        <button class="filter-btn" data-filter="method" data-value="delete">DELETE</button>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <span class="filter-label">Auth:</span>
+                        <button class="filter-btn active" data-filter="auth" data-value="all">All</button>
+                        <button class="filter-btn" data-filter="auth" data-value="public">Public</button>
+                        <button class="filter-btn" data-filter="auth" data-value="authenticated">Authenticated</button>
+                        <button class="filter-btn" data-filter="auth" data-value="admin">Admin Only</button>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <span class="filter-label">Sort:</span>
+                        <button class="filter-btn active" data-filter="sort" data-value="group">By Group</button>
+                        <button class="filter-btn" data-filter="sort" data-value="alpha">Alphabetical</button>
+                    </div>
+                </div>
             </div>
             
             <div id="routeGroups">
@@ -295,7 +678,7 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                             const cardClass = isAdminOnly ? 'admin-only' : isNoAuth ? 'no-auth' : isAuthRequired ? 'auth-required' : '';
                             
                             return `
-                                <div class="route-card ${cardClass}" data-path="${route.path}" data-methods="${route.methods.join(' ')}">
+                                <div class="route-card ${cardClass}" data-path="${route.path}" data-methods="${route.methods.join(' ')}" data-auth="${isAdminOnly ? 'admin' : isNoAuth ? 'public' : isAuthRequired ? 'authenticated' : 'public'}">
                                     <div class="route-path">
                                         <span>${route.path}</span>
                                         <button class="copy-btn" onclick="copyToClipboard('${route.path}')">📋 Copy</button>
@@ -313,6 +696,10 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                                             `).join('')}
                                         </div>
                                     ` : ''}
+                                    <div class="response-format">
+                                        <div class="response-format-title">📤 Response Format:</div>
+                                        <pre>${getResponseFormat(route.path, route.methods[0]).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                                    </div>
                                 </div>
                             `;
                         }).join('')}
@@ -332,23 +719,49 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
     </div>
     
     <script>
-        // Search functionality
+        // Filter state
+        let filters = {
+            method: 'all',
+            auth: 'all',
+            sort: 'group',
+            search: ''
+        };
+        
+        // Elements
         const searchInput = document.getElementById('searchInput');
         const groups = document.querySelectorAll('.group');
+        const filterButtons = document.querySelectorAll('.filter-btn');
         
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            
+        // Apply all filters
+        function applyFilters() {
             groups.forEach(group => {
                 let visibleCards = 0;
                 const cards = group.querySelectorAll('.route-card');
                 
                 cards.forEach(card => {
-                    const path = card.dataset.path.toLowerCase();
-                    const methods = card.dataset.methods.toLowerCase();
-                    const text = card.textContent.toLowerCase();
+                    let visible = true;
                     
-                    if (path.includes(searchTerm) || methods.includes(searchTerm) || text.includes(searchTerm)) {
+                    // Search filter
+                    if (filters.search) {
+                        const path = card.dataset.path.toLowerCase();
+                        const methods = card.dataset.methods.toLowerCase();
+                        const text = card.textContent.toLowerCase();
+                        visible = visible && (path.includes(filters.search) || methods.includes(filters.search) || text.includes(filters.search));
+                    }
+                    
+                    // Method filter
+                    if (filters.method !== 'all') {
+                        const methods = card.dataset.methods.toLowerCase();
+                        visible = visible && methods.includes(filters.method);
+                    }
+                    
+                    // Auth filter
+                    if (filters.auth !== 'all') {
+                        const auth = card.dataset.auth;
+                        visible = visible && auth === filters.auth;
+                    }
+                    
+                    if (visible) {
                         card.classList.remove('hidden');
                         visibleCards++;
                     } else {
@@ -362,6 +775,62 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                 } else {
                     group.classList.remove('hidden');
                 }
+            });
+            
+            // Sort functionality
+            if (filters.sort === 'alpha') {
+                const routeGroupsContainer = document.getElementById('routeGroups');
+                const groupsArray = Array.from(groups);
+                const allCards = [];
+                
+                groupsArray.forEach(group => {
+                    const cards = Array.from(group.querySelectorAll('.route-card'));
+                    allCards.push(...cards);
+                });
+                
+                // Sort cards alphabetically by path
+                allCards.sort((a, b) => {
+                    return a.dataset.path.localeCompare(b.dataset.path);
+                });
+                
+                // Create a single group with sorted cards
+                routeGroupsContainer.innerHTML = \`
+                    <div class="group" data-group="all">
+                        <h2 class="group-title">
+                            <span>📋 All Routes (Alphabetical)</span>
+                            <span class="count">\${allCards.filter(c => !c.classList.contains('hidden')).length}</span>
+                        </h2>
+                        \${allCards.map(card => card.outerHTML).join('')}
+                    </div>
+                \`;
+            } else {
+                // Restore original grouping if needed
+                location.reload();
+            }
+        }
+        
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            filters.search = e.target.value.toLowerCase();
+            applyFilters();
+        });
+        
+        // Filter button handling
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const filterType = button.dataset.filter;
+                const filterValue = button.dataset.value;
+                
+                // Update filter state
+                filters[filterType] = filterValue;
+                
+                // Update active state for buttons in same group
+                const sameGroupButtons = document.querySelectorAll(\`[data-filter="\${filterType}"]\`);
+                sameGroupButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Apply filters
+                applyFilters();
             });
         });
         
