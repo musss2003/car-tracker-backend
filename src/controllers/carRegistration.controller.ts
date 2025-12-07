@@ -132,3 +132,16 @@ export const getRegistrationAuditLogs = asyncHandler(async (req: Request, res: R
     })
   );
 });
+
+/**
+ * Get days remaining until registration expires for a car
+ * GET /api/car-registration/car/:carId/days-remaining
+ */
+export const getRegistrationDaysRemaining = asyncHandler(async (req: Request, res: Response) => {
+  const { carId } = req.params;
+  const context = extractAuditContext(req);
+
+  const daysRemaining = await carRegistrationService.getDaysRemaining(carId, context);
+
+  res.json(createSuccessResponse({ daysRemaining }));
+});

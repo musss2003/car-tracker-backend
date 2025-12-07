@@ -98,6 +98,24 @@ export class CarRegistrationService extends BaseService<
   protected getDeleteDescription(entity: CarRegistration): string {
     return `Deleted registration record for car ${entity.carId}`;
   }
+
+  /**
+   * Get days remaining until registration expires for a car
+   */
+  async getDaysRemaining(carId: string, context?: AuditContext): Promise<number> {
+    const activeRegistration = await this.getActiveByCarId(carId);
+    
+    if (!activeRegistration || !activeRegistration.registrationExpiry) {
+      return 0;
+    }
+
+    const expiryDate = new Date(activeRegistration.registrationExpiry);
+    const today = new Date();
+    const diffTime = expiryDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  }
 }
 
 export default new CarRegistrationService(carRegistrationRepository);

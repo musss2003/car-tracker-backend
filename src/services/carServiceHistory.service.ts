@@ -115,7 +115,27 @@ export class CarServiceHistoryService extends BaseService<
    * Custom audit description for delete operations
    */
   protected getDeleteDescription(entity: CarServiceHistory): string {
-    return `Deleted service record for car ${entity.carId} (${entity.serviceType})`;
+    return `Deleted service record for car ${entity.carId}`;
+  }
+
+  /**
+   * Get km remaining until next service for a car
+   */
+  async getKmRemaining(carId: string, context?: AuditContext): Promise<number> {
+    const latestService = await this.getLatestByCarId(carId);
+    
+    if (!latestService || !latestService.nextServiceKm || !latestService.mileage) {
+      return 0;
+    }
+
+    // Get current car mileage
+    const car = await this.carRepository.findOne({ where: { id: carId } });
+    if (!car || !car.mileage) {
+      return 0;
+    }
+
+    const remainingKm = latestService.nextServiceKm - car.mileage;
+    return Math.max(0, remainingKm);
   }
 }
 

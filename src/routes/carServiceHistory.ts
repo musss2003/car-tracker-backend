@@ -10,7 +10,8 @@ import {
   getServicesByType,
   getServicesDueSoon,
   getTotalServiceCost,
-  getServiceHistoryAuditLogs
+  getServiceHistoryAuditLogs,
+  getServiceKmRemaining
 } from '../controllers/carServiceHistory.controller';
 
 
@@ -78,5 +79,11 @@ router.get('/:carId/total-cost', getTotalServiceCost);
  * Get services by type for a car
  */
 router.get('/:carId/by-type/:serviceType', getServicesByType);
+
+/**
+ * GET /api/car-service-history/:carId/km-remaining
+ * Get km remaining until next service
+ */
+router.get('/:carId/km-remaining', getServiceKmRemaining);
 
 export default router;

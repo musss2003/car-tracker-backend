@@ -10,7 +10,8 @@ import {
   getNewCarIssueReportsByCar,
   getIssueReportsByStatus,
   getIssueReportsBySeverity,
-  getIssueReportAuditLogs
+  getIssueReportAuditLogs,
+  getActiveIssueReportsCount
 } from "../controllers/carIssueReport.controller";
 import authenticate from "../middlewares/verifyJWT";
 
@@ -38,6 +39,9 @@ router.get("/car/:carId", getCarIssueReportsForCar);
 
 // GET all new issue reports for specific car
 router.get("/car/:carId/new", getNewCarIssueReportsByCar);
+
+// GET active issue reports count for specific car
+router.get("/car/:carId/active-count", getActiveIssueReportsCount);
 
 // GET audit logs for a specific issue report
 router.get("/:id/audit-logs", getIssueReportAuditLogs);

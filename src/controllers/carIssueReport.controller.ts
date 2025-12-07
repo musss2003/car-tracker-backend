@@ -178,3 +178,16 @@ export const getIssueReportAuditLogs = asyncHandler(async (req: Request, res: Re
     })
   );
 });
+
+/**
+ * Get count of active (new) issue reports for a car
+ * GET /api/car-issue-report/car/:carId/active-count
+ */
+export const getActiveIssueReportsCount = asyncHandler(async (req: Request, res: Response) => {
+  const { carId } = req.params;
+  const context = extractAuditContext(req);
+
+  const count = await carIssueReportService.getActiveCount(carId, context);
+
+  res.json(createSuccessResponse({ count }));
+});

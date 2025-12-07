@@ -9,7 +9,8 @@ import {
   deleteCarRegistration,
   getActiveRegistration,
   getExpiringRegistrations,
-  getRegistrationAuditLogs
+  getRegistrationAuditLogs,
+  getRegistrationDaysRemaining
 } from "../controllers/carRegistration.controller";
 
 const router = express.Router();
@@ -64,5 +65,11 @@ router.get("/car/:carId", getCarRegistrations);
 // GET /api/car-registrations/car/:carId/active
 // -------------------------------------------------------------
 router.get("/car/:carId/active", getActiveRegistration);
+
+// -------------------------------------------------------------
+// 📌 GET: Days remaining until registration expires
+// GET /api/car-registrations/car/:carId/days-remaining
+// -------------------------------------------------------------
+router.get("/car/:carId/days-remaining", getRegistrationDaysRemaining);
 
 export default router;

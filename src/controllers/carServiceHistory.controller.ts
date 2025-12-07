@@ -160,3 +160,16 @@ export const getServiceHistoryAuditLogs = asyncHandler(async (req: Request, res:
     })
   );
 });
+
+/**
+ * Get km remaining until next service for a car
+ * GET /api/car-service-history/:carId/km-remaining
+ */
+export const getServiceKmRemaining = asyncHandler(async (req: Request, res: Response) => {
+  const { carId } = req.params;
+  const context = extractAuditContext(req);
+
+  const kmRemaining = await carServiceHistoryService.getKmRemaining(carId, context);
+
+  res.json(createSuccessResponse({ kmRemaining }));
+});

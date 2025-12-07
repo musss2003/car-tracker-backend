@@ -120,7 +120,18 @@ export class CarIssueReportService extends BaseService<
    * Custom audit description for delete operations
    */
   protected getDeleteDescription(entity: CarIssueReport): string {
-    return `Deleted issue report for car ${entity.carId} (${entity.status})`;
+    return `Deleted issue report for car ${entity.carId}`;
+  }
+
+  /**
+   * Get count of active (new/open) issue reports for a car
+   */
+  async getActiveCount(carId: string, context?: AuditContext): Promise<number> {
+    const repo = this.repository as CarIssueReportRepository;
+    const allReports = await repo.findByCarId(carId);
+    // Filter for 'open' status reports (active/unresolved)
+    const activeReports = allReports.filter(report => report.status === 'open');
+    return activeReports.length;
   }
 }
 
