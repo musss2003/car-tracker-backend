@@ -95,6 +95,13 @@ export const auditLogMiddleware = async (
  * Extract resource type from API path
  */
 function extractResourceFromPath(path: string): AuditResource {
+  // Check for car-related sub-resources first (more specific paths)
+  if (path.includes('/car-issue-report')) return AuditResource.CAR_ISSUE_REPORT;
+  if (path.includes('/car-insurance')) return AuditResource.CAR_INSURANCE;
+  if (path.includes('/car-registration')) return AuditResource.CAR_REGISTRATION;
+  if (path.includes('/car-service-history')) return AuditResource.CAR_SERVICE_HISTORY;
+  
+  // Then check general resources
   if (path.includes('/contract')) return AuditResource.CONTRACT;
   if (path.includes('/customer')) return AuditResource.CUSTOMER;
   if (path.includes('/car')) return AuditResource.CAR;
