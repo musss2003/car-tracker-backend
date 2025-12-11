@@ -19,9 +19,9 @@ const redisConfig: RedisOptions = {
   password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || "0", 10),
   
-  // ✅ Connection timeouts
+  // ✅ Connection timeouts (increased for production stability)
   connectTimeout: 10000, // 10 seconds to establish connection
-  commandTimeout: 5000,  // 5 seconds for command execution
+  commandTimeout: 15000,  // 15 seconds for command execution (increased from 5s)
   
   // ✅ Connection pool limits
   maxRetriesPerRequest: 3,
@@ -64,8 +64,12 @@ export const bullMQConnection = {
   db: redisConfig.db,
   maxRetriesPerRequest: null, // Required by BullMQ
   enableOfflineQueue: false,  // BullMQ handles this internally
-  connectTimeout: 10000,
-  commandTimeout: 5000,
+  connectTimeout: 10000, // 10 seconds
+  commandTimeout: 30000, // 30 seconds for queue operations (longer for job processing)
+  retryStrategy: (times: number) => {
+    if (times > 5) return null;
+    return Math.min(times * 200, 2000);
+  },
 };
 
 // ✅ Track Redis connection state
@@ -78,10 +82,28 @@ redis.on("connect", () => {
   connectionAttempts = 0;
 });
 
-redis.on("ready", () => {
+redis.on("ready", async () => {
   isRedisConnected = true;
   lastError = null;
   console.log("✅ Redis ready to accept commands");
+  
+  // ✅ Check Redis configuration in production
+  if (isProd) {
+    try {
+      const config = await redis.config('GET', 'maxmemory-policy') as string[];
+      const evictionPolicy = config[1];
+      
+      if (evictionPolicy && evictionPolicy !== 'noeviction') {
+        console.warn(
+          `⚠️  Redis eviction policy is "${evictionPolicy}". ` +
+          `Recommended: "noeviction" for queue data. ` +
+          `Run: redis-cli CONFIG SET maxmemory-policy noeviction`
+        );
+      }
+    } catch (error) {
+      // Silently ignore if we can't check config
+    }
+  }
 });
 
 redis.on("error", (error) => {

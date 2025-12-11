@@ -127,21 +127,32 @@ const emailWorker = new Worker<EmailJobData>(
   },
   {
     connection: bullMQConnection,
-    concurrency: 5, // Process up to 5 emails concurrently
+    concurrency: 3, // Reduced from 5 to prevent overload
     limiter: {
       max: 10, // Max 10 jobs per duration
       duration: 1000, // Per 1 second (prevent email provider rate limits)
     },
-    // ✅ Add lock duration to prevent job duplication
-    lockDuration: 30000, // 30 seconds
+    // ✅ Increased lock duration to prevent timeout issues
+    lockDuration: 60000, // 60 seconds (increased from 30s)
     // ✅ Add stalledInterval to detect stuck jobs
-    stalledInterval: 30000, // Check for stalled jobs every 30s
+    stalledInterval: 60000, // Check for stalled jobs every 60s (increased from 30s)
   }
 );
 
 // ✅ Worker error handlers
 emailWorker.on('error', (error) => {
-  console.error('❌ Email worker error:', error.message);
+  const errorMessage = error.message || String(error);
+  
+  // ✅ Suppress Redis timeout spam in production
+  if (errorMessage.includes('Command timed out')) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️  Email worker: Redis command timeout (retrying...)');
+    }
+    // Don't log in production - these are handled by BullMQ retry logic
+    return;
+  }
+  
+  console.error('❌ Email worker error:', errorMessage);
 });
 
 emailWorker.on('failed', (job, error) => {
