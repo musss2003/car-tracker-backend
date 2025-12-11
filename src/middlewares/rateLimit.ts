@@ -2,7 +2,6 @@
 import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
 import { redis } from "../config/redis";
-import { Request } from "express";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -12,15 +11,6 @@ const isRedisReady = () => redis.status === "ready";
 // ✅ Track fallback usage for monitoring
 let redisStoreFailures = 0;
 let lastRedisCheckTime = Date.now();
-
-/**
- * ✅ Generate consistent key for rate limiting (supports proxy)
- */
-const generateKey = (req: Request): string => {
-  // Use X-Forwarded-For if behind proxy, otherwise use IP
-  const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
-  return Array.isArray(ip) ? ip[0] : ip.toString();
-};
 
 /**
  * ✅ Create Redis store with comprehensive error handling
@@ -80,7 +70,6 @@ const createRedisStore = (prefix: string) => {
 const defaultOptions = {
   standardHeaders: true,  // Return rate limit info in headers
   legacyHeaders: false,   // Disable X-RateLimit-* headers
-  keyGenerator: generateKey, // Use consistent IP extraction
   skipFailedRequests: false, // Count all requests
   skipSuccessfulRequests: false, // Count all requests
 };
@@ -115,7 +104,8 @@ export const apiLimiter: RateLimitRequestHandler = rateLimit({
   },
   // ✅ Custom handler for rate limit exceeded
   handler: (req, res) => {
-    console.warn(`⚠️  Rate limit exceeded for IP: ${generateKey(req)} on ${req.path}`);
+    const ip = req.ip || 'unknown';
+    console.warn(`⚠️  Rate limit exceeded for IP: ${ip} on ${req.path}`);
     res.status(429).json({
       success: false,
       error: "Too many requests, please try again later.",
@@ -141,7 +131,7 @@ export const authLimiter: RateLimitRequestHandler = rateLimit({
   skipSuccessfulRequests: true, // Only count failed login attempts
   // ✅ Custom handler with security logging
   handler: (req, res) => {
-    const ip = generateKey(req);
+    const ip = req.ip || 'unknown';
     console.warn(`🚨 SECURITY: Auth rate limit exceeded for IP: ${ip} on ${req.path}`);
     
     // Log potential brute force attack
