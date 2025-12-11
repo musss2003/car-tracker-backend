@@ -27,6 +27,10 @@ const redisConfig: RedisOptions = {
   maxRetriesPerRequest: 3,
   enableOfflineQueue: true, // Queue commands when disconnected
   
+  // ✅ Faster initial connection
+  lazyConnect: false, // Connect immediately
+  enableReadyCheck: true,
+  
   // ✅ Reconnection strategy with exponential backoff
   retryStrategy: (times: number) => {
     if (times > 10) {
@@ -40,15 +44,14 @@ const redisConfig: RedisOptions = {
     return delay;
   },
   
-  // ✅ Connection health checks
-  enableReadyCheck: true,
-  lazyConnect: false,
-  
   // ✅ Keep-alive to prevent idle connection drops
   keepAlive: 30000, // 30 seconds
   
   // ✅ Connection name for debugging
   connectionName: isProd ? "car-tracker-prod" : "car-tracker-dev",
+  
+  // ✅ Show friendly error names
+  showFriendlyErrorStack: !isProd,
 };
 
 export const redis = new Redis(redisConfig);

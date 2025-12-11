@@ -6,11 +6,12 @@ import { redis } from "../config/redis";
 const isProd = process.env.NODE_ENV === "production";
 
 // ✅ Helper to check if Redis is ready
-const isRedisReady = () => redis.status === "ready";
+const isRedisReady = () => redis.status === "ready" || redis.status === "connect";
 
 // ✅ Track fallback usage for monitoring
 let redisStoreFailures = 0;
 let lastRedisCheckTime = Date.now();
+let hasLoggedRedisRecovery = false;
 
 /**
  * ✅ Create Redis store with comprehensive error handling
@@ -18,6 +19,7 @@ let lastRedisCheckTime = Date.now();
  */
 const createRedisStore = (prefix: string) => {
   const now = Date.now();
+  const redisStatus = redis.status;
   
   // Check Redis status every 30 seconds to avoid spam
   if (now - lastRedisCheckTime > 30000) {
@@ -28,15 +30,17 @@ const createRedisStore = (prefix: string) => {
     }
   }
   
-  if (!isRedisReady()) {
-    redisStoreFailures++;
-    
-    // Only warn in production or on first failure
-    if (isProd || redisStoreFailures === 1) {
-      console.warn(
-        `⚠️  Redis not ready (status: ${redis.status}) for rate limiter [${prefix}], using in-memory store`
-      );
+  // Only require "ready" status for store creation
+  if (redisStatus !== "ready") {
+    // Only log once per limiter on first failure
+    if (redisStoreFailures === 0 || redisStoreFailures % 4 === 0) {
+      if (!isProd || redisStoreFailures === 0) {
+        console.warn(
+          `⚠️  Redis not ready (status: ${redisStatus}) for rate limiter [${prefix}], using in-memory store`
+        );
+      }
     }
+    redisStoreFailures++;
     
     return undefined; // express-rate-limit uses memory store
   }
@@ -49,9 +53,10 @@ const createRedisStore = (prefix: string) => {
       prefix,
     });
     
-    // Reset failure counter on successful creation
-    if (redisStoreFailures > 0 && isProd) {
-      console.log(`✅ Redis store recovered for [${prefix}]`);
+    // Log recovery only once
+    if (redisStoreFailures > 0 && !hasLoggedRedisRecovery) {
+      console.log(`✅ Redis store connected for rate limiting [${prefix}]`);
+      hasLoggedRedisRecovery = true;
       redisStoreFailures = 0;
     }
     
