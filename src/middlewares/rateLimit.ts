@@ -1,93 +1,202 @@
-import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import { redis } from '../config/redis';
+// src/middlewares/rateLimit.ts
+import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
+import RedisStore from "rate-limit-redis";
+import { redis } from "../config/redis";
+import { Request } from "express";
+
+const isProd = process.env.NODE_ENV === "production";
+
+// ✅ Helper to check if Redis is ready
+const isRedisReady = () => redis.status === "ready";
+
+// ✅ Track fallback usage for monitoring
+let redisStoreFailures = 0;
+let lastRedisCheckTime = Date.now();
 
 /**
- * Create Redis store with error handling
+ * ✅ Generate consistent key for rate limiting (supports proxy)
  */
-const createRedisStore = (prefix: string) => {
-  try {
-    return new RedisStore({
-      // @ts-expect-error - Known typing issue with rate-limit-redis
-      sendCommand: (...args: string[]) => redis.call(...args),
-      prefix,
-    });
-  } catch (error) {
-    console.warn(`⚠️  Redis store creation failed for ${prefix}, using memory store`);
-    return undefined; // Falls back to memory store
-  }
+const generateKey = (req: Request): string => {
+  // Use X-Forwarded-For if behind proxy, otherwise use IP
+  const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+  return Array.isArray(ip) ? ip[0] : ip.toString();
 };
 
 /**
- * General API rate limiter
- * 1000 requests per 15 minutes per IP (reasonable for normal usage)
+ * ✅ Create Redis store with comprehensive error handling
+ * Falls back to in-memory store if Redis is unavailable
  */
-export const apiLimiter = rateLimit({
-  store: createRedisStore('rl:api:'),
+const createRedisStore = (prefix: string) => {
+  const now = Date.now();
+  
+  // Check Redis status every 30 seconds to avoid spam
+  if (now - lastRedisCheckTime > 30000) {
+    lastRedisCheckTime = now;
+    
+    if (redisStoreFailures > 0) {
+      console.log(`📊 Rate limit Redis failures: ${redisStoreFailures} times`);
+    }
+  }
+  
+  if (!isRedisReady()) {
+    redisStoreFailures++;
+    
+    // Only warn in production or on first failure
+    if (isProd || redisStoreFailures === 1) {
+      console.warn(
+        `⚠️  Redis not ready (status: ${redis.status}) for rate limiter [${prefix}], using in-memory store`
+      );
+    }
+    
+    return undefined; // express-rate-limit uses memory store
+  }
+
+  try {
+    // @ts-ignore - rate-limit-redis type mismatch with ioredis
+    const store = new RedisStore({
+      // @ts-ignore
+      sendCommand: (...args: any[]) => redis.call(...args),
+      prefix,
+    });
+    
+    // Reset failure counter on successful creation
+    if (redisStoreFailures > 0 && isProd) {
+      console.log(`✅ Redis store recovered for [${prefix}]`);
+      redisStoreFailures = 0;
+    }
+    
+    return store;
+  } catch (error) {
+    redisStoreFailures++;
+    console.warn(
+      `⚠️  Redis store creation failed for [${prefix}], falling back to memory store:`,
+      (error as Error).message
+    );
+    return undefined;
+  }
+};
+
+// ✅ Shared default options
+const defaultOptions = {
+  standardHeaders: true,  // Return rate limit info in headers
+  legacyHeaders: false,   // Disable X-RateLimit-* headers
+  keyGenerator: generateKey, // Use consistent IP extraction
+  skipFailedRequests: false, // Count all requests
+  skipSuccessfulRequests: false, // Count all requests
+};
+
+/**
+ * ✅ General API rate limiter
+ * 600 requests per 15 minutes per IP
+ */
+export const apiLimiter: RateLimitRequestHandler = rateLimit({
+  store: createRedisStore("rl:api:"),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Max 1000 requests per window
+  max: 600,
   message: {
     success: false,
-    message: 'Too many requests from this IP, please try again later.',
-    retryAfter: '15 minutes',
+    error: "Too many requests from this IP, please try again later.",
+    retryAfter: "15 minutes",
   },
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  // Skip rate limiting for certain conditions
+  ...defaultOptions,
   skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === '/health' || req.path === '/routes';
+    const path = req.path || "";
+    // ✅ Skip rate limiting for health checks and internal routes
+    const skipPaths = ["/health", "/metrics"];
+    if (skipPaths.includes(path)) return true;
+    
+    // ✅ Skip rate limiting for internal requests (from same server)
+    const ip = req.ip || "";
+    if (ip === "127.0.0.1" || ip === "::1" || ip === "localhost") {
+      return true;
+    }
+    
+    return false;
+  },
+  // ✅ Custom handler for rate limit exceeded
+  handler: (req, res) => {
+    console.warn(`⚠️  Rate limit exceeded for IP: ${generateKey(req)} on ${req.path}`);
+    res.status(429).json({
+      success: false,
+      error: "Too many requests, please try again later.",
+      retryAfter: "15 minutes",
+    });
   },
 });
 
 /**
- * Strict rate limiter for authentication endpoints
- * 10 requests per 15 minutes per IP (allows for typos/retries)
+ * ✅ Strict limiter for authentication endpoints
+ * 10 attempts per 15 minutes per IP (only failed requests count)
  */
-export const authLimiter = rateLimit({
-  store: createRedisStore('rl:auth:'),
+export const authLimiter: RateLimitRequestHandler = rateLimit({
+  store: createRedisStore("rl:auth:"),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Max 10 login attempts
+  max: 10,
   message: {
     success: false,
-    message: 'Too many authentication attempts, please try again later.',
-    retryAfter: '15 minutes',
+    error: "Too many authentication attempts. Please try again later.",
+    retryAfter: "15 minutes",
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful requests
+  ...defaultOptions,
+  skipSuccessfulRequests: true, // Only count failed login attempts
+  // ✅ Custom handler with security logging
+  handler: (req, res) => {
+    const ip = generateKey(req);
+    console.warn(`🚨 SECURITY: Auth rate limit exceeded for IP: ${ip} on ${req.path}`);
+    
+    // Log potential brute force attack
+    if (isProd) {
+      console.error(`🚨 POTENTIAL BRUTE FORCE ATTACK from IP: ${ip}`);
+    }
+    
+    res.status(429).json({
+      success: false,
+      error: "Too many authentication attempts. Your IP has been temporarily blocked.",
+      retryAfter: "15 minutes",
+      blocked: true,
+    });
+  },
 });
 
 /**
- * Moderate rate limiter for write operations
- * 300 requests per 15 minutes per IP
+ * Optional: writeLimiter – koristi ako želiš dodatno ograničiti mutacije.
+ * Trenutno ga možeš primijeniti samo na POST/PUT/PATCH/DELETE rute.
  */
-export const writeLimiter = rateLimit({
-  store: createRedisStore('rl:write:'),
+export const writeLimiter: RateLimitRequestHandler = rateLimit({
+  store: createRedisStore("rl:write:"),
   windowMs: 15 * 60 * 1000,
   max: 300,
   message: {
     success: false,
-    message: 'Too many write requests, please slow down.',
-    retryAfter: '15 minutes',
+    error: "Too many write requests, please slow down.",
+    retryAfter: "15 minutes",
   },
-  standardHeaders: true,
-  legacyHeaders: false,
+  ...defaultOptions,
 });
 
 /**
- * Lenient rate limiter for read operations
- * 2000 requests per 15 minutes per IP
+ * Optional: readLimiter – ako trebaš posebno ograničenje za “heavy” GET rute.
  */
-export const readLimiter = rateLimit({
-  store: createRedisStore('rl:read:'),
+export const readLimiter: RateLimitRequestHandler = rateLimit({
+  store: createRedisStore("rl:read:"),
   windowMs: 15 * 60 * 1000,
   max: 2000,
   message: {
     success: false,
-    message: 'Too many read requests, please slow down.',
-    retryAfter: '15 minutes',
+    error: "Too many read requests, please slow down.",
+    retryAfter: "15 minutes",
   },
-  standardHeaders: true,
-  legacyHeaders: false,
+  ...defaultOptions,
 });
+
+/**
+ * ✅ Get rate limit statistics for monitoring
+ */
+export function getRateLimitStats() {
+  return {
+    redisStatus: redis.status,
+    redisReady: isRedisReady(),
+    storeFailures: redisStoreFailures,
+    usingMemoryStore: !isRedisReady(),
+  };
+}

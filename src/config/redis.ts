@@ -1,69 +1,177 @@
-import Redis from 'ioredis';
+// src/config/redis.ts
+import Redis, { RedisOptions } from "ioredis";
 
-/**
- * Redis client configuration
- * Used for caching, rate limiting, and job queues
- */
-// Base Redis configuration
-const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
+const isProd = process.env.NODE_ENV === "production";
+
+// ✅ Validate Redis configuration
+if (isProd && !process.env.REDIS_HOST) {
+  console.error("❌ REDIS_HOST is required in production");
+  throw new Error("Redis configuration missing in production");
+}
+
+if (isProd && !process.env.REDIS_PASSWORD) {
+  console.warn("⚠️  WARNING: Redis password not set in production!");
+}
+
+const redisConfig: RedisOptions = {
+  host: process.env.REDIS_HOST || "localhost",
+  port: parseInt(process.env.REDIS_PORT || "6379", 10),
   password: process.env.REDIS_PASSWORD || undefined,
-  db: parseInt(process.env.REDIS_DB || '0'),
+  db: parseInt(process.env.REDIS_DB || "0", 10),
+  
+  // ✅ Connection timeouts
+  connectTimeout: 10000, // 10 seconds to establish connection
+  commandTimeout: 5000,  // 5 seconds for command execution
+  
+  // ✅ Connection pool limits
+  maxRetriesPerRequest: 3,
+  enableOfflineQueue: true, // Queue commands when disconnected
+  
+  // ✅ Reconnection strategy with exponential backoff
   retryStrategy: (times: number) => {
+    if (times > 10) {
+      console.error("❌ Redis max retries exceeded, giving up");
+      return null; // Stop retrying after 10 attempts
+    }
     const delay = Math.min(times * 50, 2000);
-    console.log(`Redis connection retry attempt ${times}, waiting ${delay}ms`);
+    if (!isProd) {
+      console.log(`Redis connection retry attempt ${times}, waiting ${delay}ms`);
+    }
     return delay;
   },
+  
+  // ✅ Connection health checks
   enableReadyCheck: true,
   lazyConnect: false,
+  
+  // ✅ Keep-alive to prevent idle connection drops
+  keepAlive: 30000, // 30 seconds
+  
+  // ✅ Connection name for debugging
+  connectionName: isProd ? "car-tracker-prod" : "car-tracker-dev",
 };
 
-// Main Redis client for caching and rate limiting
-export const redis = new Redis({
-  ...redisConfig,
-  maxRetriesPerRequest: 3,
-});
+export const redis = new Redis(redisConfig);
 
-// Redis connection for BullMQ (requires maxRetriesPerRequest: null)
+// ✅ Separate connection config for BullMQ (requires maxRetriesPerRequest: null)
 export const bullMQConnection = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
-  db: parseInt(process.env.REDIS_DB || '0'),
-  maxRetriesPerRequest: null,
+  host: redisConfig.host,
+  port: redisConfig.port,
+  password: redisConfig.password,
+  db: redisConfig.db,
+  maxRetriesPerRequest: null, // Required by BullMQ
+  enableOfflineQueue: false,  // BullMQ handles this internally
+  connectTimeout: 10000,
+  commandTimeout: 5000,
 };
 
-// Event listeners
-redis.on('connect', () => {
-  console.log('✅ Redis connected successfully');
+// ✅ Track Redis connection state
+let isRedisConnected = false;
+let connectionAttempts = 0;
+let lastError: Error | null = null;
+
+redis.on("connect", () => {
+  console.log("✅ Redis connected successfully");
+  connectionAttempts = 0;
 });
 
-redis.on('ready', () => {
-  console.log('✅ Redis ready to accept commands');
+redis.on("ready", () => {
+  isRedisConnected = true;
+  lastError = null;
+  console.log("✅ Redis ready to accept commands");
 });
 
-redis.on('error', (error) => {
-  console.error('❌ Redis connection error:', error.message);
+redis.on("error", (error) => {
+  isRedisConnected = false;
+  lastError = error;
+  connectionAttempts++;
+  
+  // Only log detailed errors in development or first few attempts
+  if (!isProd || connectionAttempts <= 3) {
+    console.error("❌ Redis connection error:", error.message);
+  }
+  
+  // Alert if production Redis is down
+  if (isProd && connectionAttempts === 1) {
+    console.error("🚨 CRITICAL: Redis connection failed in production!");
+  }
 });
 
-redis.on('close', () => {
-  console.log('⚠️  Redis connection closed');
+redis.on("close", () => {
+  isRedisConnected = false;
+  console.log("⚠️  Redis connection closed");
 });
 
-redis.on('reconnecting', () => {
-  console.log('🔄 Redis reconnecting...');
+redis.on("reconnecting", () => {
+  console.log("🔄 Redis reconnecting...");
+});
+
+redis.on("end", () => {
+  isRedisConnected = false;
+  console.log("⚠️  Redis connection ended");
 });
 
 /**
- * Gracefully close Redis connection
+ * ✅ Health check function to verify Redis is operational
+ */
+export async function isRedisHealthy(): Promise<boolean> {
+  if (!isRedisConnected) return false;
+  
+  try {
+    const result = await redis.ping();
+    return result === "PONG";
+  } catch (error) {
+    console.error("❌ Redis health check failed:", (error as Error).message);
+    return false;
+  }
+}
+
+/**
+ * ✅ Get Redis connection status
+ */
+export function getRedisStatus() {
+  return {
+    connected: isRedisConnected,
+    status: redis.status,
+    connectionAttempts,
+    lastError: lastError?.message || null,
+    uptime: process.uptime(),
+  };
+}
+
+/**
+ * ✅ Gracefully close Redis connection with timeout
  */
 export const closeRedis = async (): Promise<void> => {
+  if (redis.status === "end" || redis.status === "close") {
+    console.log("ℹ️  Redis already closed");
+    return;
+  }
+  
   try {
-    await redis.quit();
-    console.log('✅ Redis connection closed gracefully');
+    console.log("⏳ Closing Redis connection...");
+    
+    // Use quit() for graceful shutdown (waits for pending commands)
+    const closePromise = redis.quit();
+    
+    // Add timeout to force close if quit takes too long
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Redis close timeout")), 5000);
+    });
+    
+    await Promise.race([closePromise, timeoutPromise]);
+    
+    console.log("✅ Redis connection closed gracefully");
   } catch (error) {
-    console.error('❌ Error closing Redis connection:', error);
+    console.warn("⚠️  Graceful Redis close failed, forcing disconnect:", (error as Error).message);
+    
+    // Force disconnect if graceful close fails
+    try {
+      redis.disconnect();
+      console.log("✅ Redis disconnected forcefully");
+    } catch (disconnectError) {
+      console.error("❌ Error forcing Redis disconnect:", disconnectError);
+    }
   }
 };
 
