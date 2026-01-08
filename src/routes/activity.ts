@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUsersWithStatus, getOnlineUsers } from '../controllers/activity';
+import { getUsersWithStatus, getOnlineUsers } from '../controllers/activity.controller';
 import authenticate from '../middlewares/verifyJWT';
 
 const router = express.Router();

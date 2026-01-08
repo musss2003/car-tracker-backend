@@ -23,4 +23,12 @@ dist
 
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*.env
+yarn-error.log*
+
+# SSH keys and certificates
+*.pem
+*.key
+*.pub
+rescue-key
+rescue-key.pub
+car-tracker.pem

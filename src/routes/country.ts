@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCountries } from '../controllers/country';
+import { getCountries } from '../controllers/country.controller';
 import authenticate from '../middlewares/verifyJWT';
 
 

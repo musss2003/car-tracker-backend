@@ -6,7 +6,7 @@ import {
   getAuditStatistics,
   cleanupOldLogs,
   exportAuditLogs,
-} from '../controllers/auditLog';
+} from '../controllers/audit-log.controller';
 import verifyJWT from '../middlewares/verifyJWT';
 import verifyRole from '../middlewares/verifyRole';
 

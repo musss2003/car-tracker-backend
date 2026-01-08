@@ -64,12 +64,25 @@ export const createCar = asyncHandler(async (req: Request, res: Response) => {
 
 /**
  * PUT /api/cars/:id
- * Update car
+ * Update car by ID or license plate
  */
 export const updateCar = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const context = extractAuditContext(req);
-  const car = await carService.update(id, req.body, context);
+  
+  // Check if id is a UUID or license plate
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  
+  let car;
+  if (isUUID) {
+    // Update by UUID
+    car = await carService.update(id, req.body, context);
+  } else {
+    // Treat as license plate - get car first, then update by ID
+    const existingCar = await carService.getByLicensePlate(id);
+    car = await carService.update(existingCar.id, req.body, context);
+  }
+  
   res.json(createSuccessResponse(car, 'Car updated successfully'));
 });
 
