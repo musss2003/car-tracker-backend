@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import carServiceHistoryService from '../services/carServiceHistory.service';
-import auditLogService from '../services/auditLogService';
-import { AuditResource } from '../models/Auditlog';
+import carServiceHistoryService from '../services/car-service-history.service';
+import auditLogService from '../services/audit-log.service';
+import { AuditResource } from '../models/audit-log,model';
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { extractAuditContext, extractPaginationParams } from '../common/utils';

@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/db';
-import { Country } from '../models/Country';
+import { Country } from '../models/country.model';
 
 interface CountryData {
   name: string;

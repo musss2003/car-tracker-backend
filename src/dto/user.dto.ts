@@ -1,4 +1,4 @@
-import { UserRole } from '../models/User';
+import { UserRole } from '../models/user.model';
 
 export interface CreateUserDto {
   username: string;

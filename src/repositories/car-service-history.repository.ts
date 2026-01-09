@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/db';
-import CarServiceHistory from '../models/CarServiceHistory';
+import CarServiceHistory from '../models/car-service-history.model';
 import { BaseRepository } from '../common/repositories/base.repository';
 
 /**

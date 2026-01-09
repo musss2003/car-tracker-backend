@@ -1,5 +1,5 @@
-import auditLogService from '../../services/auditLogService';
-import { AuditAction, AuditResource } from '../../models/Auditlog';
+import auditLogService from '../../services/audit-log.service';
+import { AuditAction, AuditResource } from '../../models/audit-log,model';
 import { AuditContext } from '../interfaces/base-service.interface';
 
 /**

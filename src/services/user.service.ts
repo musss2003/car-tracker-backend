@@ -1,12 +1,12 @@
 import bcrypt from 'bcrypt';
-import { User, UserRole } from '../models/User';
+import { User, UserRole } from '../models/user.model';
 import { UserRepository } from '../repositories/user.repository';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/Auditlog';
+import { AuditResource } from '../models/audit-log,model';
 import { AuditContext } from '../common/interfaces/base-service.interface';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto, ResetPasswordDto } from '../dto/user.dto';
 import { ConflictError, NotFoundError, ValidationError, UnauthorizedError } from '../common/errors';
-import { RefreshToken } from '../models/RefreshToken';
+import { RefreshToken } from '../models/refresh-token.model';
 import { AppDataSource } from '../config/db';
 import { queueCredentialsEmail, queuePasswordResetEmail } from '../queues/email.queue';
 import { logAudit } from '../common/decorators/audit.decorator';

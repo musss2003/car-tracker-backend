@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import auditLogService from '../services/auditLogService';
-import { AuditAction, AuditResource, AuditStatus } from '../models/Auditlog';
+import auditLogService from '../services/audit-log.service';
+import { AuditAction, AuditResource, AuditStatus } from '../models/audit-log,model';
 import { Cache } from '../common/decorators/cache.decorator';
 
 /**
@@ -63,7 +63,7 @@ export const getAuditLogById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const auditLogRepository = (await import('../config/db')).AppDataSource.getRepository(
-      (await import('../models/Auditlog')).AuditLog
+      (await import('../models/audit-log,model')).AuditLog
     );
     
     const log = await auditLogRepository.findOne({

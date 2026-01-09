@@ -4,23 +4,23 @@ import compression from "compression";
 import { initializeTypeORM, AppDataSource } from "./config/db";
 import { initializeSentry } from "./config/monitoring";
 import { closeRedis } from "./config/redis";
-import { apiLimiter, authLimiter } from "./middlewares/rateLimit";
-import authRoutes from "./routes/auth";
-import userRoutes from "./routes/user";
-import contractRoutes from "./routes/contract";
-import carRoutes from "./routes/car";
-import carRegistrationRoutes from "./routes/carRegistration";
-import carInsuranceRoutes from "./routes/carInsurance";
-import carServiceRoutes from "./routes/carServiceHistory";
-import carIssueReportRoutes from "./routes/carIssueReport";
-import customerRoutes from "./routes/customer";
-import notificationRoutes from "./routes/notification";
-import countryRoutes from "./routes/country";
-import documentsRoutes from "./routes/upload";
-import auditLogRoutes from "./routes/auditLog";
-import activityRoutes from "./routes/activity";
-import { getRoutesJSON, getAPIDocs } from "./routes/docs";
-import { auditLogMiddleware } from "./middlewares/auditLog";
+import { apiLimiter, authLimiter } from "./middlewares/rate-limit.middleware";
+import authRoutes from "./routes/auth.route";
+import userRoutes from "./routes/user.route";
+import contractRoutes from "./routes/contract.route";
+import carRoutes from "./routes/car.route";
+import carRegistrationRoutes from "./routes/car-registration.route";
+import carInsuranceRoutes from "./routes/car-insurance.route";
+import carServiceRoutes from "./routes/car-service-history.route";
+import carIssueReportRoutes from "./routes/car-issue-report.route";
+import customerRoutes from "./routes/customer.route";
+import notificationRoutes from "./routes/notification.route";
+import countryRoutes from "./routes/country.route";
+import documentsRoutes from "./routes/upload.route";
+import auditLogRoutes from "./routes/audit-log.route";
+import activityRoutes from "./routes/activity.route";
+import { getRoutesJSON, getAPIDocs } from "./routes/docs.route";
+import { auditLogMiddleware } from "./middlewares/audit-log.middleware";
 import { errorHandler, notFoundHandler } from "./common/errors/error-handler";
 import { closeEmailQueue } from "./queues/email.queue";
 import dotenv from "dotenv";
@@ -28,10 +28,10 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import http from "http";
 import { Server } from "socket.io"; // Using Socket.IO
-import { Notification, NotificationStatus } from "./models/Notification"; // Import the TypeORM Notification model
-import { User } from "./models/User"; // Import User model for online status tracking
+import { Notification, NotificationStatus } from "./models/notification.model"; // Import the TypeORM Notification model
+import { User } from "./models/user.model"; // Import User model for online status tracking
 import "reflect-metadata"; // Required for TypeORM
-import { testEmailConfiguration } from "./services/emailService";
+import { testEmailConfiguration } from "./services/email.service";
 import {
   scheduleExpiringContractsCheck,
   scheduleExpiredContractsCheck,
@@ -41,6 +41,8 @@ import * as Sentry from "@sentry/node";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger";
 
 dotenv.config();
 
@@ -411,7 +413,22 @@ app.get("/health", async (req: Request, res: Response) => {
 if (process.env.NODE_ENV !== "production") {
   app.get("/routes", getRoutesJSON(app));
   app.get("/api-docs", getAPIDocs(app));
-  console.log("📚 API documentation available at /routes and /api-docs");
+  
+  // Swagger UI
+  app.use("/api/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Car Tracker API Docs',
+  }));
+  app.get("/api/swagger.json", (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+  
+  console.log("📚 API documentation available at:");
+  console.log("   - Swagger UI: /api/swagger");
+  console.log("   - OpenAPI JSON: /api/swagger.json");
+  console.log("   - Routes list: /routes");
+  console.log("   - HTML docs: /api-docs");
 } else {
   console.log("🔒 API documentation endpoints disabled in production");
 }

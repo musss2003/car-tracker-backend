@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { AppDataSource } from '../config/db';
-import { Contract } from '../models/Contract';
+import { Contract } from '../models/contract.model';
 import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { notifyAdmins } from '../services/notificationService';
 

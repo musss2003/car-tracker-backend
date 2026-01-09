@@ -1,6 +1,6 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
 import { bullMQConnection } from '../config/redis';
-import { sendCredentialsEmail, sendPasswordResetEmail } from '../services/emailService';
+import { sendCredentialsEmail, sendPasswordResetEmail } from '../services/email.service';
 
 const isProd = process.env.NODE_ENV === 'production';
 

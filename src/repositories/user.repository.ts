@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { User, UserRole } from '../models/User';
+import { User, UserRole } from '../models/user.model';
 import { AppDataSource } from '../config/db';
 import { BaseRepository } from '../common/repositories/base.repository';
 

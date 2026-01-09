@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../config/db';
-import { User } from '../models/User';
+import { User } from '../models/user.model';
 
 // Get all users with their online status
 export const getUsersWithStatus = async (

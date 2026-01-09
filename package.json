@@ -7,7 +7,8 @@
     "start": "node dist/app.js",
     "dev": "nodemon --ext ts --exec ts-node src/app.ts",
     "build": "tsc && mkdir -p dist/assets && cp -r src/assets/* dist/assets/",
-    "setup-countries": "ts-node src/scripts/setupCountries.ts"
+    "setup-countries": "ts-node src/scripts/setupCountries.ts",
+    "swagger": "ts-node swagger-only.ts"
   },
   "keywords": [],
   "author": "Mustafa Sinanovic",
@@ -39,6 +40,8 @@
   "dependencies": {
     "@sentry/node": "^10.28.0",
     "@types/socket.io": "^3.0.1",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
@@ -63,6 +66,8 @@
     "rate-limit-redis": "^4.3.1",
     "reflect-metadata": "^0.2.2",
     "socket.io": "^4.8.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.27",
     "uuid": "^13.0.0"
   }

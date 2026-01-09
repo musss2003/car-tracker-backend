@@ -1,7 +1,7 @@
 import { FindManyOptions, ObjectLiteral } from 'typeorm';
 import { IBaseService, AuditContext } from '../interfaces/base-service.interface';
 import { BaseRepository } from '../repositories/base.repository';
-import { AuditAction, AuditResource } from '../../models/Auditlog';
+import { AuditAction, AuditResource } from '../../models/audit-log,model';
 import { logAudit } from '../decorators/audit.decorator';
 
 /**

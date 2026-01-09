@@ -1,6 +1,6 @@
 import { Like } from 'typeorm';
 import { BaseRepository } from '../common/repositories/base.repository';
-import { Customer } from '../models/Customer';
+import { Customer } from '../models/customer.model';
 import { AppDataSource } from '../config/db';
 
 export class CustomerRepository extends BaseRepository<Customer> {

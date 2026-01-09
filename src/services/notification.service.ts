@@ -1,11 +1,13 @@
-import { Notification, NotificationStatus } from '../models/Notification';
+import { Notification, NotificationStatus } from '../models/notification.model';
 import { NotificationRepository } from '../repositories/notification.repository';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/Auditlog';
+import { AuditResource } from '../models/audit-log,model';
 import { AuditContext } from '../common/interfaces/base-service.interface';
 import { CreateNotificationDto, UpdateNotificationDto } from '../dto/notification.dto';
-import { NotFoundError, ValidationError, UnauthorizedError } from '../common/errors';
+import { NotFoundError, UnauthorizedError } from '../common/errors';
 import { Server as SocketIOServer } from 'socket.io';
+import { User, UserRole } from '../models/user.model';
+import { UserRepository } from '../repositories/user.repository';
 
 export class NotificationService extends BaseService<Notification> {
   private notificationRepository: NotificationRepository;
@@ -202,5 +204,50 @@ export class NotificationService extends BaseService<Notification> {
    */
   async cleanupOldNotifications(days: number, context: AuditContext): Promise<number> {
     return this.notificationRepository.deleteOlderThan(days);
+  }
+}
+
+/**
+ * Utility function to send notifications to all admin users
+ */
+export async function notifyAdmins(
+  message: string,
+  type: string,
+  senderId: string,
+  io?: SocketIOServer
+): Promise<void> {
+  try {
+    const userRepository = new UserRepository();
+    const admins = await userRepository.findByRole(UserRole.ADMIN);
+
+    if (admins.length === 0) {
+      console.warn('No admin users found to notify');
+      return;
+    }
+
+    const notificationRepository = new NotificationRepository();
+
+    // Create notifications for each admin
+    const notificationPromises = admins.map(async (admin: User) => {
+      const notification = await notificationRepository.create({
+        recipientId: admin.id,
+        senderId,
+        type,
+        message,
+        status: NotificationStatus.NEW,
+      });
+
+      // Emit real-time notification via Socket.IO if available
+      if (io && admin.id) {
+        io.to(admin.id).emit('receiveNotification', notification);
+      }
+
+      return notification;
+    });
+
+    await Promise.all(notificationPromises);
+  } catch (error) {
+    console.error('Error in notifyAdmins:', error);
+    throw error;
   }
 }

@@ -4,7 +4,7 @@ import { CarRepository } from '../repositories/car.repository';
 import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext, extractPaginationParams } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
-import { notifyAdmins } from '../services/notificationService';
+import { notifyAdmins } from '../services/notification.service';
 import { io } from '../app';
 
 const carRepository = new CarRepository();
@@ -52,7 +52,7 @@ export const createCar = asyncHandler(async (req: Request, res: Response) => {
     await notifyAdmins(
       `Novo vozilo dodato: ${car.manufacturer} ${car.model} (${car.licensePlate})`,
       'car-new',
-      context.userId,
+      context.userId || 'system',
       io
     );
   } catch (notifError) {

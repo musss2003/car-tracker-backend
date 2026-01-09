@@ -1,6 +1,6 @@
 import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { BaseRepository } from '../common/repositories/base.repository';
-import { Contract } from '../models/Contract';
+import { Contract } from '../models/contract.model';
 import { AppDataSource } from '../config/db';
 
 export class ContractRepository extends BaseRepository<Contract> {

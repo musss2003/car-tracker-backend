@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/db';
-import CarInsurance from '../models/CarInsurance';
+import CarInsurance from '../models/car-insurance.model';
 import { BaseRepository } from '../common/repositories/base.repository';
 
 /**

@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import * as bcrypt from "bcrypt";
 import { AppDataSource } from "../config/db";
-import { User, UserRole } from "../models/User";
-import { RefreshToken } from "../models/RefreshToken";
+import { User, UserRole } from "../models/user.model";
+import { RefreshToken } from "../models/refresh-token.model";
 import dotenv from "dotenv";
-import { logAudit } from "../middlewares/auditLog";
+import { logAudit } from "../middlewares/audit-log.middleware";
 import { captureException, setUserContext, clearUserContext } from "../config/monitoring";
 
 dotenv.config();

@@ -1,8 +1,8 @@
 import { Between, In, Not } from 'typeorm';
 import { BaseRepository } from '../common/repositories/base.repository';
-import { Car } from '../models/Car';
+import { Car } from '../models/car.model';
 import { AppDataSource } from '../config/db';
-import { Contract } from '../models/Contract';
+import { Contract } from '../models/contract.model';
 
 export class CarRepository extends BaseRepository<Car> {
   constructor() {

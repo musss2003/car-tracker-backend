@@ -1,4 +1,4 @@
-import { NotificationStatus } from '../models/Notification';
+import { NotificationStatus } from '../models/notification.model';
 
 export interface CreateNotificationDto {
   recipientId: string;

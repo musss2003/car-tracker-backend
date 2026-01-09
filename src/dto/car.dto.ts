@@ -1,4 +1,4 @@
-import { FuelType, TransmissionType, CarCategory, CarStatus } from '../models/Car';
+import { FuelType, TransmissionType, CarCategory, CarStatus } from '../models/car.model';
 
 export interface CreateCarDto {
   manufacturer: string;

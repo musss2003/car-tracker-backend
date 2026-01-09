@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../config/db';
-import { Country } from '../models/Country';
+import { Country } from '../models/country.model';
 
 // Get all countries
 export const getCountries = async (req: Request, res: Response) => {
