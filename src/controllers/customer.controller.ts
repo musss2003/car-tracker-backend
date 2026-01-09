@@ -1,14 +1,19 @@
 import { Request, Response } from 'express';
 import { CustomerService } from '../services/customer.service';
 import { CustomerRepository } from '../repositories/customer.repository';
+import { ContractService } from '../services/contract.service';
+import { ContractRepository } from '../repositories/contract.repository';
 import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext, extractPaginationParams } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { notifyAdmins } from '../services/notification.service';
+import { validate as isUUID } from 'uuid';
 import { io } from '../app';
 
 const customerRepository = new CustomerRepository();
+const contractRepository = new ContractRepository();
 const customerService = new CustomerService(customerRepository);
+const contractService = new ContractService(contractRepository);
 
 /**
  * GET /api/customers
@@ -162,4 +167,24 @@ export const getRecentCustomers = asyncHandler(async (req: Request, res: Respons
   const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
   const customers = await customerService.getRecentCustomers(limit);
   res.json(createSuccessResponse(customers, 'Recent customers retrieved successfully'));
+});
+
+/**
+ * GET /api/customers/:id/contracts
+ * Get all contracts for a specific customer
+ */
+export const getCustomerContracts = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  // Validate UUID format
+  if (!isUUID(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid customer ID format',
+      data: null
+    });
+  }
+  
+  const contracts = await contractService.getByCustomerId(id);
+  res.json(createSuccessResponse(contracts, 'Customer contracts retrieved successfully'));
 });

@@ -13,7 +13,8 @@ import {
   searchCustomersByPhone,
   getCustomersByCountry,
   getCustomersByCity,
-  getRecentCustomers
+  getRecentCustomers,
+  getCustomerContracts
 } from '../controllers/customer.controller';
 import authenticate from '../middlewares/verify-jwt.middleware';
 
@@ -232,6 +233,43 @@ router.get('/license/:driverLicenseNumber', getCustomerByDriverLicense);
  *         description: Customer not found
  */
 router.get('/id-person/:idOfPerson', getCustomerByIdOfPerson);
+
+/**
+ * @swagger
+ * /api/customers/{id}/contracts:
+ *   get:
+ *     tags: [Customers]
+ *     summary: Get all contracts for a specific customer
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Customer ID
+ *     responses:
+ *       200:
+ *         description: List of customer contracts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Contract'
+ *       400:
+ *         description: Invalid customer ID format
+ *       404:
+ *         description: Customer not found
+ */
+router.get('/:id/contracts', getCustomerContracts);
 
 /**
  * @swagger
