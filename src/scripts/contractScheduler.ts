@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { AppDataSource } from '../config/db';
 import { Contract } from '../models/contract.model';
 import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
-import { notifyAdmins } from '../services/notificationService';
+import { notifyAdmins } from '../services/notification.service';
 
 let io: any;
 

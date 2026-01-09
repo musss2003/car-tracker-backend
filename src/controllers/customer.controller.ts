@@ -4,7 +4,7 @@ import { CustomerRepository } from '../repositories/customer.repository';
 import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext, extractPaginationParams } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
-import { notifyAdmins } from '../services/notificationService';
+import { notifyAdmins } from '../services/notification.service';
 import { io } from '../app';
 
 const customerRepository = new CustomerRepository();

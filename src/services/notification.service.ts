@@ -213,7 +213,7 @@ export class NotificationService extends BaseService<Notification> {
 export async function notifyAdmins(
   message: string,
   type: string,
-  senderId: string,
+  senderId?: string,
   io?: SocketIOServer
 ): Promise<void> {
   try {

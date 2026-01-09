@@ -10,7 +10,7 @@ import { RefreshToken } from '../models/refresh-token.model';
 import { AppDataSource } from '../config/db';
 import { queueCredentialsEmail, queuePasswordResetEmail } from '../queues/email.queue';
 import { logAudit } from '../common/decorators/audit.decorator';
-import { notifyAdmins } from './notificationService';
+import { notifyAdmins } from './notification.service';
 import { Server as SocketIOServer } from 'socket.io';
 
 export class UserService extends BaseService<User> {
