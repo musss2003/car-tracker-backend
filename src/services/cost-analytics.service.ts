@@ -1,9 +1,9 @@
 import { Repository } from 'typeorm';
-import { CarServiceHistory } from '../models/CarServiceHistory';
-import { CarRegistration } from '../models/CarRegistration';
-import { CarInsurance } from '../models/CarInsurance';
-import { CarIssueReport } from '../models/CarIssueReport';
-import Car from '../models/Car';
+import { CarServiceHistory } from '../models/car-service-history.model';
+import { CarRegistration } from '../models/car-registration.model';
+import { CarInsurance } from '../models/car-insurance.model';
+import { CarIssueReport } from '../models/car-issue-report.model';
+import Car from '../models/car.model';
 
 export interface CostAnalytics {
   totalCosts: {
