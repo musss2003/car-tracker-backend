@@ -88,7 +88,7 @@ export class CostAnalyticsService {
     const projections = this.calculateProjections(monthlyCosts);
 
     // Calculate cost per km and per day
-    const costPerKm = car.mileage > 0 ? totalCosts.all / car.mileage : 0;
+    const costPerKm = (car.mileage && car.mileage > 0) ? totalCosts.all / car.mileage : 0;
     
     const oldestDate = this.getOldestDate(serviceHistory, insuranceHistory);
     const daysSinceStart = oldestDate 
