@@ -55,15 +55,15 @@ export const getCarCostAnalytics = asyncHandler(async (req: Request, res: Respon
     }),
     registrationRepo.find({
       where: { car: { id: carId } },
-      order: { registrationDate: 'DESC' },
+      order: { renewalDate: 'DESC' },
     }),
     insuranceRepo.find({
       where: { car: { id: carId } },
-      order: { startDate: 'DESC' },
+      order: { createdAt: 'DESC' },
     }),
     issueRepo.find({
       where: { car: { id: carId } },
-      order: { reportedDate: 'DESC' },
+      order: { reportedAt: 'DESC' },
     }),
   ]);
 
@@ -120,15 +120,15 @@ export const getCarMaintenanceAlerts = asyncHandler(async (req: Request, res: Re
     }),
     registrationRepo.findOne({
       where: { car: { id: carId } },
-      order: { registrationDate: 'DESC' },
+      order: { renewalDate: 'DESC' },
     }),
     insuranceRepo.findOne({
       where: { car: { id: carId } },
-      order: { startDate: 'DESC' },
+      order: { createdAt: 'DESC' },
     }),
     issueRepo.find({
-      where: { car: { id: carId }, status: 'reported' },
-      order: { reportedDate: 'DESC' },
+      where: { car: { id: carId }, status: 'open' },
+      order: { reportedAt: 'DESC' },
     }),
   ]);
 
@@ -193,19 +193,19 @@ export const getCarDashboard = asyncHandler(async (req: Request, res: Response) 
       }),
       registrationRepo.find({
         where: { car: { id: carId } },
-        order: { registrationDate: 'DESC' },
+        order: { renewalDate: 'DESC' },
       }),
       insuranceRepo.find({
         where: { car: { id: carId } },
-        order: { startDate: 'DESC' },
+        order: { createdAt: 'DESC' },
       }),
       issueRepo.find({
         where: { car: { id: carId } },
-        order: { reportedDate: 'DESC' },
+        order: { reportedAt: 'DESC' },
       }),
       issueRepo.find({
-        where: { car: { id: carId }, status: 'reported' },
-        order: { reportedDate: 'DESC' },
+        where: { car: { id: carId }, status: 'open' },
+        order: { reportedAt: 'DESC' },
       }),
     ]);
 

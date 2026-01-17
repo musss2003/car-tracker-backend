@@ -151,7 +151,7 @@ export class MaintenanceAlertService {
       };
     }
 
-    const expiryDate = new Date(latestRegistration.expiryDate);
+    const expiryDate = new Date(latestRegistration.registrationExpiry);
     const today = new Date();
     const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -213,7 +213,7 @@ export class MaintenanceAlertService {
       };
     }
 
-    const expiryDate = new Date(latestInsurance.expiryDate);
+    const expiryDate = new Date(latestInsurance.insuranceExpiry);
     const today = new Date();
     const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 

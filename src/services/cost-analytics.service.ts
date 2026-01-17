@@ -1,9 +1,9 @@
 import { Repository } from 'typeorm';
-import { CarServiceHistory } from '../models/car-service-history.model';
-import { CarRegistration } from '../models/car-registration.model';
-import { CarInsurance } from '../models/car-insurance.model';
-import { CarIssueReport } from '../models/car-issue-report.model';
-import { Car } from '../models/car.model';
+import { CarServiceHistory } from '../models/CarServiceHistory';
+import { CarRegistration } from '../models/CarRegistration';
+import { CarInsurance } from '../models/CarInsurance';
+import { CarIssueReport } from '../models/CarIssueReport';
+import Car from '../models/Car';
 
 export interface CostAnalytics {
   totalCosts: {
@@ -15,7 +15,6 @@ export interface CostAnalytics {
   };
   monthlyCosts: MonthlyCost[];
   categoryBreakdown: CategoryCost[];
-  yearlyTrends: YearlyTrend[];
   averages: {
     monthly: number;
     yearly: number;
@@ -44,15 +43,6 @@ export interface CategoryCost {
   percentage: number;
 }
 
-export interface YearlyTrend {
-  year: number;
-  service: number;
-  insurance: number;
-  registration: number;
-  issues: number;
-  total: number;
-}
-
 interface AnalyticsData {
   serviceHistory: CarServiceHistory[];
   registrations: CarRegistration[];
@@ -71,8 +61,8 @@ export class CostAnalyticsService {
     // Calculate total costs by category
     const serviceCosts = this.calculateServiceCosts(serviceHistory);
     const insuranceCosts = this.calculateInsuranceCosts(insuranceHistory);
-    const registrationCosts = this.calculateRegistrationCosts(registrations);
-    const issueCosts = this.calculateIssueCosts(issueReports);
+    const registrationCosts = 0; // CarRegistration has no cost field
+    const issueCosts = 0; // CarIssueReport has no estimatedCost field
 
     const totalCosts = {
       all: serviceCosts + insuranceCosts + registrationCosts + issueCosts,
@@ -85,37 +75,31 @@ export class CostAnalyticsService {
     // Generate monthly breakdown
     const monthlyCosts = this.generateMonthlyBreakdown(
       serviceHistory,
-      registrations,
-      insuranceHistory,
-      issueReports
+      insuranceHistory
     );
 
     // Generate category breakdown
     const categoryBreakdown = this.generateCategoryBreakdown(totalCosts);
 
-    // Calculate yearly trends
-    const yearlyTrends = this.calculateYearlyTrends(
-      serviceHistory,
-      registrations,
-      insuranceHistory,
-      issueReports
-    );
-
     // Calculate averages
     const averages = this.calculateAverages(monthlyCosts);
 
-    // Calculate projections
+    // Calculate projections (simple weighted average based on last 3 months)
     const projections = this.calculateProjections(monthlyCosts);
 
-    // Calculate cost per KM and per day
-    const costPerKm = this.calculateCostPerKm(totalCosts.all, car);
-    const costPerDay = this.calculateCostPerDay(totalCosts.all, car);
+    // Calculate cost per km and per day
+    const costPerKm = car.mileage > 0 ? totalCosts.all / car.mileage : 0;
+    
+    const oldestDate = this.getOldestDate(serviceHistory, insuranceHistory);
+    const daysSinceStart = oldestDate 
+      ? Math.floor((Date.now() - oldestDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    const costPerDay = daysSinceStart > 0 ? totalCosts.all / daysSinceStart : 0;
 
     return {
       totalCosts,
       monthlyCosts,
       categoryBreakdown,
-      yearlyTrends,
       averages,
       projections,
       costPerKm,
@@ -128,22 +112,12 @@ export class CostAnalyticsService {
   }
 
   private calculateInsuranceCosts(insuranceHistory: CarInsurance[]): number {
-    return insuranceHistory.reduce((sum, insurance) => sum + (insurance.cost || 0), 0);
-  }
-
-  private calculateRegistrationCosts(registrations: CarRegistration[]): number {
-    return registrations.reduce((sum, reg) => sum + (reg.cost || 0), 0);
-  }
-
-  private calculateIssueCosts(issueReports: CarIssueReport[]): number {
-    return issueReports.reduce((sum, issue) => sum + (issue.estimatedCost || 0), 0);
+    return insuranceHistory.reduce((sum, insurance) => sum + (insurance.price || 0), 0);
   }
 
   private generateMonthlyBreakdown(
     serviceHistory: CarServiceHistory[],
-    registrations: CarRegistration[],
-    insuranceHistory: CarInsurance[],
-    issueReports: CarIssueReport[]
+    insuranceHistory: CarInsurance[]
   ): MonthlyCost[] {
     const monthlyMap = new Map<string, MonthlyCost>();
 
@@ -171,7 +145,7 @@ export class CostAnalyticsService {
 
     // Process insurance
     insuranceHistory.forEach((insurance) => {
-      const date = new Date(insurance.startDate);
+      const date = new Date(insurance.createdAt);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
       if (!monthlyMap.has(key)) {
@@ -187,66 +161,33 @@ export class CostAnalyticsService {
       }
       
       const monthData = monthlyMap.get(key)!;
-      monthData.insurance += insurance.cost || 0;
-      monthData.total += insurance.cost || 0;
+      monthData.insurance += insurance.price || 0;
+      monthData.total += insurance.price || 0;
     });
 
-    // Process registrations
-    registrations.forEach((reg) => {
-      const date = new Date(reg.registrationDate);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!monthlyMap.has(key)) {
-        monthlyMap.set(key, {
-          month: date.toLocaleString('default', { month: 'long' }),
-          year: date.getFullYear(),
-          service: 0,
-          insurance: 0,
-          registration: 0,
-          issues: 0,
-          total: 0,
-        });
-      }
-      
-      const monthData = monthlyMap.get(key)!;
-      monthData.registration += reg.cost || 0;
-      monthData.total += reg.cost || 0;
-    });
-
-    // Process issue reports
-    issueReports.forEach((issue) => {
-      const date = new Date(issue.reportedDate);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!monthlyMap.has(key)) {
-        monthlyMap.set(key, {
-          month: date.toLocaleString('default', { month: 'long' }),
-          year: date.getFullYear(),
-          service: 0,
-          insurance: 0,
-          registration: 0,
-          issues: 0,
-          total: 0,
-        });
-      }
-      
-      const monthData = monthlyMap.get(key)!;
-      monthData.issues += issue.estimatedCost || 0;
-      monthData.total += issue.estimatedCost || 0;
-    });
-
-    // Convert to array and sort by date (most recent first)
-    return Array.from(monthlyMap.values())
+    // Get last 12 months and return
+    const sortedMonths = Array.from(monthlyMap.values())
       .sort((a, b) => {
         if (a.year !== b.year) return b.year - a.year;
-        return new Date(`${b.month} 1, ${b.year}`).getMonth() - new Date(`${a.month} 1, ${a.year}`).getMonth();
+        const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
+                           'july', 'august', 'september', 'october', 'november', 'december'];
+        return monthNames.indexOf(b.month.toLowerCase()) - monthNames.indexOf(a.month.toLowerCase());
       })
-      .slice(0, 12); // Last 12 months
+      .slice(0, 12);
+
+    return sortedMonths;
   }
 
   private generateCategoryBreakdown(totalCosts: CostAnalytics['totalCosts']): CategoryCost[] {
     const total = totalCosts.all;
-    if (total === 0) return [];
+    if (total === 0) {
+      return [
+        { category: 'Service', amount: 0, percentage: 0 },
+        { category: 'Insurance', amount: 0, percentage: 0 },
+        { category: 'Registration', amount: 0, percentage: 0 },
+        { category: 'Issues', amount: 0, percentage: 0 },
+      ];
+    }
 
     return [
       {
@@ -269,62 +210,7 @@ export class CostAnalyticsService {
         amount: totalCosts.issues,
         percentage: (totalCosts.issues / total) * 100,
       },
-    ].filter((cat) => cat.amount > 0);
-  }
-
-  private calculateYearlyTrends(
-    serviceHistory: CarServiceHistory[],
-    registrations: CarRegistration[],
-    insuranceHistory: CarInsurance[],
-    issueReports: CarIssueReport[]
-  ): YearlyTrend[] {
-    const yearlyMap = new Map<number, YearlyTrend>();
-
-    // Helper to ensure year exists in map
-    const ensureYear = (year: number) => {
-      if (!yearlyMap.has(year)) {
-        yearlyMap.set(year, {
-          year,
-          service: 0,
-          insurance: 0,
-          registration: 0,
-          issues: 0,
-          total: 0,
-        });
-      }
-      return yearlyMap.get(year)!;
-    };
-
-    // Process all records
-    serviceHistory.forEach((s) => {
-      const year = new Date(s.serviceDate).getFullYear();
-      const data = ensureYear(year);
-      data.service += s.cost || 0;
-      data.total += s.cost || 0;
-    });
-
-    insuranceHistory.forEach((i) => {
-      const year = new Date(i.startDate).getFullYear();
-      const data = ensureYear(year);
-      data.insurance += i.cost || 0;
-      data.total += i.cost || 0;
-    });
-
-    registrations.forEach((r) => {
-      const year = new Date(r.registrationDate).getFullYear();
-      const data = ensureYear(year);
-      data.registration += r.cost || 0;
-      data.total += r.cost || 0;
-    });
-
-    issueReports.forEach((issue) => {
-      const year = new Date(issue.reportedDate).getFullYear();
-      const data = ensureYear(year);
-      data.issues += issue.estimatedCost || 0;
-      data.total += issue.estimatedCost || 0;
-    });
-
-    return Array.from(yearlyMap.values()).sort((a, b) => b.year - a.year);
+    ];
   }
 
   private calculateAverages(monthlyCosts: MonthlyCost[]): { monthly: number; yearly: number } {
@@ -332,8 +218,8 @@ export class CostAnalyticsService {
       return { monthly: 0, yearly: 0 };
     }
 
-    const totalMonthly = monthlyCosts.reduce((sum, month) => sum + month.total, 0);
-    const monthlyAverage = totalMonthly / monthlyCosts.length;
+    const monthlyAverage =
+      monthlyCosts.reduce((sum, month) => sum + month.total, 0) / monthlyCosts.length;
 
     return {
       monthly: monthlyAverage,
@@ -342,42 +228,42 @@ export class CostAnalyticsService {
   }
 
   private calculateProjections(monthlyCosts: MonthlyCost[]): { monthly: number; yearly: number } {
-    if (monthlyCosts.length < 3) {
-      // Not enough data for projection
-      return this.calculateAverages(monthlyCosts);
+    if (monthlyCosts.length === 0) {
+      return { monthly: 0, yearly: 0 };
     }
 
-    // Use last 6 months for projection (weighted average)
-    const recentMonths = monthlyCosts.slice(0, 6);
-    const weights = [0.3, 0.25, 0.2, 0.15, 0.07, 0.03]; // More weight on recent months
-    
-    const weightedAverage = recentMonths.reduce((sum, month, index) => {
-      return sum + month.total * weights[index];
-    }, 0);
+    // Use last 3 months for projection (weighted average)
+    const recentMonths = monthlyCosts.slice(0, Math.min(3, monthlyCosts.length));
+    const weights = [0.5, 0.3, 0.2]; // Recent months weighted more
+
+    let weightedSum = 0;
+    let totalWeight = 0;
+
+    recentMonths.forEach((month, index) => {
+      const weight = weights[index] || 0.1;
+      weightedSum += month.total * weight;
+      totalWeight += weight;
+    });
+
+    const monthlyProjection = totalWeight > 0 ? weightedSum / totalWeight : 0;
 
     return {
-      monthly: weightedAverage,
-      yearly: weightedAverage * 12,
+      monthly: monthlyProjection,
+      yearly: monthlyProjection * 12,
     };
   }
 
-  private calculateCostPerKm(totalCost: number, car: Car): number {
-    const mileage = car.mileage || 0;
-    if (mileage === 0) return 0;
-    return totalCost / mileage;
-  }
+  private getOldestDate(
+    serviceHistory: CarServiceHistory[],
+    insuranceHistory: CarInsurance[]
+  ): Date | null {
+    const dates: Date[] = [];
 
-  private calculateCostPerDay(totalCost: number, car: Car): number {
-    const carAge = this.calculateCarAgeInDays(car);
-    if (carAge === 0) return 0;
-    return totalCost / carAge;
-  }
+    serviceHistory.forEach((s) => dates.push(new Date(s.serviceDate)));
+    insuranceHistory.forEach((i) => dates.push(new Date(i.createdAt)));
 
-  private calculateCarAgeInDays(car: Car): number {
-    if (!car.createdAt) return 0;
-    const created = new Date(car.createdAt);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - created.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (dates.length === 0) return null;
+
+    return new Date(Math.min(...dates.map((d) => d.getTime())));
   }
 }
