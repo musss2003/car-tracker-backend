@@ -7,7 +7,7 @@ import { CarIssueReport } from '../models/car-issue-report.model';
 
 interface TopExpenseCar {
   carId: string;
-  brand: string;
+  manufacturer: string;
   model: string;
   year: number;
   licensePlate: string;
@@ -50,8 +50,9 @@ export class CrossCarAnalyticsService {
     const issueRepo = AppDataSource.getRepository(CarIssueReport);
 
     // Get all cars for the user (if userId provided)
-    const whereClause = userId ? { userId } : {};
-    const cars = await carRepo.find({ where: whereClause });
+    const cars = userId 
+      ? await carRepo.find({ where: { createdById: userId } })
+      : await carRepo.find();
 
     if (cars.length === 0) {
       return [];
@@ -92,7 +93,7 @@ export class CrossCarAnalyticsService {
 
       carExpenses.push({
         carId: car.id,
-        brand: car.brand,
+        manufacturer: car.manufacturer,
         model: car.model,
         year: car.year,
         licensePlate: car.licensePlate,
@@ -130,8 +131,9 @@ export class CrossCarAnalyticsService {
     const WARNING_DAYS_THRESHOLD = 30;
 
     // Get all cars for the user (if userId provided)
-    const whereClause = userId ? { userId } : {};
-    const cars = await carRepo.find({ where: whereClause });
+    const cars = userId
+      ? await carRepo.find({ where: { createdById: userId } })
+      : await carRepo.find();
 
     const summary: MaintenanceSummary = {
       totalCars: cars.length,
@@ -166,7 +168,7 @@ export class CrossCarAnalyticsService {
         serviceRepo.find({ where: { carId: car.id }, order: { serviceDate: 'DESC' } }),
         insuranceRepo.find({ where: { carId: car.id }, order: { createdAt: 'DESC' } }),
         registrationRepo.find({ where: { carId: car.id }, order: { renewalDate: 'DESC' } }),
-        issueRepo.find({ where: { carId: car.id, status: 'OPEN' } }),
+        issueRepo.find({ where: { carId: car.id, status: 'open' } }),
       ]);
 
       // Check service alerts
