@@ -7,12 +7,14 @@ import { CarInsurance } from '../models/car-insurance.model';
 import { CarIssueReport } from '../models/car-issue-report.model';
 import { CostAnalyticsService } from '../services/cost-analytics.service';
 import { MaintenanceAlertService } from '../services/maintenance-alert.service';
+import { CrossCarAnalyticsService } from '../services/cross-car-analytics.service';
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { validate as isUUID } from 'uuid';
 
 const costAnalyticsService = new CostAnalyticsService();
 const maintenanceAlertService = new MaintenanceAlertService();
+const crossCarAnalyticsService = new CrossCarAnalyticsService();
 
 /**
  * GET /api/cars/:carId/cost-analytics
@@ -245,4 +247,46 @@ export const getCarDashboard = asyncHandler(async (req: Request, res: Response) 
   };
 
   res.json(createSuccessResponse(dashboard, 'Dashboard data retrieved successfully'));
+});
+
+/**
+ * GET /api/cars/analytics/top-expenses
+ * Get top cars by total expenses
+ */
+export const getTopExpenses = asyncHandler(async (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 10;
+  const userId = (req as any).user?.id; // Get from authenticated user
+
+  if (limit < 1 || limit > 100) {
+    return res.status(400).json({
+      success: false,
+      message: 'Limit must be between 1 and 100',
+      data: null,
+    });
+  }
+
+  const topExpenses = await crossCarAnalyticsService.getTopExpenses(limit, userId);
+
+  res.json(
+    createSuccessResponse(
+      {
+        topExpenses,
+        count: topExpenses.length,
+        limit,
+      },
+      'Top expenses retrieved successfully'
+    )
+  );
+});
+
+/**
+ * GET /api/cars/maintenance/summary
+ * Get maintenance summary across all cars
+ */
+export const getMaintenanceSummary = asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id; // Get from authenticated user
+
+  const summary = await crossCarAnalyticsService.getMaintenanceSummary(userId);
+
+  res.json(createSuccessResponse(summary, 'Maintenance summary retrieved successfully'));
 });

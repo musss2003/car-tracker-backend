@@ -3,6 +3,8 @@ import {
   getCarCostAnalytics,
   getCarMaintenanceAlerts,
   getCarDashboard,
+  getTopExpenses,
+  getMaintenanceSummary,
 } from '../controllers/car-analytics.controller';
 import authenticate from '../middlewares/verify-jwt.middleware';
 
@@ -82,5 +84,46 @@ router.get('/:carId/maintenance-alerts', getCarMaintenanceAlerts);
  *         description: Car not found
  */
 router.get('/:carId/dashboard', getCarDashboard);
+
+/**
+ * @swagger
+ * /api/cars/analytics/top-expenses:
+ *   get:
+ *     tags: [Cars - Analytics]
+ *     summary: Get top cars by total expenses
+ *     description: Returns a list of cars sorted by total expenses (all categories combined)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Maximum number of cars to return
+ *     responses:
+ *       200:
+ *         description: Top expenses retrieved successfully
+ *       400:
+ *         description: Invalid limit parameter
+ */
+router.get('/analytics/top-expenses', getTopExpenses);
+
+/**
+ * @swagger
+ * /api/cars/maintenance/summary:
+ *   get:
+ *     tags: [Cars - Analytics]
+ *     summary: Get maintenance summary across all cars
+ *     description: Returns aggregated maintenance alerts and statistics for all user's cars
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Maintenance summary retrieved successfully
+ */
+router.get('/maintenance/summary', getMaintenanceSummary);
 
 export default router;
