@@ -49,6 +49,16 @@ export const getCarCostAnalytics = asyncHandler(async (req: Request, res: Respon
     });
   }
 
+  // Verify ownership - ensure the authenticated user owns this car
+  const userId = (req as any).user?.id;
+  if (car.createdById !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: You do not have access to this car',
+      data: null,
+    });
+  }
+
   // Fetch all related data in parallel
   const [serviceHistory, registrations, insuranceHistory, issueReports] = await Promise.all([
     serviceRepo.find({
@@ -110,6 +120,16 @@ export const getCarMaintenanceAlerts = asyncHandler(async (req: Request, res: Re
     return res.status(404).json({
       success: false,
       message: 'Car not found',
+      data: null,
+    });
+  }
+
+  // Verify ownership - ensure the authenticated user owns this car
+  const userId = (req as any).user?.id;
+  if (car.createdById !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: You do not have access to this car',
       data: null,
     });
   }
@@ -182,6 +202,16 @@ export const getCarDashboard = asyncHandler(async (req: Request, res: Response) 
     return res.status(404).json({
       success: false,
       message: 'Car not found',
+      data: null,
+    });
+  }
+
+  // Verify ownership - ensure the authenticated user owns this car
+  const userId = (req as any).user?.id;
+  if (car.createdById !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: You do not have access to this car',
       data: null,
     });
   }
