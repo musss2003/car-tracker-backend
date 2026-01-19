@@ -32,12 +32,8 @@ export const getCarCostAnalytics = asyncHandler(async (req: Request, res: Respon
     });
   }
 
-  // Get repositories
+  // Get car repository
   const carRepo = AppDataSource.getRepository(Car);
-  const serviceRepo = AppDataSource.getRepository(CarServiceHistory);
-  const registrationRepo = AppDataSource.getRepository(CarRegistration);
-  const insuranceRepo = AppDataSource.getRepository(CarInsurance);
-  const issueRepo = AppDataSource.getRepository(CarIssueReport);
 
   // Fetch car
   const car = await carRepo.findOne({ where: { id: carId } });
@@ -59,34 +55,8 @@ export const getCarCostAnalytics = asyncHandler(async (req: Request, res: Respon
     });
   }
 
-  // Fetch all related data in parallel
-  const [serviceHistory, registrations, insuranceHistory, issueReports] = await Promise.all([
-    serviceRepo.find({
-      where: { car: { id: carId } },
-      order: { serviceDate: 'DESC' },
-    }),
-    registrationRepo.find({
-      where: { car: { id: carId } },
-      order: { renewalDate: 'DESC' },
-    }),
-    insuranceRepo.find({
-      where: { car: { id: carId } },
-      order: { createdAt: 'DESC' },
-    }),
-    issueRepo.find({
-      where: { car: { id: carId } },
-      order: { reportedAt: 'DESC' },
-    }),
-  ]);
-
-  // Calculate analytics
-  const analytics = await costAnalyticsService.calculateCostAnalytics({
-    car,
-    serviceHistory,
-    registrations,
-    insuranceHistory,
-    issueReports,
-  });
+  // Calculate analytics using database aggregations (optimized)
+  const analytics = await costAnalyticsService.calculateCostAnalytics(carId, car);
 
   res.json(createSuccessResponse(analytics, 'Cost analytics retrieved successfully'));
 });
@@ -216,45 +186,40 @@ export const getCarDashboard = asyncHandler(async (req: Request, res: Response) 
     });
   }
 
-  // Fetch all data in parallel
-  const [serviceHistory, registrations, insuranceHistory, issueReports, activeIssues] =
+  // Fetch only the data needed for maintenance alerts (not cost calculations)
+  const [latestService, latestRegistration, latestInsurance, activeIssues, recentIssues] =
     await Promise.all([
-      serviceRepo.find({
+      serviceRepo.findOne({
         where: { car: { id: carId } },
         order: { serviceDate: 'DESC' },
       }),
-      registrationRepo.find({
+      registrationRepo.findOne({
         where: { car: { id: carId } },
         order: { renewalDate: 'DESC' },
       }),
-      insuranceRepo.find({
+      insuranceRepo.findOne({
         where: { car: { id: carId } },
         order: { createdAt: 'DESC' },
-      }),
-      issueRepo.find({
-        where: { car: { id: carId } },
-        order: { reportedAt: 'DESC' },
       }),
       issueRepo.find({
         where: { car: { id: carId }, status: 'open' },
         order: { reportedAt: 'DESC' },
       }),
+      issueRepo.find({
+        where: { car: { id: carId } },
+        order: { reportedAt: 'DESC' },
+        take: 5,
+      }),
     ]);
 
-  // Calculate analytics and alerts in parallel
+  // Calculate analytics and alerts in parallel using optimized methods
   const [costAnalytics, maintenanceAlerts] = await Promise.all([
-    costAnalyticsService.calculateCostAnalytics({
-      car,
-      serviceHistory,
-      registrations,
-      insuranceHistory,
-      issueReports,
-    }),
+    costAnalyticsService.calculateCostAnalytics(carId, car),
     maintenanceAlertService.generateAlerts({
       car,
-      latestService: serviceHistory[0],
-      latestRegistration: registrations[0],
-      latestInsurance: insuranceHistory[0],
+      latestService: latestService || undefined,
+      latestRegistration: latestRegistration || undefined,
+      latestInsurance: latestInsurance || undefined,
       activeIssues,
     }),
   ]);
@@ -269,10 +234,10 @@ export const getCarDashboard = asyncHandler(async (req: Request, res: Response) 
       summary: alertSummary,
     },
     recentActivity: {
-      latestService: serviceHistory[0] || null,
-      latestRegistration: registrations[0] || null,
-      latestInsurance: insuranceHistory[0] || null,
-      recentIssues: issueReports.slice(0, 5),
+      latestService: latestService || null,
+      latestRegistration: latestRegistration || null,
+      latestInsurance: latestInsurance || null,
+      recentIssues,
     },
   };
 
