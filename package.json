@@ -8,7 +8,10 @@
     "dev": "nodemon --ext ts --exec ts-node src/app.ts",
     "build": "tsc && mkdir -p dist/assets && cp -r src/assets/* dist/assets/",
     "setup-countries": "ts-node src/scripts/setupCountries.ts",
-    "swagger": "ts-node swagger-only.ts"
+    "swagger": "ts-node swagger-only.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "Mustafa Sinanovic",
@@ -22,6 +25,7 @@
     "@types/express": "^5.0.0",
     "@types/gridfs-stream": "^0.5.39",
     "@types/helmet": "^0.0.48",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/mongoose": "^5.11.97",
     "@types/morgan": "^1.9.10",
@@ -32,8 +36,10 @@
     "@types/pg": "^8.15.5",
     "dotenv": "^16.4.7",
     "express-list-endpoints": "^7.1.0",
+    "jest": "^30.2.0",
     "mongoose": "^8.10.0",
     "nodemon": "^3.1.7",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   },

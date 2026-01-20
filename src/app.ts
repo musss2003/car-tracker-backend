@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.route";
 import userRoutes from "./routes/user.route";
 import contractRoutes from "./routes/contract.route";
 import carRoutes from "./routes/car.route";
+import carAnalyticsRoutes from "./routes/car-analytics.route";
 import carRegistrationRoutes from "./routes/car-registration.route";
 import carInsuranceRoutes from "./routes/car-insurance.route";
 import carServiceRoutes from "./routes/car-service-history.route";
@@ -377,6 +378,7 @@ process.on("uncaughtException", (error) => {
 app.use("/api/auth", authLimiter, authRoutes); // ✅ Strict rate limit for auth
 app.use("/api/users", apiLimiter, userRoutes);
 app.use("/api/contracts", apiLimiter, contractRoutes);
+app.use("/api/cars", apiLimiter, carAnalyticsRoutes); // Analytics routes (must be before general car routes)
 app.use("/api/cars", apiLimiter, carRoutes);
 app.use("/api/car-registration", apiLimiter, carRegistrationRoutes);
 app.use("/api/car-insurance", apiLimiter, carInsuranceRoutes);
