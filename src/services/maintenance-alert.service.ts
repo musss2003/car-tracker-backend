@@ -90,7 +90,7 @@ export class MaintenanceAlertService {
       };
     }
 
-    const kmSinceLastService = (car.mileage || 0) - (latestService.mileage || 0);
+    const kmSinceLastService = Math.max(0, (car.mileage || 0) - (latestService.mileage || 0));
     const kmRemaining = this.SERVICE_INTERVAL - kmSinceLastService;
 
     if (kmRemaining <= 0) {
@@ -99,7 +99,7 @@ export class MaintenanceAlertService {
         type: 'service',
         urgency: 'critical',
         title: 'Servis prekoračen!',
-        message: `Vozilo je prekoračilo servisni interval za ${Math.abs(kmRemaining)} km`,
+        message: `Vozilo je prekoračilo servisni interval za ${Math.abs(Math.round(kmRemaining))} km`,
         actionLabel: 'Zakaži servis',
         actionUrl: `/cars/${car.id}/service-history`,
         kmRemaining: 0,
@@ -112,7 +112,7 @@ export class MaintenanceAlertService {
         type: 'service',
         urgency: 'critical',
         title: 'Hitan servis!',
-        message: `Servis je hitan! Preostalo samo ${kmRemaining} km`,
+        message: `Servis je hitan! Preostalo samo ${Math.round(kmRemaining)} km`,
         actionLabel: 'Zakaži servis',
         actionUrl: `/cars/${car.id}/service-history`,
         kmRemaining,
@@ -125,7 +125,7 @@ export class MaintenanceAlertService {
         type: 'service',
         urgency: 'warning',
         title: 'Servis uskoro potreban',
-        message: `Servis uskoro potreban. Preostalo ${kmRemaining} km`,
+        message: `Servis uskoro potreban. Preostalo ${Math.round(kmRemaining)} km`,
         actionLabel: 'Zakaži servis',
         actionUrl: `/cars/${car.id}/service-history`,
         kmRemaining,

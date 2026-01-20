@@ -174,7 +174,7 @@ export class CrossCarAnalyticsService {
       // Check service alerts
       if (serviceHistory.length > 0 && car.mileage) {
         const latestService = serviceHistory[0];
-        const kmSinceLastService = car.mileage - (latestService.mileage || 0);
+        const kmSinceLastService = Math.max(0, car.mileage - (latestService.mileage || 0));
         const kmRemaining = SERVICE_INTERVAL - kmSinceLastService;
 
         if (kmRemaining <= 0 || kmRemaining < CRITICAL_KM_THRESHOLD) {
