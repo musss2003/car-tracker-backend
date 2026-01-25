@@ -63,7 +63,7 @@ export const getAuditLogById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const auditLogRepository = (await import('../config/db')).AppDataSource.getRepository(
-      (await import('../models/audit-log,model')).AuditLog
+      (await import('../models/audit-log.model')).AuditLog
     );
     
     const log = await auditLogRepository.findOne({
