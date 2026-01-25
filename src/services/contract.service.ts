@@ -7,7 +7,7 @@ import { ValidationError, NotFoundError, ConflictError } from '../common/errors/
 import { AppDataSource } from '../config/db';
 import { Customer } from '../models/customer.model';
 import { Car } from '../models/car.model';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 
 export class ContractService extends BaseService<Contract, CreateContractDto, UpdateContractDto> {
   constructor(private contractRepository: ContractRepository) {

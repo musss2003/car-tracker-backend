@@ -1,7 +1,7 @@
 import CarIssueReport from '../models/car-issue-report.model';
 import Car from '../models/car.model';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 import carIssueReportRepository, { CarIssueReportRepository } from '../repositories/car-issue-report.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarIssueReportDto, UpdateCarIssueReportDto, validateCarIssueReportData } from '../dto/car-issue-report.dto';

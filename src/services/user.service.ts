@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import { User, UserRole } from '../models/user.model';
 import { UserRepository } from '../repositories/user.repository';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 import { AuditContext } from '../common/interfaces/base-service.interface';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto, ResetPasswordDto } from '../dto/user.dto';
 import { ConflictError, NotFoundError, ValidationError, UnauthorizedError } from '../common/errors';

@@ -1,7 +1,7 @@
 import CarInsurance from '../models/car-insurance.model';
 import Car from '../models/car.model';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 import carInsuranceRepository, { CarInsuranceRepository } from '../repositories/car-insurance.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarInsuranceDto, UpdateCarInsuranceDto, validateCarInsuranceData } from '../dto/car-insurance.dto';

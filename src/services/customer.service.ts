@@ -4,7 +4,7 @@ import { CreateCustomerDto, UpdateCustomerDto, validateCustomerData, validateCus
 import { CustomerRepository } from '../repositories/customer.repository';
 import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 
 export class CustomerService extends BaseService<Customer, CreateCustomerDto, UpdateCustomerDto> {
   constructor(private customerRepository: CustomerRepository) {

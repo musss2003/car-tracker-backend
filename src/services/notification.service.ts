@@ -1,7 +1,7 @@
 import { Notification, NotificationStatus } from '../models/notification.model';
 import { NotificationRepository } from '../repositories/notification.repository';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 import { AuditContext } from '../common/interfaces/base-service.interface';
 import { CreateNotificationDto, UpdateNotificationDto } from '../dto/notification.dto';
 import { NotFoundError, UnauthorizedError } from '../common/errors';

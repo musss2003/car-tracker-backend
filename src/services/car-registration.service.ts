@@ -1,7 +1,7 @@
 import CarRegistration from '../models/car-registration.model';
 import Car from '../models/car.model';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 import carRegistrationRepository, { CarRegistrationRepository } from '../repositories/car-registration.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarRegistrationDto, UpdateCarRegistrationDto, validateCarRegistrationData } from '../dto/car-registration.dto';

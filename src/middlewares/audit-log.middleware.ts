@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import auditLogService from '../services/audit-log.service';
-import { AuditAction, AuditResource, AuditStatus } from '../models/audit-log,model';
+import { AuditAction, AuditResource, AuditStatus } from '../models/audit-log.model';
 
 // Extend Express Request to include timing
 declare global {

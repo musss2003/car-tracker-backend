@@ -5,7 +5,7 @@ import { CarRepository } from '../repositories/car.repository';
 import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
 import { Contract } from '../models/contract.model';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 
 export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
   constructor(private carRepository: CarRepository) {

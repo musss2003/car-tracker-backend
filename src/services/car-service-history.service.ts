@@ -1,7 +1,7 @@
 import CarServiceHistory from '../models/car-service-history.model';
 import Car from '../models/car.model';
 import { BaseService } from '../common/services/base.service';
-import { AuditResource } from '../models/audit-log,model';
+import { AuditResource } from '../models/audit-log.model';
 import carServiceHistoryRepository, { CarServiceHistoryRepository } from '../repositories/car-service-history.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarServiceHistoryDto, UpdateCarServiceHistoryDto, validateCarServiceHistoryData } from '../dto/car-service-history.dto';

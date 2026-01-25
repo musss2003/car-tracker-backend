@@ -9,7 +9,7 @@ import { Contract } from "../models/contract.model";
 import { Notification } from "../models/notification.model";
 import { Country } from "../models/country.model";
 import { RefreshToken } from "../models/refresh-token.model";
-import { AuditLog } from "../models/audit-log,model";
+import { AuditLog } from "../models/audit-log.model";
 import CarRegistration from "../models/car-registration.model";
 import CarInsurance from "../models/car-insurance.model";
 import CarServiceHistory from "../models/car-service-history.model";

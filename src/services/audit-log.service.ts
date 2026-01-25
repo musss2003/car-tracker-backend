@@ -1,5 +1,5 @@
 import { AppDataSource } from '../config/db';
-import { AuditLog, AuditAction, AuditResource, AuditStatus } from '../models/audit-log,model';
+import { AuditLog, AuditAction, AuditResource, AuditStatus } from '../models/audit-log.model';
 import { User } from '../models/user.model';
 
 export interface CreateAuditLogParams {
