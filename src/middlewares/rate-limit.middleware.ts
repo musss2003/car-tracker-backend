@@ -111,6 +111,11 @@ export const apiLimiter: RateLimitRequestHandler = rateLimit({
   handler: (req, res) => {
     const ip = req.ip || 'unknown';
     console.warn(`⚠️  Rate limit exceeded for IP: ${ip} on ${req.path}`);
+    
+    // Add CORS headers to prevent CORS errors on rate limit responses
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
     res.status(429).json({
       success: false,
       error: "Too many requests, please try again later.",
@@ -138,6 +143,10 @@ export const authLimiter: RateLimitRequestHandler = rateLimit({
   handler: (req, res) => {
     const ip = req.ip || 'unknown';
     console.warn(`🚨 SECURITY: Auth rate limit exceeded for IP: ${ip} on ${req.path}`);
+    
+    // Add CORS headers to prevent CORS errors on rate limit responses
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     
     // Log potential brute force attack
     if (isProd) {
