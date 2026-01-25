@@ -37,7 +37,7 @@ export const getAuditLogs = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: result.logs,
+      logs: result.logs,
       pagination: {
         page: filters.page,
         limit: filters.limit,
