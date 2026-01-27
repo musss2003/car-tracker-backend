@@ -1,4 +1,17 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from "typeorm";
+import { Customer } from "./customer.model";
+import { Car } from "./car.model";
+import { User } from "./user.model";
+import { Contract } from "./contract.model";
 
 export enum BookingStatus {
   PENDING = 'pending',
@@ -23,175 +36,160 @@ export interface IBookingExtra {
   pricePerDay: number;
 }
 
-export interface IBooking extends Document {
-  customerId: mongoose.Types.ObjectId;
-  carId: mongoose.Types.ObjectId;
+@Entity("bookings")
+@Index(['customerId']) // Index for customer's bookings
+@Index(['carId']) // Index for car's bookings
+@Index(['status']) // Index for status queries
+@Index(['startDate']) // Index for date range queries
+@Index(['endDate']) // Index for expiring bookings
+@Index(['expiresAt']) // Index for auto-expiration
+@Index(['bookingReference'], { unique: true }) // Unique index for reference
+@Index(['startDate', 'endDate']) // Composite index for date range overlaps
+@Index(['carId', 'startDate', 'endDate']) // Composite index for car availability
+@Index(['status', 'expiresAt']) // Composite index for expiration queries
+export class Booking {
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
+
+  // Booking Reference (auto-generated unique identifier)
+  @Column({ name: "booking_reference", unique: true, length: 50 })
+  bookingReference: string;
+
+  // Relationship with Customer (cannot be deleted)
+  @Column({ name: "customer_id" })
+  customerId: string;
+
+  @ManyToOne(() => Customer, { eager: true, onDelete: "RESTRICT" })
+  @JoinColumn({ name: "customer_id" })
+  customer: Customer;
+
+  // Relationship with Car (cannot be deleted)
+  @Column({ name: "car_id" })
+  carId: string;
+
+  @ManyToOne(() => Car, { eager: true, onDelete: "RESTRICT" })
+  @JoinColumn({ name: "car_id" })
+  car: Car;
+
+  // Rental Period
+  @Column({ name: "start_date", type: "date" })
+  startDate: Date;
+
+  @Column({ name: "end_date", type: "date" })
+  endDate: Date;
+
+  // Status
+  @Column({
+    type: "enum",
+    enum: BookingStatus,
+    default: BookingStatus.PENDING
+  })
+  status: BookingStatus;
+
+  // Pricing
+  @Column({ name: "total_estimated_cost", type: "decimal", precision: 10, scale: 2 })
+  totalEstimatedCost: number;
+
+  @Column({ name: "deposit_amount", type: "decimal", precision: 10, scale: 2, default: 0 })
+  depositAmount: number;
+
+  @Column({ name: "deposit_paid", type: "boolean", default: false })
+  depositPaid: boolean;
+
+  // Locations
+  @Column({ name: "pickup_location", type: "varchar", length: 255, nullable: true })
+  pickupLocation?: string;
+
+  @Column({ name: "dropoff_location", type: "varchar", length: 255, nullable: true })
+  dropoffLocation?: string;
+
+  // Additional drivers (stored as JSON array)
+  @Column({ name: "additional_drivers", type: "json", nullable: true })
+  additionalDrivers?: string[];
+
+  // Extras (stored as JSON)
+  @Column({ name: "extras", type: "json", nullable: true })
+  extras?: IBookingExtra[];
+
+  // Notes
+  @Column({ name: "notes", type: "text", nullable: true })
+  notes?: string;
+
+  // Expiration
+  @Column({ name: "expires_at", type: "timestamp" })
+  expiresAt: Date;
+
+  // Cancellation
+  @Column({ name: "cancelled_at", type: "timestamp", nullable: true })
+  cancelledAt?: Date;
+
+  @Column({ name: "cancellation_reason", type: "text", nullable: true })
+  cancellationReason?: string;
+
+  // Conversion to Contract
+  @Column({ name: "converted_to_contract_id", nullable: true })
+  convertedToContractId?: string;
+
+  @ManyToOne(() => Contract, { eager: false, nullable: true })
+  @JoinColumn({ name: "converted_to_contract_id" })
+  convertedToContract?: Contract;
+
+  @Column({ name: "converted_at", type: "timestamp", nullable: true })
+  convertedAt?: Date;
+
+  // User who created the booking
+  @Column({ name: "created_by" })
+  createdById: string;
+
+  @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: "created_by" })
+  createdBy: User;
+
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
+
+  // User who last updated the booking
+  @Column({ name: "updated_by", nullable: true })
+  updatedById?: string;
+
+  @ManyToOne(() => User, { eager: true, nullable: true })
+  @JoinColumn({ name: "updated_by" })
+  updatedBy?: User;
+
+  @UpdateDateColumn({ name: "updated_at", nullable: true })
+  updatedAt?: Date;
+}
+
+export interface IBooking {
+  id: string;
+  bookingReference: string;
+  customerId: string;
+  customer: Customer;
+  carId: string;
+  car: Car;
   startDate: Date;
   endDate: Date;
   status: BookingStatus;
   totalEstimatedCost: number;
   depositAmount: number;
   depositPaid: boolean;
-  notes?: string;
-  bookingReference: string;
   pickupLocation?: string;
   dropoffLocation?: string;
   additionalDrivers?: string[];
   extras?: IBookingExtra[];
+  notes?: string;
+  expiresAt: Date;
   cancelledAt?: Date;
   cancellationReason?: string;
-  convertedToContractId?: mongoose.Types.ObjectId;
+  convertedToContractId?: string;
+  convertedToContract?: Contract;
   convertedAt?: Date;
-  expiresAt: Date;
-  createdBy: mongoose.Types.ObjectId;
-  updatedBy?: mongoose.Types.ObjectId;
+  createdById: string;
+  createdBy: User;
   createdAt: Date;
-  updatedAt: Date;
+  updatedById?: string;
+  updatedBy?: User;
+  updatedAt?: Date;
 }
 
-const BookingExtraSchema = new Schema<IBookingExtra>(
-  {
-    type: {
-      type: String,
-      enum: Object.values(BookingExtraType),
-      required: true
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
-      default: 1
-    },
-    pricePerDay: {
-      type: Number,
-      required: true,
-      min: 0
-    }
-  },
-  { _id: false }
-);
-
-const BookingSchema = new Schema<IBooking>(
-  {
-    customerId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Customer',
-      required: true,
-      index: true
-    },
-    carId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Car',
-      required: true,
-      index: true
-    },
-    startDate: {
-      type: Date,
-      required: true,
-      index: true
-    },
-    endDate: {
-      type: Date,
-      required: true,
-      index: true
-    },
-    status: {
-      type: String,
-      enum: Object.values(BookingStatus),
-      default: BookingStatus.PENDING,
-      index: true
-    },
-    totalEstimatedCost: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    depositAmount: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0
-    },
-    depositPaid: {
-      type: Boolean,
-      default: false
-    },
-    notes: {
-      type: String,
-      trim: true
-    },
-    bookingReference: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true
-    },
-    pickupLocation: {
-      type: String,
-      trim: true
-    },
-    dropoffLocation: {
-      type: String,
-      trim: true
-    },
-    additionalDrivers: [
-      {
-        type: String,
-        trim: true
-      }
-    ],
-    extras: [BookingExtraSchema],
-    cancelledAt: {
-      type: Date
-    },
-    cancellationReason: {
-      type: String,
-      trim: true
-    },
-    convertedToContractId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Contract'
-    },
-    convertedAt: {
-      type: Date
-    },
-    expiresAt: {
-      type: Date,
-      required: true,
-      index: true
-    },
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    updatedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    }
-  },
-  {
-    timestamps: true
-  }
-);
-
-// Compound indexes for common queries
-BookingSchema.index({ carId: 1, startDate: 1, endDate: 1 });
-BookingSchema.index({ customerId: 1, status: 1 });
-BookingSchema.index({ status: 1, expiresAt: 1 });
-BookingSchema.index({ startDate: 1, status: 1 });
-
-// Virtual for number of days
-BookingSchema.virtual('numberOfDays').get(function () {
-  const start = new Date(this.startDate);
-  const end = new Date(this.endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-});
-
-// Ensure virtuals are included in JSON
-BookingSchema.set('toJSON', { virtuals: true });
-BookingSchema.set('toObject', { virtuals: true });
-
-export const Booking = mongoose.model<IBooking>('Booking', BookingSchema);
+export default Booking;
