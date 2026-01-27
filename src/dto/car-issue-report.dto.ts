@@ -1,49 +1,78 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+  MinLength
+} from 'class-validator';
+
+export enum IssueSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+export enum IssueStatus {
+  OPEN = 'open',
+  IN_PROGRESS = 'in_progress',
+  RESOLVED = 'resolved'
+}
+
 /**
  * DTO for creating a new car issue report
  */
-export interface CreateCarIssueReportDto {
-  carId: string;
-  reportedById?: string;
-  description: string;
+export class CreateCarIssueReportDto {
+  @IsUUID()
+  @IsNotEmpty()
+  carId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(10)
+  description!: string;
+
+  @IsString()
+  @IsOptional()
   diagnosticPdfUrl?: string;
-  severity?: 'low' | 'medium' | 'high' | 'critical';
-  status?: 'open' | 'in_progress' | 'resolved';
+
+  @IsEnum(IssueSeverity)
+  @IsOptional()
+  severity?: IssueSeverity;
+
+  @IsEnum(IssueStatus)
+  @IsOptional()
+  status?: IssueStatus;
 }
 
 /**
  * DTO for updating a car issue report
  */
-export interface UpdateCarIssueReportDto {
+export class UpdateCarIssueReportDto {
+  @IsString()
+  @MinLength(10)
+  @IsOptional()
   description?: string;
+
+  @IsString()
+  @IsOptional()
   diagnosticPdfUrl?: string;
-  severity?: 'low' | 'medium' | 'high' | 'critical';
-  status?: 'open' | 'in_progress' | 'resolved';
+
+  @IsEnum(IssueSeverity)
+  @IsOptional()
+  severity?: IssueSeverity;
+
+  @IsEnum(IssueStatus)
+  @IsOptional()
+  status?: IssueStatus;
+
+  @IsUUID()
+  @IsOptional()
   resolvedById?: string;
-  resolvedAt?: Date;
-  updatedById?: string;
-}
 
-/**
- * Validation helper for car issue report data
- */
-export function validateCarIssueReportData(data: Partial<CreateCarIssueReportDto>): string[] {
-  const errors: string[] = [];
-
-  if (!data.carId) {
-    errors.push('Car ID is required');
-  }
-
-  if (!data.description || data.description.trim().length === 0) {
-    errors.push('Description is required');
-  }
-
-  if (data.severity && !['low', 'medium', 'high', 'critical'].includes(data.severity)) {
-    errors.push('Invalid severity level');
-  }
-
-  if (data.status && !['open', 'in_progress', 'resolved'].includes(data.status)) {
-    errors.push('Invalid status');
-  }
-
-  return errors;
+  @IsDateString()
+  @IsOptional()
+  resolvedAt?: string;  // String in DTO, Date in entity
 }

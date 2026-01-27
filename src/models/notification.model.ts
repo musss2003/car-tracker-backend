@@ -1,60 +1,88 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index
+} from 'typeorm';
 import { User } from './user.model';
 
-// Define the Notification status enum
+/**
+ * Notification status enum
+ */
 export enum NotificationStatus {
-    NEW = 'new',
-    SEEN = 'seen'
+  NEW = 'new',
+  SEEN = 'seen'
 }
 
-// Define the Notification entity for PostgreSQL
+/**
+ * Notification Entity
+ */
 @Entity('notifications')
+@Index(['recipientId'])
+@Index(['status'])
+@Index(['createdAt'])
+@Index(['recipientId', 'status']) // Composite for unread notifications
 export class Notification {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ name: 'recipient_id' })
-    recipientId: string; // ID of the user receiving the notification
+  // Recipient (required)
+  @Column({ name: 'recipient_id' })
+  recipientId: string;
 
-    @ManyToOne(() => User, { eager: false })
-    @JoinColumn({ name: 'recipient_id' })
-    recipient: User;
+  @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: 'recipient_id' })
+  recipient: User;
 
-    @Column({ name: 'sender_id', nullable: true })
-    senderId?: string; // Optional: ID of the user sending the notification
+  // Sender (optional)
+  @Column({ name: 'sender_id', nullable: true })
+  senderId?: string;
 
-    @ManyToOne(() => User, { eager: false, nullable: true })
-    @JoinColumn({ name: 'sender_id' })
-    sender?: User;
+  @ManyToOne(() => User, { eager: false, nullable: true })
+  @JoinColumn({ name: 'sender_id' })
+  sender?: User;
 
-    @Column({ type: 'varchar', length: 100 })
-    type: string; // Type of notification (e.g., "message", "alert")
+  // Notification details
+  @Column({ type: 'varchar', length: 100 })
+  type: string;
 
-    @Column({ type: 'text' })
-    message: string; // Notification content
+  @Column({ type: 'text' })
+  message: string;
 
-    @Column({
-        type: 'enum',
-        enum: NotificationStatus,
-        default: NotificationStatus.NEW
-    })
-    status: NotificationStatus; // Status of the notification
+  // Status
+  @Column({
+    type: 'enum',
+    enum: NotificationStatus,
+    default: NotificationStatus.NEW
+  })
+  status: NotificationStatus;
 
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date; // Timestamp of creation
+  // Timestamps
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', nullable: true })
+  updatedAt?: Date;
 }
 
-// Export interface for compatibility
+/**
+ * Notification interface
+ */
 export interface INotification {
-    id: string;
-    recipientId: string;
-    recipient?: User;
-    senderId?: string;
-    sender?: User;
-    type: string;
-    message: string;
-    status: NotificationStatus;
-    createdAt: Date;
+  id: string;
+  recipientId: string;
+  recipient: User;
+  senderId?: string;
+  sender?: User;
+  type: string;
+  message: string;
+  status: NotificationStatus;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 export default Notification;

@@ -1,95 +1,92 @@
-export interface CreateContractDto {
-  customerId: string;
-  carId: string;
-  startDate: Date;
-  endDate: Date;
-  dailyRate: number;
-  totalAmount: number;
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsUUID,
+  Min
+} from 'class-validator';
+
+/**
+ * DTO for creating a new contract
+ */
+export class CreateContractDto {
+  @IsUUID()
+  @IsNotEmpty()
+  customerId!: string;
+
+  @IsUUID()
+  @IsNotEmpty()
+  carId!: string;
+
+  @IsDateString()
+  @IsNotEmpty()
+  startDate!: string;
+
+  @IsDateString()
+  @IsNotEmpty()
+  endDate!: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  dailyRate!: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  totalAmount!: number;
+
+  @IsString()
+  @IsOptional()
   additionalNotes?: string;
-  photoUrl: string;
+
+  @IsString()
+  @IsNotEmpty()
+  photoUrl!: string;
 }
 
-export interface UpdateContractDto {
+/**
+ * DTO for updating a contract
+ */
+export class UpdateContractDto {
+  @IsUUID()
+  @IsOptional()
   customerId?: string;
+
+  @IsUUID()
+  @IsOptional()
   carId?: string;
-  startDate?: Date;
-  endDate?: Date;
+
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   dailyRate?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   totalAmount?: number;
+
+  @IsString()
+  @IsOptional()
   additionalNotes?: string;
+
+  @IsString()
+  @IsOptional()
   photoUrl?: string;
+
+  @IsBoolean()
+  @IsOptional()
   notificationSent?: boolean;
-}
-
-/**
- * Validates contract data
- */
-export function validateContractData(data: Partial<CreateContractDto>): string | null {
-  if (!data.customerId || data.customerId.trim() === '') {
-    return 'Customer ID is required';
-  }
-  if (!data.carId || data.carId.trim() === '') {
-    return 'Car ID is required';
-  }
-  if (!data.startDate) {
-    return 'Start date is required';
-  }
-  if (!data.endDate) {
-    return 'End date is required';
-  }
-  if (!data.dailyRate || data.dailyRate <= 0) {
-    return 'Daily rate must be a positive number';
-  }
-  if (!data.totalAmount || data.totalAmount <= 0) {
-    return 'Total amount must be a positive number';
-  }
-  if (!data.photoUrl || data.photoUrl.trim() === '') {
-    return 'Photo URL is required';
-  }
-
-  // Validate dates
-  const startDate = new Date(data.startDate);
-  const endDate = new Date(data.endDate);
-  
-  if (isNaN(startDate.getTime())) {
-    return 'Invalid start date';
-  }
-  if (isNaN(endDate.getTime())) {
-    return 'Invalid end date';
-  }
-  if (endDate <= startDate) {
-    return 'End date must be after start date';
-  }
-
-  return null;
-}
-
-/**
- * Validates update data
- */
-export function validateContractUpdateData(data: UpdateContractDto): string | null {
-  if (data.dailyRate !== undefined && data.dailyRate <= 0) {
-    return 'Daily rate must be a positive number';
-  }
-  if (data.totalAmount !== undefined && data.totalAmount <= 0) {
-    return 'Total amount must be a positive number';
-  }
-
-  // Validate dates if provided
-  if (data.startDate && data.endDate) {
-    const startDate = new Date(data.startDate);
-    const endDate = new Date(data.endDate);
-    
-    if (isNaN(startDate.getTime())) {
-      return 'Invalid start date';
-    }
-    if (isNaN(endDate.getTime())) {
-      return 'Invalid end date';
-    }
-    if (endDate <= startDate) {
-      return 'End date must be after start date';
-    }
-  }
-
-  return null;
 }

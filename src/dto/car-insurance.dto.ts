@@ -1,46 +1,70 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+  Min,
+  MaxLength
+} from 'class-validator';
+
 /**
  * DTO for creating a new car insurance record
  */
-export interface CreateCarInsuranceDto {
-  carId: string;
+export class CreateCarInsuranceDto {
+  @IsUUID()
+  @IsNotEmpty()
+  carId!: string;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
   policyNumber?: string;
+
+  @IsString()
+  @MaxLength(255)
+  @IsOptional()
   provider?: string;
-  insuranceExpiry: Date | string;
+
+  @IsDateString()
+  @IsNotEmpty()
+  insuranceExpiry!: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   price?: number;
+
+  @IsString()
+  @IsOptional()
+  additionalNotes?: string;
 }
 
 /**
  * DTO for updating a car insurance record
  */
-export interface UpdateCarInsuranceDto {
+export class UpdateCarInsuranceDto {
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
   policyNumber?: string;
+
+  @IsString()
+  @MaxLength(255)
+  @IsOptional()
   provider?: string;
-  insuranceExpiry?: Date | string;
+
+  @IsDateString()
+  @IsOptional()
+  insuranceExpiry?: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   price?: number;
-}
 
-/**
- * Validation helper for car insurance data
- */
-export function validateCarInsuranceData(data: Partial<CreateCarInsuranceDto>): string[] {
-  const errors: string[] = [];
-
-  if (!data.carId) {
-    errors.push('Car ID is required');
-  }
-
-  if (!data.insuranceExpiry) {
-    errors.push('Insurance expiry date is required');
-  } else {
-    const expiryDate = new Date(data.insuranceExpiry);
-    if (isNaN(expiryDate.getTime())) {
-      errors.push('Invalid insurance expiry date');
-    }
-  }
-
-  if (data.price !== undefined && data.price < 0) {
-    errors.push('Price cannot be negative');
-  }
-
-  return errors;
+  @IsString()
+  @IsOptional()
+  additionalNotes?: string;
 }
