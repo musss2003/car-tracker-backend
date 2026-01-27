@@ -1,195 +1,195 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+  IsDateString
+} from 'class-validator';
 import { FuelType, TransmissionType, CarCategory, CarStatus } from '../models/car.model';
 
-export interface CreateCarDto {
-  manufacturer: string;
-  model: string;
-  year: number;
-  licensePlate: string;
-  fuelType: FuelType;
-  transmission: TransmissionType;
-  pricePerDay: number;
+/**
+ * DTO for creating a new car
+ */
+export class CreateCarDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  manufacturer!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  model!: string;
+
+  @IsNumber()
+  @Min(1900)
+  @Max(new Date().getFullYear() + 1)
+  year!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  licensePlate!: string;
+
+  @IsEnum(['petrol', 'diesel', 'hybrid', 'electric'])
+  @IsNotEmpty()
+  fuelType!: FuelType;
+
+  @IsEnum(['manual', 'automatic'])
+  @IsNotEmpty()
+  transmission!: TransmissionType;
+
+  @IsNumber()
+  @Min(0)
+  pricePerDay!: number;
+
+  @IsString()
+  @MaxLength(50)
+  @IsOptional()
   color?: string;
+
+  @IsString()
+  @MaxLength(50)
+  @IsOptional()
   chassisNumber?: string;
+
+  @IsNumber()
+  @Min(1)
+  @Max(20)
+  @IsOptional()
   seats?: number;
+
+  @IsNumber()
+  @Min(2)
+  @Max(6)
+  @IsOptional()
   doors?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   mileage?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   enginePower?: number;
+
+  @IsEnum(['economy', 'luxury', 'suv', 'van', 'family', 'business'])
+  @IsOptional()
   category?: CarCategory;
+
+  @IsEnum(['available', 'archived', 'deleted'])
+  @IsOptional()
   status?: CarStatus;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
   currentLocation?: string;
+
+  @IsString()
+  @IsOptional()
   photoUrl?: string;
 }
 
-export interface UpdateCarDto {
+/**
+ * DTO for updating a car
+ */
+export class UpdateCarDto {
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
   manufacturer?: string;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
   model?: string;
+
+  @IsNumber()
+  @Min(1900)
+  @Max(new Date().getFullYear() + 1)
+  @IsOptional()
   year?: number;
+
+  @IsString()
+  @MaxLength(50)
+  @IsOptional()
   color?: string;
+
+  @IsString()
+  @MaxLength(50)
+  @IsOptional()
   chassisNumber?: string;
+
+  @IsEnum(['petrol', 'diesel', 'hybrid', 'electric'])
+  @IsOptional()
   fuelType?: FuelType;
+
+  @IsEnum(['manual', 'automatic'])
+  @IsOptional()
   transmission?: TransmissionType;
+
+  @IsNumber()
+  @Min(1)
+  @Max(20)
+  @IsOptional()
   seats?: number;
+
+  @IsNumber()
+  @Min(2)
+  @Max(6)
+  @IsOptional()
   doors?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   mileage?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   enginePower?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
   pricePerDay?: number;
+
+  @IsEnum(['economy', 'luxury', 'suv', 'van', 'family', 'business'])
+  @IsOptional()
   category?: CarCategory;
+
+  @IsEnum(['available', 'archived', 'deleted'])
+  @IsOptional()
   status?: CarStatus;
+
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
   currentLocation?: string;
+
+  @IsString()
+  @IsOptional()
   photoUrl?: string;
 }
 
-export interface CarAvailabilityDto {
-  startDate: Date;
-  endDate: Date;
-}
-
 /**
- * Validates car data
- * @param data - The car data to validate
- * @returns null if valid, error message if invalid
+ * DTO for checking car availability
  */
-export function validateCarData(data: Partial<CreateCarDto>): string | null {
-  // Required fields for creation
-  if (!data.manufacturer || data.manufacturer.trim() === '') {
-    return 'Manufacturer is required';
-  }
-  if (!data.model || data.model.trim() === '') {
-    return 'Model is required';
-  }
-  if (!data.year) {
-    return 'Year is required';
-  }
-  if (!data.licensePlate || data.licensePlate.trim() === '') {
-    return 'License plate is required';
-  }
-  if (!data.fuelType) {
-    return 'Fuel type is required';
-  }
-  if (!data.transmission) {
-    return 'Transmission is required';
-  }
-  if (data.pricePerDay === undefined || data.pricePerDay === null) {
-    return 'Price per day is required';
-  }
+export class CarAvailabilityDto {
+  @IsDateString()
+  @IsNotEmpty()
+  startDate!: string;
 
-  // Validate year range
-  const currentYear = new Date().getFullYear();
-  if (data.year < 1900 || data.year > currentYear + 1) {
-    return `Year must be between 1900 and ${currentYear + 1}`;
-  }
-
-  // Validate price
-  if (data.pricePerDay < 0) {
-    return 'Price per day must be a positive number';
-  }
-
-  // Validate numeric fields if provided
-  if (data.seats !== undefined && (data.seats < 1 || data.seats > 20)) {
-    return 'Seats must be between 1 and 20';
-  }
-  if (data.doors !== undefined && (data.doors < 2 || data.doors > 6)) {
-    return 'Doors must be between 2 and 6';
-  }
-  if (data.mileage !== undefined && data.mileage < 0) {
-    return 'Mileage must be a positive number';
-  }
-  if (data.enginePower !== undefined && data.enginePower < 0) {
-    return 'Engine power must be a positive number';
-  }
-
-  // Validate fuel type
-  const validFuelTypes: FuelType[] = ['petrol', 'diesel', 'hybrid', 'electric'];
-  if (data.fuelType && !validFuelTypes.includes(data.fuelType)) {
-    return 'Invalid fuel type';
-  }
-
-  // Validate transmission
-  const validTransmissions: TransmissionType[] = ['manual', 'automatic'];
-  if (data.transmission && !validTransmissions.includes(data.transmission)) {
-    return 'Invalid transmission type';
-  }
-
-  // Validate category if provided
-  if (data.category) {
-    const validCategories: CarCategory[] = ['economy', 'luxury', 'suv', 'van', 'family', 'business'];
-    if (!validCategories.includes(data.category)) {
-      return 'Invalid category';
-    }
-  }
-
-  // Validate status if provided
-  if (data.status) {
-    const validStatuses: CarStatus[] = ['available', 'archived', 'deleted'];
-    if (!validStatuses.includes(data.status)) {
-      return 'Invalid status';
-    }
-  }
-
-  return null;
-}
-
-/**
- * Validates update data
- * @param data - The update data to validate
- * @returns null if valid, error message if invalid
- */
-export function validateCarUpdateData(data: UpdateCarDto): string | null {
-  // If any required field is being updated, validate it
-  if (data.year !== undefined) {
-    const currentYear = new Date().getFullYear();
-    if (data.year < 1900 || data.year > currentYear + 1) {
-      return `Year must be between 1900 and ${currentYear + 1}`;
-    }
-  }
-
-  if (data.pricePerDay !== undefined && data.pricePerDay < 0) {
-    return 'Price per day must be a positive number';
-  }
-
-  if (data.seats !== undefined && (data.seats < 1 || data.seats > 20)) {
-    return 'Seats must be between 1 and 20';
-  }
-
-  if (data.doors !== undefined && (data.doors < 2 || data.doors > 6)) {
-    return 'Doors must be between 2 and 6';
-  }
-
-  if (data.mileage !== undefined && data.mileage < 0) {
-    return 'Mileage must be a positive number';
-  }
-
-  if (data.enginePower !== undefined && data.enginePower < 0) {
-    return 'Engine power must be a positive number';
-  }
-
-  if (data.fuelType) {
-    const validFuelTypes: FuelType[] = ['petrol', 'diesel', 'hybrid', 'electric'];
-    if (!validFuelTypes.includes(data.fuelType)) {
-      return 'Invalid fuel type';
-    }
-  }
-
-  if (data.transmission) {
-    const validTransmissions: TransmissionType[] = ['manual', 'automatic'];
-    if (!validTransmissions.includes(data.transmission)) {
-      return 'Invalid transmission type';
-    }
-  }
-
-  if (data.category) {
-    const validCategories: CarCategory[] = ['economy', 'luxury', 'suv', 'van', 'family', 'business'];
-    if (!validCategories.includes(data.category)) {
-      return 'Invalid category';
-    }
-  }
-
-  if (data.status) {
-    const validStatuses: CarStatus[] = ['available', 'archived', 'deleted'];
-    if (!validStatuses.includes(data.status)) {
-      return 'Invalid status';
-    }
-  }
-
-  return null;
+  @IsDateString()
+  @IsNotEmpty()
+  endDate!: string;
 }

@@ -1,51 +1,62 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsArray,
+  IsUUID,
+  MaxLength
+} from 'class-validator';
 import { NotificationStatus } from '../models/notification.model';
 
-export interface CreateNotificationDto {
-  recipientId: string;
+/**
+ * DTO for creating a new notification
+ */
+export class CreateNotificationDto {
+  @IsUUID()
+  @IsNotEmpty()
+  recipientId!: string;
+
+  @IsUUID()
+  @IsOptional()
   senderId?: string;
-  type: string;
-  message: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  type!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  message!: string;
 }
 
-export interface UpdateNotificationDto {
+/**
+ * DTO for updating a notification
+ */
+export class UpdateNotificationDto {
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
   type?: string;
+
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
   message?: string;
+
+  @IsEnum(NotificationStatus)
+  @IsOptional()
   status?: NotificationStatus;
 }
 
-export interface MarkAsReadDto {
-  notificationIds: string[];
+/**
+ * DTO for marking notifications as read
+ */
+export class MarkAsReadDto {
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsNotEmpty()
+  notificationIds!: string[];
 }
-
-// Validation functions
-export const validateCreateNotification = (data: CreateNotificationDto): string[] => {
-  const errors: string[] = [];
-
-  if (!data.recipientId) {
-    errors.push('Recipient ID is required');
-  }
-
-  if (!data.type || data.type.trim().length === 0) {
-    errors.push('Notification type is required');
-  }
-
-  if (!data.message || data.message.trim().length === 0) {
-    errors.push('Notification message is required');
-  }
-
-  if (data.message && data.message.length > 500) {
-    errors.push('Message must not exceed 500 characters');
-  }
-
-  return errors;
-};
-
-export const validateUpdateNotification = (data: UpdateNotificationDto): string[] => {
-  const errors: string[] = [];
-
-  if (data.message && data.message.length > 500) {
-    errors.push('Message must not exceed 500 characters');
-  }
-
-  return errors;
-};
