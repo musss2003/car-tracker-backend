@@ -237,3 +237,5 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
     return `Deleted contract for ${customerName} with car ${carInfo}`;
   }
 }
+
+export default new ContractService(new ContractRepository());

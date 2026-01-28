@@ -1,10 +1,12 @@
 import { AppDataSource } from '../config/db';
 import { Booking, BookingStatus } from '../models/booking.model';
-import { BookingSortField, SortOrder, BookingQueryDto, buildSafeQueryParams, getSafeColumnName } from '../dto/booking.dto';
-import { Between, LessThan, MoreThan, In, FindOptionsWhere, Like } from 'typeorm';
+import { BookingQueryDto, buildSafeQueryParams, getSafeColumnName } from '../dto/booking.dto';
+import { BaseRepository } from '../common/repositories/base.repository';
+import { Between, LessThan, MoreThan, In, FindOptionsWhere } from 'typeorm';
 
 /**
- * Booking Repository with TypeORM
+ * Repository for Booking entity
+ * Extends BaseRepository for standard CRUD operations
  * 
  * Security features:
  * - Uses enum types instead of strings
@@ -12,37 +14,16 @@ import { Between, LessThan, MoreThan, In, FindOptionsWhere, Like } from 'typeorm
  * - Prevents SQL injection through TypeORM QueryBuilder
  * - Type-safe filter operations
  */
-export class BookingRepository {
-  /**
-   * Getter pattern to avoid circular dependency issues
-   */
-  private get repository() {
-    return AppDataSource.getRepository(Booking);
-  }
-
-  /**
-   * Create a new booking
-   */
-  async create(bookingData: Partial<Booking>): Promise<Booking> {
-    const booking = this.repository.create(bookingData);
-    return await this.repository.save(booking);
-  }
-
-  /**
-   * Find booking by ID with relations
-   */
-  async findById(id: string): Promise<Booking | null> {
-    return await this.repository.findOne({
-      where: { id },
-      relations: ['customer', 'car', 'createdBy', 'updatedBy', 'convertedToContract']
-    });
+export class BookingRepository extends BaseRepository<Booking> {
+  constructor() {
+    super(AppDataSource.getRepository(Booking));
   }
 
   /**
    * Find booking by reference
    */
   async findByReference(bookingReference: string): Promise<Booking | null> {
-    return await this.repository.findOne({
+    return this.repository.findOne({
       where: { bookingReference },
       relations: ['customer', 'car', 'createdBy', 'updatedBy']
     });
@@ -51,8 +32,10 @@ export class BookingRepository {
   /**
    * Find all bookings with secure filtering and pagination
    * Uses BookingQueryDto for validated, type-safe queries
+   * 
+   * Note: Named findWithFilters to avoid conflict with BaseRepository.findAll
    */
-  async findAll(queryDto: BookingQueryDto): Promise<{
+  async findWithFilters(queryDto: BookingQueryDto): Promise<{
     data: Booking[];
     total: number;
     page: number;
@@ -242,7 +225,7 @@ export class BookingRepository {
    * Security: Uses enum type instead of string
    */
   async findByStatus(status: BookingStatus): Promise<Booking[]> {
-    return await this.repository.find({
+    return this.repository.find({
       where: { status },
       relations: ['customer', 'car', 'createdBy'],
       order: { createdAt: 'DESC' }
@@ -316,14 +299,19 @@ export class BookingRepository {
     const expiryThreshold = new Date();
     expiryThreshold.setDate(now.getDate() + daysBeforeExpiry);
 
-    return await this.repository.find({
-      where: {
-        status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED]),
-        expiresAt: Between(now, expiryThreshold) as any
-      },
-      relations: ['customer', 'car'],
-      order: { expiresAt: 'ASC' }
-    });
+    return this.repository
+      .createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.customer', 'customer')
+      .leftJoinAndSelect('booking.car', 'car')
+      .where('booking.status IN (:...statuses)', {
+        statuses: [BookingStatus.PENDING, BookingStatus.CONFIRMED]
+      })
+      .andWhere('booking.expiresAt BETWEEN :now AND :expiryThreshold', {
+        now,
+        expiryThreshold
+      })
+      .orderBy('booking.expiresAt', 'ASC')
+      .getMany();
   }
 
   /**
@@ -331,13 +319,16 @@ export class BookingRepository {
    */
   async findExpiredBookings(): Promise<Booking[]> {
     const now = new Date();
-    return await this.repository.find({
-      where: {
-        status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED]),
-        expiresAt: LessThan(now) as any
-      },
-      relations: ['customer', 'car']
-    });
+    
+    return this.repository
+      .createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.customer', 'customer')
+      .leftJoinAndSelect('booking.car', 'car')
+      .where('booking.status IN (:...statuses)', {
+        statuses: [BookingStatus.PENDING, BookingStatus.CONFIRMED]
+      })
+      .andWhere('booking.expiresAt < :now', { now })
+      .getMany();
   }
 
   /**
@@ -348,51 +339,17 @@ export class BookingRepository {
     const futureDate = new Date();
     futureDate.setDate(now.getDate() + days);
 
-    return await this.repository.find({
-      where: {
-        status: BookingStatus.CONFIRMED,
-        startDate: Between(now, futureDate) as any
-      },
-      relations: ['customer', 'car'],
-      order: { startDate: 'ASC' }
-    });
-  }
-
-  /**
-   * Update booking
-   */
-  async update(id: string, updateData: Partial<Booking>): Promise<Booking> {
-    const updateResult = await this.repository.update(id, updateData);
-    
-    if (updateResult.affected === 0) {
-      throw new Error('Booking not found or not updated');
-    }
-    
-    const updated = await this.findById(id);
-    if (!updated) {
-      // This case should be rare if updateResult.affected > 0, but it's a safeguard
-      throw new Error('Booking not found after update');
-    }
-    
-    return updated;
-  }
-
-  /**
-   * Delete booking (soft delete recommended in production)
-   */
-  async delete(id: string): Promise<void> {
-    const result = await this.repository.delete(id);
-    
-    if (result.affected === 0) {
-      throw new Error(`Booking with id ${id} not found`);
-    }
-  }
-
-  /**
-   * Count bookings with optional filter
-   */
-  async count(filter: FindOptionsWhere<Booking> = {}): Promise<number> {
-    return await this.repository.count({ where: filter });
+    return this.repository
+      .createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.customer', 'customer')
+      .leftJoinAndSelect('booking.car', 'car')
+      .where('booking.status = :status', { status: BookingStatus.CONFIRMED })
+      .andWhere('booking.startDate BETWEEN :now AND :futureDate', {
+        now,
+        futureDate
+      })
+      .orderBy('booking.startDate', 'ASC')
+      .getMany();
   }
 
   /**
@@ -428,4 +385,5 @@ export class BookingRepository {
   }
 }
 
+// Export singleton instance
 export default new BookingRepository();

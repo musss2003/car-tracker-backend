@@ -154,3 +154,5 @@ export class CustomerRepository extends BaseRepository<Customer> {
     });
   }
 }
+
+export default new CustomerRepository();

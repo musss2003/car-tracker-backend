@@ -25,6 +25,17 @@ export class BadRequestError extends AppError {
 }
 
 /**
+ * 400 Bad Request - Business Rule Violation
+ * Use this for business logic violations (e.g., "Cannot cancel a converted booking")
+ */
+export class BusinessRuleError extends BadRequestError {
+  constructor(message: string, errors?: string[]) {
+    super(message, errors);
+    Object.setPrototypeOf(this, BusinessRuleError.prototype);
+  }
+}
+
+/**
  * 401 Unauthorized
  */
 export class UnauthorizedError extends AppError {
