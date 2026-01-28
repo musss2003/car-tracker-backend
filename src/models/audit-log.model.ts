@@ -28,6 +28,7 @@ export enum AuditResource {
   CAR = 'car',
   USER = 'user',
   AUTH = 'auth',
+  BOOKING = 'booking',
   NOTIFICATION = 'notification',
   COUNTRY = 'country',
   CAR_ISSUE_REPORT = 'car_issue_report',

@@ -187,3 +187,5 @@ export class CarRepository extends BaseRepository<Car> {
     });
   }
 }
+
+export default new CarRepository();
