@@ -11,12 +11,14 @@ import {
   Min,
   Max,
   ValidateNested,
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
   Validate,
   ValidatorConstraint,
-  ValidatorConstraintInterface
+  ValidatorConstraintInterface,
+  ValidationArguments,
+  Matches,
+  MinLength,
+  MaxLength,
+  IsIn
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -44,6 +46,28 @@ export enum BookingExtraType {
 }
 
 /**
+ * Allowed sort fields - WHITELIST ONLY (Security: Prevents SQL injection)
+ */
+export enum BookingSortField {
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+  START_DATE = 'startDate',
+  END_DATE = 'endDate',
+  TOTAL_ESTIMATED_COST = 'totalEstimatedCost',
+  BOOKING_REFERENCE = 'bookingReference',
+  STATUS = 'status',
+  EXPIRES_AT = 'expiresAt',
+}
+
+/**
+ * Sort order - strict enum (Security: Prevents SQL injection)
+ */
+export enum SortOrder {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
+
+/**
  * Booking Extra DTO
  */
 export class BookingExtraDto {
@@ -53,11 +77,13 @@ export class BookingExtraDto {
 
   @IsNumber()
   @Min(1)
+  @Max(10)
   @IsNotEmpty()
   quantity!: number;
 
   @IsNumber()
   @Min(0)
+  @Max(10000)
   @IsNotEmpty()
   pricePerDay!: number;
 }
@@ -151,23 +177,29 @@ export class IsValidDateConstraint implements ValidatorConstraintInterface {
 
 /**
  * DTO for creating a new booking
+ * 
+ * Security features:
+ * - UUID validation for IDs (prevents injection)
+ * - Custom date validators (prevents past dates, invalid ranges)
+ * - Bounded numeric values (prevents extremes)
+ * - Pattern validation for locations (prevents special char injection)
  */
 export class CreateBookingDto {
-  @IsUUID()
+  @IsUUID('4', { message: 'Customer ID must be a valid UUID' })
   @IsNotEmpty()
   customerId!: string;
 
-  @IsUUID()
+  @IsUUID('4', { message: 'Car ID must be a valid UUID' })
   @IsNotEmpty()
   carId!: string;
 
-  @IsDateString()
+  @IsDateString({}, { message: 'Start date must be a valid ISO 8601 date string' })
   @IsNotEmpty()
   @Validate(IsValidDateConstraint)
   @Validate(IsFutureDateConstraint)
   startDate!: string;
 
-  @IsDateString()
+  @IsDateString({}, { message: 'End date must be a valid ISO 8601 date string' })
   @IsNotEmpty()
   @Validate(IsValidDateConstraint)
   @Validate(IsAfterStartDateConstraint)
@@ -175,14 +207,24 @@ export class CreateBookingDto {
   endDate!: string;
 
   @IsString()
+  @MaxLength(255, { message: 'Pickup location must not exceed 255 characters' })
+  @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
+    message: 'Pickup location contains invalid characters'
+  })
   @IsOptional()
   pickupLocation?: string;
 
   @IsString()
+  @MaxLength(255, { message: 'Dropoff location must not exceed 255 characters' })
+  @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
+    message: 'Dropoff location contains invalid characters'
+  })
   @IsOptional()
   dropoffLocation?: string;
 
   @IsArray()
+  @IsString({ each: true })
+  @MaxLength(100, { each: true, message: 'Driver name must not exceed 100 characters' })
   @IsOptional()
   additionalDrivers?: string[];
 
@@ -193,26 +235,30 @@ export class CreateBookingDto {
   extras?: BookingExtraDto[];
 
   @IsString()
+  @MaxLength(1000, { message: 'Notes must not exceed 1000 characters' })
   @IsOptional()
   notes?: string;
 
   @IsNumber()
-  @Min(0)
+  @Min(0, { message: 'Deposit amount cannot be negative' })
+  @Max(1000000, { message: 'Deposit amount is too large' })
   @IsOptional()
   depositAmount?: number;
 }
 
 /**
  * DTO for updating a booking
+ * 
+ * Security: Same validations as CreateBookingDto for updated fields
  */
 export class UpdateBookingDto {
-  @IsDateString()
+  @IsDateString({}, { message: 'Start date must be a valid ISO 8601 date string' })
   @Validate(IsValidDateConstraint)
   @Validate(IsFutureDateConstraint)
   @IsOptional()
   startDate?: string;
 
-  @IsDateString()
+  @IsDateString({}, { message: 'End date must be a valid ISO 8601 date string' })
   @Validate(IsValidDateConstraint)
   @Validate(IsAfterStartDateConstraint)
   @Validate(MaxDateRangeConstraint, [365])
@@ -220,14 +266,24 @@ export class UpdateBookingDto {
   endDate?: string;
 
   @IsString()
+  @MaxLength(255, { message: 'Pickup location must not exceed 255 characters' })
+  @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
+    message: 'Pickup location contains invalid characters'
+  })
   @IsOptional()
   pickupLocation?: string;
 
   @IsString()
+  @MaxLength(255, { message: 'Dropoff location must not exceed 255 characters' })
+  @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
+    message: 'Dropoff location contains invalid characters'
+  })
   @IsOptional()
   dropoffLocation?: string;
 
   @IsArray()
+  @IsString({ each: true })
+  @MaxLength(100, { each: true, message: 'Driver name must not exceed 100 characters' })
   @IsOptional()
   additionalDrivers?: string[];
 
@@ -238,11 +294,13 @@ export class UpdateBookingDto {
   extras?: BookingExtraDto[];
 
   @IsString()
+  @MaxLength(1000, { message: 'Notes must not exceed 1000 characters' })
   @IsOptional()
   notes?: string;
 
   @IsNumber()
-  @Min(0)
+  @Min(0, { message: 'Deposit amount cannot be negative' })
+  @Max(1000000, { message: 'Deposit amount is too large' })
   @IsOptional()
   depositAmount?: number;
 
@@ -250,31 +308,39 @@ export class UpdateBookingDto {
   @IsOptional()
   depositPaid?: boolean;
 
-  @IsEnum(BookingStatus)
+  @IsEnum(BookingStatus, {
+    message: `Status must be one of: ${Object.values(BookingStatus).join(', ')}`
+  })
   @IsOptional()
   status?: BookingStatus;
 }
 
 /**
  * DTO for checking car availability
+ * 
+ * Security: Validates dates and car ID to prevent injection
  */
 export class CheckAvailabilityDto {
-  @IsUUID()
+  @IsUUID('4', { message: 'Car ID must be a valid UUID' })
   @IsNotEmpty()
   carId!: string;
 
-  @IsDateString()
+  @IsDateString({}, { message: 'Start date must be a valid ISO 8601 date string' })
   @IsNotEmpty()
   @Validate(IsValidDateConstraint)
   @Validate(IsFutureDateConstraint)
   startDate!: string;
 
-  @IsDateString()
+  @IsDateString({}, { message: 'End date must be a valid ISO 8601 date string' })
   @IsNotEmpty()
   @Validate(IsValidDateConstraint)
   @Validate(IsAfterStartDateConstraint)
   @Validate(MaxDateRangeConstraint, [365])
   endDate!: string;
+
+  @IsUUID('4', { message: 'Exclude booking ID must be a valid UUID' })
+  @IsOptional()
+  excludeBookingId?: string;
 }
 
 /**
@@ -282,58 +348,118 @@ export class CheckAvailabilityDto {
  */
 export class CancelBookingDto {
   @IsString()
-  @IsNotEmpty()
-  @Min(10, { message: 'Cancellation reason must be at least 10 characters' })
+  @IsNotEmpty({ message: 'Cancellation reason is required' })
+  @MinLength(10, { message: 'Cancellation reason must be at least 10 characters' })
+  @MaxLength(1000, { message: 'Cancellation reason must not exceed 1000 characters' })
   reason!: string;
 }
 
 /**
- * DTO for booking query/filtering
+ * SECURE DTO for booking query/filtering
+ * 
+ * Security enhancements:
+ * - status: Enum validation (prevents SQL injection)
+ * - sortBy: Whitelist enum (prevents field access attacks)
+ * - sortOrder: Strict enum (prevents SQL injection)
+ * - page/limit: Bounded (prevents resource exhaustion)
+ * - All UUIDs validated (prevents injection)
+ * - All dates validated with ISO format (prevents injection)
  */
 export class BookingQueryDto {
-  @IsUUID()
+  @IsUUID('4', { message: 'Customer ID must be a valid UUID' })
   @IsOptional()
   customerId?: string;
 
-  @IsUUID()
+  @IsUUID('4', { message: 'Car ID must be a valid UUID' })
   @IsOptional()
   carId?: string;
 
-  @IsEnum(BookingStatus)
+  @IsEnum(BookingStatus, {
+    message: `Status must be one of: ${Object.values(BookingStatus).join(', ')}`
+  })
   @IsOptional()
   status?: BookingStatus;
 
-  @IsDateString()
+  @IsDateString({}, { message: 'Start date from must be a valid ISO 8601 date string' })
   @Validate(IsValidDateConstraint)
   @IsOptional()
   startDateFrom?: string;
 
-  @IsDateString()
+  @IsDateString({}, { message: 'Start date to must be a valid ISO 8601 date string' })
   @Validate(IsValidDateConstraint)
   @IsOptional()
   startDateTo?: string;
 
-  @IsNumber()
-  @Min(1)
-  @Max(100)
+  @IsDateString({}, { message: 'End date from must be a valid ISO 8601 date string' })
+  @Validate(IsValidDateConstraint)
   @IsOptional()
-  @Type(() => Number)
-  page?: number;
+  endDateFrom?: string;
 
-  @IsNumber()
-  @Min(1)
-  @Max(100)
+  @IsDateString({}, { message: 'End date to must be a valid ISO 8601 date string' })
+  @Validate(IsValidDateConstraint)
   @IsOptional()
-  @Type(() => Number)
-  limit?: number;
+  endDateTo?: string;
 
   @IsString()
+  @Matches(/^[A-Z0-9-]+$/, {
+    message: 'Booking reference must contain only uppercase letters, numbers, and hyphens'
+  })
   @IsOptional()
-  sortBy?: string;
+  bookingReference?: string;
 
-  @IsEnum(['ASC', 'DESC'])
+  @IsIn(['true', 'false'], {
+    message: 'Deposit paid must be true or false'
+  })
   @IsOptional()
-  sortOrder?: 'ASC' | 'DESC';
+  depositPaid?: string; // Receives as string from query params
+
+  @IsNumber({}, { message: 'Minimum cost must be a number' })
+  @Min(0, { message: 'Minimum cost cannot be negative' })
+  @Max(1000000, { message: 'Minimum cost cannot exceed 1,000,000' })
+  @Type(() => Number)
+  @IsOptional()
+  minCost?: number;
+
+  @IsNumber({}, { message: 'Maximum cost must be a number' })
+  @Min(0, { message: 'Maximum cost cannot be negative' })
+  @Max(1000000, { message: 'Maximum cost cannot exceed 1,000,000' })
+  @Type(() => Number)
+  @IsOptional()
+  maxCost?: number;
+
+  @IsNumber({}, { message: 'Page must be a number' })
+  @Min(1, { message: 'Page must be at least 1' })
+  @Max(10000, { message: 'Page cannot exceed 10,000' })
+  @IsOptional()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @IsNumber({}, { message: 'Limit must be a number' })
+  @Min(1, { message: 'Limit must be at least 1' })
+  @Max(100, { message: 'Limit cannot exceed 100' })
+  @IsOptional()
+  @Type(() => Number)
+  limit?: number = 10;
+
+  @IsEnum(BookingSortField, {
+    message: `Sort by must be one of: ${Object.values(BookingSortField).join(', ')}`
+  })
+  @IsOptional()
+  sortBy?: BookingSortField = BookingSortField.CREATED_AT;
+
+  @IsEnum(SortOrder, {
+    message: `Sort order must be one of: ${Object.values(SortOrder).join(', ')}`
+  })
+  @IsOptional()
+  sortOrder?: SortOrder = SortOrder.DESC;
+
+  @IsString()
+  @MaxLength(100, { message: 'Search query must not exceed 100 characters' })
+  @Matches(/^[a-zA-Z0-9\s\-_]*$/, {
+    message: 'Search query can only contain letters, numbers, spaces, hyphens, and underscores'
+  })
+  @IsOptional()
+  search?: string;
 }
 
 /**
@@ -365,6 +491,7 @@ export interface BookingsListResponse {
   total: number;
   page: number;
   pages: number;
+  limit: number;
 }
 
 export interface AvailabilityResponse {
@@ -388,8 +515,17 @@ export const BOOKING_VALIDATION = {
   MIN_ADVANCE_BOOKING_HOURS: 2,
   MAX_ADVANCE_BOOKING_DAYS: 730, // 2 years
   MIN_CANCELLATION_REASON_LENGTH: 10,
+  MAX_CANCELLATION_REASON_LENGTH: 1000,
   MAX_NOTES_LENGTH: 1000,
   MAX_LOCATION_LENGTH: 255,
+  MAX_DRIVER_NAME_LENGTH: 100,
+  MAX_PAGE: 10000,
+  MAX_LIMIT: 100,
+  DEFAULT_LIMIT: 10,
+  MAX_COST: 1000000,
+  MIN_COST: 0,
+  MAX_QUANTITY: 10,
+  MAX_PRICE_PER_DAY: 10000,
 } as const;
 
 /**
@@ -450,4 +586,184 @@ export function validateDateRange(startDate: string, endDate: string): {
     valid: errors.length === 0,
     errors
   };
+}
+
+/**
+ * Type-safe query builder interface
+ */
+export interface SafeBookingQueryParams {
+  where: {
+    customerId?: string;
+    carId?: string;
+    status?: BookingStatus;
+    startDate?: {
+      gte?: Date;
+      lte?: Date;
+    };
+    endDate?: {
+      gte?: Date;
+      lte?: Date;
+    };
+    bookingReference?: string;
+    depositPaid?: boolean;
+    totalEstimatedCost?: {
+      gte?: number;
+      lte?: number;
+    };
+  };
+  pagination: {
+    page: number;
+    limit: number;
+    skip: number;
+  };
+  sort: {
+    field: BookingSortField;
+    order: SortOrder;
+  };
+}
+
+/**
+ * Convert validated BookingQueryDto to safe query parameters
+ * Security: Never uses user input directly in queries
+ */
+export function buildSafeQueryParams(dto: BookingQueryDto): SafeBookingQueryParams {
+  const where: SafeBookingQueryParams['where'] = {};
+
+  // UUID filters (already validated)
+  if (dto.customerId) where.customerId = dto.customerId;
+  if (dto.carId) where.carId = dto.carId;
+  
+  // Enum filter (already validated)
+  if (dto.status) where.status = dto.status;
+  
+  // Booking reference (already validated pattern)
+  if (dto.bookingReference) where.bookingReference = dto.bookingReference;
+  
+  // Boolean filter (convert from string)
+  if (dto.depositPaid !== undefined) {
+    where.depositPaid = dto.depositPaid === 'true';
+  }
+
+  // Date range filters (already validated as ISO strings)
+  if (dto.startDateFrom || dto.startDateTo) {
+    where.startDate = {};
+    if (dto.startDateFrom) where.startDate.gte = new Date(dto.startDateFrom);
+    if (dto.startDateTo) where.startDate.lte = new Date(dto.startDateTo);
+  }
+
+  if (dto.endDateFrom || dto.endDateTo) {
+    where.endDate = {};
+    if (dto.endDateFrom) where.endDate.gte = new Date(dto.endDateFrom);
+    if (dto.endDateTo) where.endDate.lte = new Date(dto.endDateTo);
+  }
+
+  // Cost range filters (already validated as bounded numbers)
+  if (dto.minCost !== undefined || dto.maxCost !== undefined) {
+    where.totalEstimatedCost = {};
+    if (dto.minCost !== undefined) where.totalEstimatedCost.gte = dto.minCost;
+    if (dto.maxCost !== undefined) where.totalEstimatedCost.lte = dto.maxCost;
+  }
+
+  // Pagination (already validated and bounded)
+  const page = dto.page || 1;
+  const limit = dto.limit || 10;
+
+  const pagination = {
+    page,
+    limit,
+    skip: (page - 1) * limit
+  };
+
+  // Sort (already validated with enum whitelist)
+  const sort = {
+    field: dto.sortBy || BookingSortField.CREATED_AT,
+    order: dto.sortOrder || SortOrder.DESC
+  };
+
+  return { where, pagination, sort };
+}
+
+/**
+ * Mapping of DTO sort fields to actual database column names
+ * Security: Prevents direct field access in queries
+ */
+export const SORT_FIELD_MAPPING: Record<BookingSortField, string> = {
+  [BookingSortField.CREATED_AT]: 'created_at',
+  [BookingSortField.UPDATED_AT]: 'updated_at',
+  [BookingSortField.START_DATE]: 'start_date',
+  [BookingSortField.END_DATE]: 'end_date',
+  [BookingSortField.TOTAL_ESTIMATED_COST]: 'total_estimated_cost',
+  [BookingSortField.BOOKING_REFERENCE]: 'booking_reference',
+  [BookingSortField.STATUS]: 'status',
+  [BookingSortField.EXPIRES_AT]: 'expires_at',
+};
+
+/**
+ * Get safe column name for sorting
+ * Security: Never returns user input directly - always mapped
+ */
+export function getSafeColumnName(sortField: BookingSortField): string {
+  return SORT_FIELD_MAPPING[sortField];
+}
+
+/**
+ * Security validation helper for additional runtime checks
+ */
+export class BookingQuerySecurity {
+  /**
+   * Validate that date ranges are logical
+   */
+  static validateDateRanges(dto: BookingQueryDto): string[] {
+    const errors: string[] = [];
+
+    // Start date range validation
+    if (dto.startDateFrom && dto.startDateTo) {
+      const from = new Date(dto.startDateFrom);
+      const to = new Date(dto.startDateTo);
+      if (from > to) {
+        errors.push('Start date from cannot be after start date to');
+      }
+    }
+
+    // End date range validation
+    if (dto.endDateFrom && dto.endDateTo) {
+      const from = new Date(dto.endDateFrom);
+      const to = new Date(dto.endDateTo);
+      if (from > to) {
+        errors.push('End date from cannot be after end date to');
+      }
+    }
+
+    return errors;
+  }
+
+  /**
+   * Validate that cost ranges are logical
+   */
+  static validateCostRanges(dto: BookingQueryDto): string[] {
+    const errors: string[] = [];
+
+    if (dto.minCost !== undefined && dto.maxCost !== undefined) {
+      if (dto.minCost > dto.maxCost) {
+        errors.push('Minimum cost cannot be greater than maximum cost');
+      }
+    }
+
+    return errors;
+  }
+
+  /**
+   * Full validation (combines all checks)
+   */
+  static validateQuery(dto: BookingQueryDto): { valid: boolean; errors: string[] } {
+    const errors = [
+      ...this.validateDateRanges(dto),
+      ...this.validateCostRanges(dto)
+    ];
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
 }
