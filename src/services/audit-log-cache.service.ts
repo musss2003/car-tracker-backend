@@ -1,7 +1,6 @@
 import { AppDataSource } from "../config/db";
 import { AuditLog, AuditAction, AuditResource, AuditStatus } from "../models/audit-log.model";
-import { Cache, invalidateCache, invalidateCachePattern } from "../common/decorators/cache.decorator";
-import { Between, FindManyOptions } from "typeorm";
+import { Between, FindOptionsWhere } from "typeorm";
 
 interface AuditLogFilters {
   userId?: string;
@@ -19,9 +18,8 @@ export class AuditLogCacheService {
   private auditLogRepository = AppDataSource.getRepository(AuditLog);
 
   /**
-   * Get audit logs with caching (2 minutes TTL due to frequent updates)
+   * Get audit logs with filtering and pagination
    */
-  @Cache({ ttl: 120, prefix: 'audit-logs' })
   async getLogs(filters: AuditLogFilters) {
     const { 
       userId, 
@@ -35,7 +33,7 @@ export class AuditLogCacheService {
       limit = 50 
     } = filters;
 
-    const where: any = {};
+    const where: FindOptionsWhere<AuditLog> = {};
     
     if (userId) where.userId = userId;
     if (action) where.action = action;
@@ -63,9 +61,8 @@ export class AuditLogCacheService {
   }
 
   /**
-   * Get recent activity for a user (cached)
+   * Get recent activity for a user
    */
-  @Cache({ ttl: 60, prefix: 'audit-logs:user-activity' })
   async getUserRecentActivity(userId: string, limit: number = 10) {
     return await this.auditLogRepository.find({
       where: { userId },
@@ -76,9 +73,8 @@ export class AuditLogCacheService {
   }
 
   /**
-   * Get resource history (cached)
+   * Get resource history
    */
-  @Cache({ ttl: 120, prefix: 'audit-logs:resource-history' })
   async getResourceHistory(resource: AuditResource, resourceId: string) {
     return await this.auditLogRepository.find({
       where: { resource, resourceId },
@@ -88,11 +84,10 @@ export class AuditLogCacheService {
   }
 
   /**
-   * Get audit statistics (cached for 5 minutes)
+   * Get audit statistics
    */
-  @Cache({ ttl: 300, prefix: 'audit-logs:stats' })
   async getAuditStatistics(startDate?: Date, endDate?: Date) {
-    const where: any = {};
+    const where: FindOptionsWhere<AuditLog> = {};
     
     if (startDate && endDate) {
       where.createdAt = Between(startDate, endDate);
@@ -108,8 +103,8 @@ export class AuditLogCacheService {
       this.auditLogRepository.count({ where }),
       this.auditLogRepository.count({ where: { ...where, status: AuditStatus.SUCCESS } }),
       this.auditLogRepository.count({ where: { ...where, status: AuditStatus.FAILURE } }),
-      this.getActionCounts(where),
-      this.getResourceCounts(where),
+      this.getActionCounts(startDate, endDate),
+      this.getResourceCounts(startDate, endDate),
     ]);
 
     return {
@@ -123,39 +118,26 @@ export class AuditLogCacheService {
   }
 
   /**
-   * Invalidate audit log caches (call after new audit log is created)
-   */
-  async invalidateAuditCaches(userId?: string, resource?: AuditResource, resourceId?: string) {
-    // Invalidate general logs cache
-    await invalidateCachePattern('audit-logs:AuditLogCacheService:getLogs:*');
-    
-    // Invalidate stats cache
-    await invalidateCache('AuditLogCacheService', 'getAuditStatistics');
-    
-    // Invalidate user-specific cache
-    if (userId) {
-      await invalidateCache('AuditLogCacheService', 'getUserRecentActivity', userId);
-    }
-    
-    // Invalidate resource-specific cache
-    if (resource && resourceId) {
-      await invalidateCache('AuditLogCacheService', 'getResourceHistory', resource, resourceId);
-    }
-  }
-
-  /**
    * Helper: Get action counts
    */
-  private async getActionCounts(where: any) {
-    const result = await this.auditLogRepository
+  private async getActionCounts(startDate?: Date, endDate?: Date) {
+    const queryBuilder = this.auditLogRepository
       .createQueryBuilder('audit')
       .select('audit.action', 'action')
       .addSelect('COUNT(*)', 'count')
-      .where(where)
-      .groupBy('audit.action')
-      .getRawMany();
+      .groupBy('audit.action');
 
-    return result.reduce((acc: any, curr: any) => {
+    // Add date filter if provided
+    if (startDate && endDate) {
+      queryBuilder.where('audit.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    }
+
+    const result = await queryBuilder.getRawMany();
+
+    return result.reduce((acc: Record<string, number>, curr: any) => {
       acc[curr.action] = parseInt(curr.count);
       return acc;
     }, {});
@@ -164,16 +146,24 @@ export class AuditLogCacheService {
   /**
    * Helper: Get resource counts
    */
-  private async getResourceCounts(where: any) {
-    const result = await this.auditLogRepository
+  private async getResourceCounts(startDate?: Date, endDate?: Date) {
+    const queryBuilder = this.auditLogRepository
       .createQueryBuilder('audit')
       .select('audit.resource', 'resource')
       .addSelect('COUNT(*)', 'count')
-      .where(where)
-      .groupBy('audit.resource')
-      .getRawMany();
+      .groupBy('audit.resource');
 
-    return result.reduce((acc: any, curr: any) => {
+    // Add date filter if provided
+    if (startDate && endDate) {
+      queryBuilder.where('audit.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    }
+
+    const result = await queryBuilder.getRawMany();
+
+    return result.reduce((acc: Record<string, number>, curr: any) => {
       acc[curr.resource] = parseInt(curr.count);
       return acc;
     }, {});

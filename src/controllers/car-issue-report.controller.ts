@@ -6,6 +6,7 @@ import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { extractAuditContext, extractPaginationParams } from '../common/utils';
 import { CreateCarIssueReportDto, UpdateCarIssueReportDto } from '../dto/car-issue-report.dto';
+import { IssueSeverity, IssueStatus } from '../models/car-issue-report.model';
 
 /**
  * REFACTORED CarIssueReport Controller
@@ -73,11 +74,7 @@ export const updateCarIssueReportStatus = asyncHandler(async (req: Request, res:
   const data: UpdateCarIssueReportDto = req.body;
   const context = extractAuditContext(req);
 
-  // Add updatedBy from context
-  if (context?.userId) {
-    data.updatedById = context.userId;
-  }
-
+  // Don't modify DTO - pass context to service which will handle updatedById
   const updated = await carIssueReportService.update(id, data, context);
 
   res.json(
@@ -117,7 +114,7 @@ export const getNewCarIssueReportsByCar = asyncHandler(async (req: Request, res:
 
   const reports = await carIssueReportService.getByCarIdAndStatus(
     carId,
-    status as 'open' | 'in_progress' | 'resolved'
+    status as IssueStatus
   );
 
   res.json(createSuccessResponse(reports));
@@ -131,7 +128,7 @@ export const getIssueReportsByStatus = asyncHandler(async (req: Request, res: Re
   const { status } = req.params;
 
   const reports = await carIssueReportService.getByStatus(
-    status as 'open' | 'in_progress' | 'resolved'
+    status as IssueStatus
   );
 
   res.json(createSuccessResponse(reports));
@@ -145,7 +142,7 @@ export const getIssueReportsBySeverity = asyncHandler(async (req: Request, res: 
   const { severity } = req.params;
 
   const reports = await carIssueReportService.getBySeverity(
-    severity as 'low' | 'medium' | 'high' | 'critical'
+    severity as IssueSeverity
   );
 
   res.json(createSuccessResponse(reports));

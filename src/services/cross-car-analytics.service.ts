@@ -3,7 +3,7 @@ import { Car } from '../models/car.model';
 import { CarServiceHistory } from '../models/car-service-history.model';
 import { CarRegistration } from '../models/car-registration.model';
 import { CarInsurance } from '../models/car-insurance.model';
-import { CarIssueReport } from '../models/car-issue-report.model';
+import { CarIssueReport, IssueStatus } from '../models/car-issue-report.model';
 
 interface TopExpenseCar {
   carId: string;
@@ -168,7 +168,7 @@ export class CrossCarAnalyticsService {
         serviceRepo.find({ where: { carId: car.id }, order: { serviceDate: 'DESC' } }),
         insuranceRepo.find({ where: { carId: car.id }, order: { createdAt: 'DESC' } }),
         registrationRepo.find({ where: { carId: car.id }, order: { renewalDate: 'DESC' } }),
-        issueRepo.find({ where: { carId: car.id, status: 'open' } }),
+        issueRepo.find({ where: { carId: car.id, status: IssueStatus.OPEN } }),
       ]);
 
       // Check service alerts

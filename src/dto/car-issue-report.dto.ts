@@ -1,3 +1,4 @@
+import { IssueStatus, IssueSeverity } from '../models/car-issue-report.model';
 import {
   IsString,
   IsNotEmpty,
@@ -7,19 +8,6 @@ import {
   IsDateString,
   MinLength
 } from 'class-validator';
-
-export enum IssueSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
-}
-
-export enum IssueStatus {
-  OPEN = 'open',
-  IN_PROGRESS = 'in_progress',
-  RESOLVED = 'resolved'
-}
 
 /**
  * DTO for creating a new car issue report

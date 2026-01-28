@@ -4,7 +4,7 @@ import { BaseService } from '../common/services/base.service';
 import { AuditResource } from '../models/audit-log.model';
 import carServiceHistoryRepository, { CarServiceHistoryRepository } from '../repositories/car-service-history.repository';
 import { AppDataSource } from '../config/db';
-import { CreateCarServiceHistoryDto, UpdateCarServiceHistoryDto, validateCarServiceHistoryData } from '../dto/car-service-history.dto';
+import { CreateCarServiceHistoryDto, UpdateCarServiceHistoryDto } from '../dto/car-service-history.dto';
 import { NotFoundError, ValidationError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
@@ -26,12 +26,6 @@ export class CarServiceHistoryService extends BaseService<
    * Create a new service history record with validation
    */
   async create(data: CreateCarServiceHistoryDto, context?: AuditContext): Promise<CarServiceHistory> {
-    // Validate input
-    const validationErrors = validateCarServiceHistoryData(data);
-    if (validationErrors.length > 0) {
-      throw new ValidationError('Invalid service history data', validationErrors);
-    }
-
     // Verify car exists
     const car = await this.carRepository.findOne({ where: { id: data.carId } });
     if (!car) {

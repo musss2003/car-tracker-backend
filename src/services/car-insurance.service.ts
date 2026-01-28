@@ -4,7 +4,7 @@ import { BaseService } from '../common/services/base.service';
 import { AuditResource } from '../models/audit-log.model';
 import carInsuranceRepository, { CarInsuranceRepository } from '../repositories/car-insurance.repository';
 import { AppDataSource } from '../config/db';
-import { CreateCarInsuranceDto, UpdateCarInsuranceDto, validateCarInsuranceData } from '../dto/car-insurance.dto';
+import { CreateCarInsuranceDto, UpdateCarInsuranceDto } from '../dto/car-insurance.dto';
 import { NotFoundError, ValidationError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
@@ -27,12 +27,6 @@ export class CarInsuranceService extends BaseService<
    * Create a new insurance record with validation
    */
   async create(data: CreateCarInsuranceDto, context?: AuditContext): Promise<CarInsurance> {
-    // Validate input
-    const validationErrors = validateCarInsuranceData(data);
-    if (validationErrors.length > 0) {
-      throw new ValidationError('Invalid insurance data', validationErrors);
-    }
-
     // Verify car exists
     const car = await this.carRepository.findOne({ where: { id: data.carId } });
     if (!car) {

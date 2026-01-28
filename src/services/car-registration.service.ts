@@ -4,7 +4,7 @@ import { BaseService } from '../common/services/base.service';
 import { AuditResource } from '../models/audit-log.model';
 import carRegistrationRepository, { CarRegistrationRepository } from '../repositories/car-registration.repository';
 import { AppDataSource } from '../config/db';
-import { CreateCarRegistrationDto, UpdateCarRegistrationDto, validateCarRegistrationData } from '../dto/car-registration.dto';
+import { CreateCarRegistrationDto, UpdateCarRegistrationDto } from '../dto/car-registration.dto';
 import { NotFoundError, ValidationError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
@@ -26,12 +26,6 @@ export class CarRegistrationService extends BaseService<
    * Create a new registration record with validation
    */
   async create(data: CreateCarRegistrationDto, context?: AuditContext): Promise<CarRegistration> {
-    // Validate input
-    const validationErrors = validateCarRegistrationData(data);
-    if (validationErrors.length > 0) {
-      throw new ValidationError('Invalid registration data', validationErrors);
-    }
-
     // Verify car exists
     const car = await this.carRepository.findOne({ where: { id: data.carId } });
     if (!car) {
@@ -85,7 +79,7 @@ export class CarRegistrationService extends BaseService<
     if (before.renewalDate !== after.renewalDate) {
       changes.push(`renewal date updated`);
     }
-    if (before.notes !== after.notes) {
+    if (before.additionalNotes !== after.additionalNotes) {
       changes.push(`notes updated`);
     }
 
@@ -113,7 +107,7 @@ export class CarRegistrationService extends BaseService<
     const today = new Date();
     const diffTime = expiryDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+    
     return diffDays;
   }
 }
