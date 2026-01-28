@@ -36,6 +36,15 @@ export interface IBookingExtra {
   pricePerDay: number;
 }
 
+/**
+ * Decimal transformer for converting between database decimal (string) and application number
+ */
+const decimalTransformer = {
+  to: (value: number | null | undefined): number | null | undefined => value,
+  from: (value: string | null | undefined): number | null | undefined => 
+    value != null ? parseFloat(value) : value
+};
+
 @Entity("bookings")
 @Index(['customerId']) // Index for customer's bookings
 @Index(['carId']) // Index for car's bookings
@@ -86,11 +95,24 @@ export class Booking {
   })
   status: BookingStatus;
 
-  // Pricing
-  @Column({ name: "total_estimated_cost", type: "decimal", precision: 10, scale: 2 })
+  // Pricing with decimal transformers
+  @Column({
+    name: "total_estimated_cost",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    transformer: decimalTransformer
+  })
   totalEstimatedCost: number;
 
-  @Column({ name: "deposit_amount", type: "decimal", precision: 10, scale: 2, default: 0 })
+  @Column({
+    name: "deposit_amount",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: decimalTransformer
+  })
   depositAmount: number;
 
   @Column({ name: "deposit_paid", type: "boolean", default: false })
