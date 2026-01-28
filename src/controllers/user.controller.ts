@@ -4,11 +4,7 @@ import {
   CreateUserDto,
   UpdateUserDto,
   ChangePasswordDto,
-  ResetPasswordDto,
-  validateCreateUser,
-  validateUpdateUser,
-  validateChangePassword,
-  validateResetPassword,
+  ResetPasswordDto
 } from '../dto/user.dto';
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse, createErrorResponse } from '../common/dto/response.dto';
@@ -44,12 +40,6 @@ export const getUser = asyncHandler(async (req: Request, res: Response) => {
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const data: CreateUserDto = req.body;
 
-  // Validate input
-  const errors = validateCreateUser(data);
-  if (errors.length > 0) {
-    return res.status(400).json(createErrorResponse(errors.join(', ')));
-  }
-
   const context: AuditContext = {
     userId: req.user?.id || 'system',
     userRole: req.user?.role,
@@ -66,12 +56,6 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
  */
 export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   const data: UpdateUserDto = req.body;
-
-  // Validate input
-  const errors = validateUpdateUser(data);
-  if (errors.length > 0) {
-    return res.status(400).json(createErrorResponse(errors.join(', ')));
-  }
 
   const context: AuditContext = {
     userId: req.user?.id || 'system',
@@ -90,12 +74,6 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
 export const changeUserPassword = asyncHandler(async (req: Request, res: Response) => {
   const data: ChangePasswordDto = req.body;
 
-  // Validate input
-  const errors = validateChangePassword(data);
-  if (errors.length > 0) {
-    return res.status(400).json(createErrorResponse(errors.join(', ')));
-  }
-
   const context: AuditContext = {
     userId: req.user?.id || 'system',
     userRole: req.user?.role,
@@ -112,12 +90,6 @@ export const changeUserPassword = asyncHandler(async (req: Request, res: Respons
  */
 export const resetUserPassword = asyncHandler(async (req: Request, res: Response) => {
   const data: ResetPasswordDto = req.body;
-
-  // Validate input
-  const errors = validateResetPassword(data);
-  if (errors.length > 0) {
-    return res.status(400).json(createErrorResponse(errors.join(', ')));
-  }
 
   const context: AuditContext = {
     userId: req.user?.id || 'system',

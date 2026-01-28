@@ -1,6 +1,6 @@
 import { BaseService } from '../common/services/base.service';
 import { Contract } from '../models/contract.model';
-import { CreateContractDto, UpdateContractDto, validateContractData, validateContractUpdateData } from '../dto/contract.dto';
+import { CreateContractDto, UpdateContractDto } from '../dto/contract.dto';
 import { ContractRepository } from '../repositories/contract.repository';
 import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
@@ -18,12 +18,6 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
    * Create a new contract with validation
    */
   async create(data: CreateContractDto, context: AuditContext): Promise<Contract> {
-    // Validate data
-    const validationError = validateContractData(data);
-    if (validationError) {
-      throw new ValidationError(validationError);
-    }
-
     // Verify customer exists
     const customerRepository = AppDataSource.getRepository(Customer);
     const customer = await customerRepository.findOne({ where: { id: data.customerId, isDeleted: false } });
@@ -62,12 +56,6 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
    * Update contract with validation
    */
   async update(id: string, data: UpdateContractDto, context: AuditContext): Promise<Contract> {
-    // Validate update data
-    const validationError = validateContractUpdateData(data);
-    if (validationError) {
-      throw new ValidationError(validationError);
-    }
-
     // Get existing contract
     const existingContract = await this.getById(id);
 
@@ -204,22 +192,48 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
   }
 
   /**
-   * Override audit description for better context
+   * Custom audit description for create operations
    */
-  protected getAuditDescription(action: AuditAction, entity?: Contract): string {
-    if (!entity) return `${action} contract`;
+  protected getCreateDescription(entity: Contract): string {
+    const customerName = entity.customer?.name || 'customer';
+    const carInfo = entity.car?.licensePlate || 'car';
+    const dates = `${entity.startDate} - ${entity.endDate}`;
+    return `Created contract for ${customerName} with car ${carInfo} (${dates})`;
+  }
+
+  /**
+   * Custom audit description for update operations
+   */
+  protected getUpdateDescription(before: Contract, after: Contract): string {
+    const changes: string[] = [];
     
-    const contractInfo = `Contract for ${entity.customer?.name || 'customer'} with car ${entity.car?.licensePlate || 'car'}`;
-    
-    switch (action) {
-      case 'CREATE':
-        return `Created ${contractInfo} (${entity.startDate} - ${entity.endDate})`;
-      case 'UPDATE':
-        return `Updated ${contractInfo}`;
-      case 'DELETE':
-        return `Deleted ${contractInfo}`;
-      default:
-        return `${action} ${contractInfo}`;
+    if (before.startDate !== after.startDate || before.endDate !== after.endDate) {
+      changes.push(`dates: ${before.startDate}-${before.endDate} → ${after.startDate}-${after.endDate}`);
     }
+    if (before.dailyRate !== after.dailyRate) {
+      changes.push(`daily rate: ${before.dailyRate} → ${after.dailyRate}`);
+    }
+    if (before.totalAmount !== after.totalAmount) {
+      changes.push(`total: ${before.totalAmount} → ${after.totalAmount}`);
+    }
+    if (before.customerId !== after.customerId) {
+      changes.push(`customer changed`);
+    }
+    if (before.carId !== after.carId) {
+      changes.push(`car changed`);
+    }
+    
+    const customerName = after.customer?.name || 'customer';
+    const carInfo = after.car?.licensePlate || 'car';
+    return `Updated contract for ${customerName} with car ${carInfo}${changes.length ? ` (${changes.join(', ')})` : ''}`;
+  }
+
+  /**
+   * Custom audit description for delete operations
+   */
+  protected getDeleteDescription(entity: Contract): string {
+    const customerName = entity.customer?.name || 'customer';
+    const carInfo = entity.car?.licensePlate || 'car';
+    return `Deleted contract for ${customerName} with car ${carInfo}`;
   }
 }

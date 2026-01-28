@@ -11,7 +11,7 @@ import {
   getExpiringRegistrations,
   getRegistrationAuditLogs,
   getRegistrationDaysRemaining
-} from "../controllers/carRegistration.controller";
+} from "../controllers/car-registration.controller";
 
 const router = express.Router();
 

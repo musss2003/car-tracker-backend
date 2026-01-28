@@ -4,7 +4,7 @@ import { Car } from '../models/car.model';
 import { CarServiceHistory } from '../models/car-service-history.model';
 import { CarRegistration } from '../models/car-registration.model';
 import { CarInsurance } from '../models/car-insurance.model';
-import { CarIssueReport } from '../models/car-issue-report.model';
+import { CarIssueReport, IssueStatus } from '../models/car-issue-report.model';
 import { CostAnalyticsService } from '../services/cost-analytics.service';
 import { MaintenanceAlertService } from '../services/maintenance-alert.service';
 import { CrossCarAnalyticsService } from '../services/cross-car-analytics.service';
@@ -119,7 +119,7 @@ export const getCarMaintenanceAlerts = asyncHandler(async (req: Request, res: Re
       order: { createdAt: 'DESC' },
     }),
     issueRepo.find({
-      where: { car: { id: carId }, status: 'open' },
+      where: { car: { id: carId }, status: IssueStatus.OPEN },
       order: { reportedAt: 'DESC' },
     }),
   ]);
@@ -202,7 +202,7 @@ export const getCarDashboard = asyncHandler(async (req: Request, res: Response) 
         order: { createdAt: 'DESC' },
       }),
       issueRepo.find({
-        where: { car: { id: carId }, status: 'open' },
+        where: { car: { id: carId }, status: IssueStatus.OPEN },
         order: { reportedAt: 'DESC' },
       }),
       issueRepo.find({

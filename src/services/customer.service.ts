@@ -1,6 +1,6 @@
 import { BaseService } from '../common/services/base.service';
 import { Customer } from '../models/customer.model';
-import { CreateCustomerDto, UpdateCustomerDto, validateCustomerData, validateCustomerUpdateData } from '../dto/customer.dto';
+import { CreateCustomerDto, UpdateCustomerDto } from '../dto/customer.dto';
 import { CustomerRepository } from '../repositories/customer.repository';
 import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
@@ -15,12 +15,6 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
    * Create a new customer with validation
    */
   async create(data: CreateCustomerDto, context: AuditContext): Promise<Customer> {
-    // Validate data
-    const validationError = validateCustomerData(data);
-    if (validationError) {
-      throw new ValidationError(validationError);
-    }
-
     // Check if customer already exists by passport or driver license
     const existingByPassport = await this.customerRepository.findByPassportNumber(data.passportNumber);
     if (existingByPassport) {
@@ -45,12 +39,6 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
    * Update customer with validation
    */
   async update(id: string, data: UpdateCustomerDto, context: AuditContext): Promise<Customer> {
-    // Validate update data
-    const validationError = validateCustomerUpdateData(data);
-    if (validationError) {
-      throw new ValidationError(validationError);
-    }
-
     // If passport number is being updated, check for conflicts
     if (data.passportNumber) {
       const existing = await this.customerRepository.findByPassportNumber(data.passportNumber);
@@ -168,25 +156,42 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
     return this.customerRepository.findRecentCustomers(limit);
   }
 
-  // Using base delete implementation with automatic audit logging
+  /**
+   * Custom audit description for create operations
+   */
+  protected getCreateDescription(entity: Customer): string {
+    return `Created customer: ${entity.name} (Passport: ${entity.passportNumber})`;
+  }
 
   /**
-   * Override audit description for better context
+   * Custom audit description for update operations
    */
-  protected getAuditDescription(action: AuditAction, entity?: Customer): string {
-    if (!entity) return `${action} customer`;
+  protected getUpdateDescription(before: Customer, after: Customer): string {
+    const changes: string[] = [];
     
-    const customerInfo = `${entity.name} (Passport: ${entity.passportNumber})`;
-    
-    switch (action) {
-      case 'CREATE':
-        return `Created customer: ${customerInfo}`;
-      case 'UPDATE':
-        return `Updated customer: ${customerInfo}`;
-      case 'DELETE':
-        return `Deleted customer: ${customerInfo}`;
-      default:
-        return `${action} customer: ${customerInfo}`;
+    if (before.name !== after.name) {
+      changes.push(`name: ${before.name} → ${after.name}`);
     }
+    if (before.email !== after.email) {
+      changes.push(`email: ${before.email} → ${after.email}`);
+    }
+    if (before.phoneNumber !== after.phoneNumber) {
+      changes.push(`phone: ${before.phoneNumber} → ${after.phoneNumber}`);
+    }
+    if (before.passportNumber !== after.passportNumber) {
+      changes.push(`passport: ${before.passportNumber} → ${after.passportNumber}`);
+    }
+    if (before.driverLicenseNumber !== after.driverLicenseNumber) {
+      changes.push(`license: ${before.driverLicenseNumber} → ${after.driverLicenseNumber}`);
+    }
+    
+    return `Updated customer: ${after.name} (Passport: ${after.passportNumber})${changes.length ? ` (${changes.join(', ')})` : ''}`;
+  }
+
+  /**
+   * Custom audit description for delete operations
+   */
+  protected getDeleteDescription(entity: Customer): string {
+    return `Deleted customer: ${entity.name} (Passport: ${entity.passportNumber})`;
   }
 }

@@ -12,7 +12,7 @@ import {
   getIssueReportsBySeverity,
   getIssueReportAuditLogs,
   getActiveIssueReportsCount
-} from "../controllers/carIssueReport.controller";
+} from "../controllers/car-issue-report.controller";
 import authenticate from "../middlewares/verify-jwt.middleware";
 
 const router = Router();

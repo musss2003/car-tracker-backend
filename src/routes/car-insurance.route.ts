@@ -9,7 +9,7 @@ import {
   getActiveInsurance,
   getExpiringInsurance,
   getInsuranceAuditLogs
-} from "../controllers/carInsurance.controller";
+} from "../controllers/car-insurance.controller";
 
 
 const router = express.Router();

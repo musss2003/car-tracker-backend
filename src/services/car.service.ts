@@ -1,6 +1,6 @@
 import { BaseService } from '../common/services/base.service';
 import { Car } from '../models/car.model';
-import { CreateCarDto, UpdateCarDto, validateCarData, validateCarUpdateData, CarAvailabilityDto } from '../dto/car.dto';
+import { CreateCarDto, UpdateCarDto, CarAvailabilityDto } from '../dto/car.dto';
 import { CarRepository } from '../repositories/car.repository';
 import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
@@ -16,12 +16,6 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
    * Create a new car with validation
    */
   async create(data: CreateCarDto, context: AuditContext): Promise<Car> {
-    // Validate data
-    const validationError = validateCarData(data);
-    if (validationError) {
-      throw new ValidationError(validationError);
-    }
-
     // Check if license plate already exists
     const existing = await this.carRepository.findByLicensePlate(data.licensePlate);
     if (existing) {
@@ -43,12 +37,6 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
    * Update car with validation
    */
   async update(id: string, data: UpdateCarDto, context: AuditContext): Promise<Car> {
-    // Validate update data
-    const validationError = validateCarUpdateData(data);
-    if (validationError) {
-      throw new ValidationError(validationError);
-    }
-
     const updateData = {
       ...data,
       updatedById: context.userId
@@ -205,25 +193,30 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
     return this.carRepository.findCarsWithLowMileage(maxMileage);
   }
 
-  // Using base delete implementation with automatic audit logging
-
   /**
    * Override audit description for better context
    */
-  protected getAuditDescription(action: AuditAction, entity?: Car): string {
-    if (!entity) return `${action} car`;
+  protected getCreateDescription(entity: Car): string {
+    return `Created car: ${entity.manufacturer} ${entity.model} (${entity.licensePlate})`;
+  }
+
+  protected getUpdateDescription(before: Car, after: Car): string {
+    const changes: string[] = [];
     
-    const carInfo = `${entity.manufacturer} ${entity.model} (${entity.licensePlate})`;
-    
-    switch (action) {
-      case 'CREATE':
-        return `Created car: ${carInfo}`;
-      case 'UPDATE':
-        return `Updated car: ${carInfo}`;
-      case 'DELETE':
-        return `Deleted car: ${carInfo}`;
-      default:
-        return `${action} car: ${carInfo}`;
+    if (before.status !== after.status) {
+      changes.push(`status: ${before.status} → ${after.status}`);
     }
+    if (before.mileage !== after.mileage) {
+      changes.push(`mileage: ${before.mileage} → ${after.mileage}`);
+    }
+    if (before.pricePerDay !== after.pricePerDay) {
+      changes.push(`price: ${before.pricePerDay} → ${after.pricePerDay}`);
+    }
+    
+    return `Updated car: ${after.manufacturer} ${after.model} (${after.licensePlate})${changes.length ? ` (${changes.join(', ')})` : ''}`;
+  }
+
+  protected getDeleteDescription(entity: Car): string {
+    return `Deleted car: ${entity.manufacturer} ${entity.model} (${entity.licensePlate})`;
   }
 }

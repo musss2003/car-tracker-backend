@@ -2,9 +2,7 @@ import { Request, Response } from 'express';
 import { NotificationService } from '../services/notification.service';
 import {
   CreateNotificationDto,
-  UpdateNotificationDto,
-  validateCreateNotification,
-  validateUpdateNotification,
+  UpdateNotificationDto
 } from '../dto/notification.dto';
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse, createErrorResponse } from '../common/dto/response.dto';
@@ -66,12 +64,6 @@ export const getNotification = asyncHandler(async (req: Request, res: Response) 
 export const createNotification = asyncHandler(async (req: Request, res: Response) => {
   const data: CreateNotificationDto = req.body;
 
-  // Validate input
-  const errors = validateCreateNotification(data);
-  if (errors.length > 0) {
-    return res.status(400).json(createErrorResponse(errors.join(', ')));
-  }
-
   const context: AuditContext = {
     userId: req.user?.id || 'system',
     userRole: req.user?.role,
@@ -94,12 +86,6 @@ export const updateNotification = asyncHandler(async (req: Request, res: Respons
   }
 
   const data: UpdateNotificationDto = req.body;
-
-  // Validate input
-  const errors = validateUpdateNotification(data);
-  if (errors.length > 0) {
-    return res.status(400).json(createErrorResponse(errors.join(', ')));
-  }
 
   const context: AuditContext = {
     userId,
