@@ -75,12 +75,14 @@ export class BookingExtraDto {
   @IsNotEmpty()
   type!: BookingExtraType;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   @Max(10)
   @IsNotEmpty()
   quantity!: number;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(10000)
@@ -239,6 +241,7 @@ export class CreateBookingDto {
   @IsOptional()
   notes?: string;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0, { message: 'Deposit amount cannot be negative' })
   @Max(1000000, { message: 'Deposit amount is too large' })
@@ -298,6 +301,7 @@ export class UpdateBookingDto {
   @IsOptional()
   notes?: string;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0, { message: 'Deposit amount cannot be negative' })
   @Max(1000000, { message: 'Deposit amount is too large' })

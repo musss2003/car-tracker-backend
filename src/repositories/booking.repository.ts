@@ -362,11 +362,18 @@ export class BookingRepository {
    * Update booking
    */
   async update(id: string, updateData: Partial<Booking>): Promise<Booking> {
-    await this.repository.update(id, updateData);
+    const updateResult = await this.repository.update(id, updateData);
+    
+    if (updateResult.affected === 0) {
+      throw new Error('Booking not found or not updated');
+    }
+    
     const updated = await this.findById(id);
     if (!updated) {
+      // This case should be rare if updateResult.affected > 0, but it's a safeguard
       throw new Error('Booking not found after update');
     }
+    
     return updated;
   }
 
@@ -374,7 +381,11 @@ export class BookingRepository {
    * Delete booking (soft delete recommended in production)
    */
   async delete(id: string): Promise<void> {
-    await this.repository.delete(id);
+    const result = await this.repository.delete(id);
+    
+    if (result.affected === 0) {
+      throw new Error(`Booking with id ${id} not found`);
+    }
   }
 
   /**
