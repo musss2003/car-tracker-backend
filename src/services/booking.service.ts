@@ -22,7 +22,8 @@ import logger from "../config/logger";
 import type { Car } from "../models/car.model";
 import type { Customer } from "../models/customer.model";
 import type { Contract } from "../models/contract.model";
-import { AuditResource } from "../models/audit-log.model";
+import { AuditAction, AuditResource } from "../models/audit-log.model";
+import { logAudit } from "../common";
 
 /**
  * Booking Service
@@ -337,28 +338,70 @@ export class BookingService extends BaseService<
    * Confirm a pending booking
    *
    * Business Rules:
-   * - Booking must be in PENDING status
-   * - Optionally require deposit payment
-   * - Changes status to CONFIRMED
+   * - Booking must be in PENDING status (throws BadRequestError)
+   * - Deposit must be paid if required (throws BusinessRuleError)
+   * - Booking must not be expired (throws BusinessRuleError)
+   *
+   * @param id - Booking ID
+   * @param context - Audit context
+   * @returns Confirmed booking
+   * @throws BadRequestError if booking is not in PENDING status
+   * @throws BusinessRuleError if deposit not paid or booking expired
    */
   async confirmBooking(id: string, context: AuditContext): Promise<Booking> {
     const booking = await this.getById(id);
 
+    // Validation 1: Status must be PENDING (BadRequestError)
     if (booking.status !== BookingStatus.PENDING) {
-      // ✅ Log business rule violation
       logger.warn("Attempted to confirm non-pending booking", {
         bookingId: id,
+        bookingReference: booking.bookingReference,
         currentStatus: booking.status,
         userId: context.userId,
       });
-      throw new BusinessRuleError(
-        `Cannot confirm booking with status: ${booking.status}`,
+      throw new BadRequestError(
+        `Cannot confirm booking with status: ${booking.status}. Only PENDING bookings can be confirmed.`,
       );
     }
 
+    // Validation 2: Deposit must be paid (BusinessRuleError)
+    if (!booking.depositPaid) {
+      logger.warn("Attempted to confirm booking without deposit payment", {
+        bookingId: id,
+        bookingReference: booking.bookingReference,
+        depositPaid: booking.depositPaid,
+        userId: context.userId,
+      });
+      throw new BusinessRuleError(
+        "Cannot confirm booking: deposit payment is required but not paid.",
+      );
+    }
+
+    // Validation 3: Booking must not be expired (BusinessRuleError)
+    if (booking.expiresAt) {
+      const now = new Date();
+      const expiresAt = new Date(booking.expiresAt);
+
+      if (now > expiresAt) {
+        logger.warn("Attempted to confirm expired booking", {
+          bookingId: id,
+          bookingReference: booking.bookingReference,
+          expiresAt: booking.expiresAt,
+          currentTime: now.toISOString(),
+          userId: context.userId,
+        });
+        throw new BusinessRuleError(
+          `Cannot confirm booking: booking expired on ${expiresAt.toISOString()}.`,
+        );
+      }
+    }
+
+    // All validations passed - confirm booking
     logger.info("Confirming booking", {
       bookingId: id,
+      bookingReference: booking.bookingReference,
       userId: context.userId,
+      userRole: context.userRole,
     });
 
     return await this.update(id, { status: BookingStatus.CONFIRMED }, context);
@@ -491,62 +534,129 @@ export class BookingService extends BaseService<
    * - Frees up car availability
    *
    * Uses bulk update for better performance
+   *
+   * @returns Object with expired count, bookings array, and failed count
    */
   async expireBookings(): Promise<{
     expired: number;
     bookings: Booking[];
     failed: number;
   }> {
-    const expiredBookings = await this.bookingRepo.findExpiredBookings();
-
-    if (expiredBookings.length === 0) {
-      logger.debug("No expired bookings found");
-      return { expired: 0, bookings: [], failed: 0 };
-    }
-
-    const bookingIds = expiredBookings.map((b) => b.id);
-
-    logger.info("Starting bulk expiration of bookings", {
-      count: bookingIds.length,
-      bookingIds: bookingIds.slice(0, 10),
-    });
-
     try {
-      const affectedCount = await this.bookingRepo.bulkUpdateStatus(
-        bookingIds,
-        BookingStatus.EXPIRED,
-        "system",
-      );
+      // Find all expired bookings
+      const expiredBookings = await this.bookingRepo.findExpiredBookings();
 
-      const updatedBookings = await Promise.all(
-        bookingIds.map((id) => this.bookingRepo.findById(id)),
-      );
+      if (expiredBookings.length === 0) {
+        logger.debug("No expired bookings found");
+        return { expired: 0, bookings: [], failed: 0 };
+      }
 
-      const results = updatedBookings.filter((b): b is Booking => b !== null);
+      const bookingIds = expiredBookings.map((b) => b.id);
+      const bookingReferences = expiredBookings.map((b) => b.bookingReference);
 
-      // ✅ Log success
-      logger.info("Successfully expired bookings", {
-        expired: affectedCount,
-        requested: bookingIds.length,
+      // Application log: Operation started
+      logger.info("Starting bulk expiration of bookings", {
+        count: bookingIds.length,
+        bookingReferences: bookingReferences.slice(0, 10), // First 10 for reference
       });
 
-      return {
-        expired: affectedCount,
-        bookings: results,
-        failed: 0,
-      };
+      try {
+        // Bulk update all expired bookings in single query
+        const affectedCount = await this.bookingRepo.bulkUpdateStatus(
+          bookingIds,
+          BookingStatus.EXPIRED,
+          "system",
+        );
+
+        // Re-fetch updated bookings to return them
+        const updatedBookings = await Promise.all(
+          bookingIds.map((id) => this.bookingRepo.findById(id)),
+        );
+
+        const results = updatedBookings.filter((b): b is Booking => b !== null);
+
+        // Application log: Operation succeeded
+        logger.info("Successfully expired bookings", {
+          expired: affectedCount,
+          requested: bookingIds.length,
+          bookingReferences: bookingReferences.slice(0, 10),
+        });
+
+        // Audit log: Record the bulk operation for compliance
+        await logAudit({
+          resource: "BOOKING" as AuditResource,
+          action: "UPDATE" as AuditAction,
+          resourceId: "bulk-operation",
+          description: `Bulk expired ${affectedCount} bookings: ${bookingReferences.slice(0, 5).join(", ")}${bookingReferences.length > 5 ? "..." : ""}`,
+          context: {
+            userId: "system",
+            userRole: "system",
+            username: "system",
+          },
+          afterData: {
+            count: affectedCount,
+            bookingIds: bookingIds,
+            status: BookingStatus.EXPIRED,
+          },
+          includeChanges: true,
+        });
+
+        return {
+          expired: affectedCount,
+          bookings: results,
+          failed: 0,
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+
+        // Application log: Operation failed
+        logger.error("Failed to expire bookings in bulk", {
+          count: bookingIds.length,
+          error: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+          bookingReferences: bookingReferences.slice(0, 10),
+        });
+
+        // Audit log: Record the failure
+        await logAudit({
+          resource: "BOOKING" as AuditResource,
+          action: AuditAction.UPDATE,
+          resourceId: "bulk-operation-failed",
+          description: `Failed to bulk expire ${bookingIds.length} bookings: ${errorMessage}`,
+          context: {
+            userId: "system",
+            userRole: "system",
+            username: "system",
+          },
+          beforeData: {
+            count: bookingIds.length,
+            bookingIds: bookingIds,
+            error: errorMessage,
+          },
+        });
+
+        // Return failed result instead of throwing
+        return {
+          expired: 0,
+          bookings: [],
+          failed: bookingIds.length,
+        };
+      }
     } catch (error) {
-      // ✅ Log error with context
-      logger.error("Failed to expire bookings in bulk", {
-        count: bookingIds.length,
-        error: error instanceof Error ? error.message : "Unknown error",
+      // Catch errors from findExpiredBookings
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      logger.error("Failed to find expired bookings", {
+        error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
       });
 
       return {
         expired: 0,
         bookings: [],
-        failed: bookingIds.length,
+        failed: 0,
       };
     }
   }

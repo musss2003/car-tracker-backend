@@ -3,7 +3,9 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
+    'plugin:jest/recommended', // ✅ Add this
   ],
+  plugins: ['jest'], // ✅ Add this
   parserOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
@@ -17,7 +19,7 @@ module.exports = {
   rules: {
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    'no-console': 'off', // Allow console in Node.js
+    'no-console': 'off',
   },
-  ignorePatterns: ['dist', 'node_modules', '*.js'],
+  ignorePatterns: ['dist', 'node_modules', '*.config.js'],
 };

@@ -2,6 +2,7 @@
   "name": "car-rental-backend",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node dist/app.js",
@@ -42,6 +43,7 @@
     "@typescript-eslint/parser": "^8.54.0",
     "dotenv": "^16.4.7",
     "eslint": "^9.39.2",
+    "eslint-plugin-jest": "^29.12.1",
     "express-list-endpoints": "^7.1.0",
     "jest": "^30.2.0",
     "mongoose": "^8.10.0",

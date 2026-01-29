@@ -5,7 +5,7 @@ import { AuditResource } from '../models/audit-log.model';
 import carInsuranceRepository, { CarInsuranceRepository } from '../repositories/car-insurance.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarInsuranceDto, UpdateCarInsuranceDto } from '../dto/car-insurance.dto';
-import { NotFoundError, ValidationError } from '../common/errors';
+import { NotFoundError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
 /**
