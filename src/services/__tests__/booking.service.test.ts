@@ -245,7 +245,7 @@ describe('BookingService', () => {
       } as any);
 
       await expect(
-        bookingService.confirmBooking('booking-123', mockContext, true)
+        bookingService.confirmBooking('booking-123', mockContext)
       ).rejects.toThrow(BadRequestError);
     });
 
