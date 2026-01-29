@@ -5,7 +5,7 @@ import {
   IsOptional,
   MinLength,
   MaxLength,
-  Matches
+  Matches,
 } from 'class-validator';
 
 /**

@@ -18,7 +18,7 @@ import {
   Matches,
   MinLength,
   MaxLength,
-  IsIn
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -30,7 +30,7 @@ export enum BookingStatus {
   CONFIRMED = 'confirmed',
   CANCELLED = 'cancelled',
   CONVERTED = 'converted',
-  EXPIRED = 'expired'
+  EXPIRED = 'expired',
 }
 
 /**
@@ -42,7 +42,7 @@ export enum BookingExtraType {
   ADDITIONAL_DRIVER = 'additional_driver',
   INSURANCE_UPGRADE = 'insurance_upgrade',
   WIFI = 'wifi',
-  ROOF_RACK = 'roof_rack'
+  ROOF_RACK = 'roof_rack',
 }
 
 /**
@@ -119,14 +119,14 @@ export class IsAfterStartDateConstraint implements ValidatorConstraintInterface 
     if (!endDateString) return false;
     const object = args.object as any;
     if (!object.startDate) return true; // Let @IsNotEmpty handle missing startDate
-    
+
     const startDate = new Date(object.startDate);
     const endDate = new Date(endDateString);
-    
+
     // Remove time component for date-only comparison
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(0, 0, 0, 0);
-    
+
     return endDate > startDate;
   }
 
@@ -144,14 +144,14 @@ export class MaxDateRangeConstraint implements ValidatorConstraintInterface {
     if (!endDateString) return false;
     const object = args.object as any;
     if (!object.startDate) return true;
-    
+
     const maxDays = args.constraints[0] || 365; // Default 1 year max
     const startDate = new Date(object.startDate);
     const endDate = new Date(endDateString);
-    
+
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays <= maxDays;
   }
 
@@ -179,7 +179,7 @@ export class IsValidDateConstraint implements ValidatorConstraintInterface {
 
 /**
  * DTO for creating a new booking
- * 
+ *
  * Security features:
  * - UUID validation for IDs (prevents injection)
  * - Custom date validators (prevents past dates, invalid ranges)
@@ -211,7 +211,7 @@ export class CreateBookingDto {
   @IsString()
   @MaxLength(255, { message: 'Pickup location must not exceed 255 characters' })
   @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
-    message: 'Pickup location contains invalid characters'
+    message: 'Pickup location contains invalid characters',
   })
   @IsOptional()
   pickupLocation?: string;
@@ -219,7 +219,7 @@ export class CreateBookingDto {
   @IsString()
   @MaxLength(255, { message: 'Dropoff location must not exceed 255 characters' })
   @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
-    message: 'Dropoff location contains invalid characters'
+    message: 'Dropoff location contains invalid characters',
   })
   @IsOptional()
   dropoffLocation?: string;
@@ -251,7 +251,7 @@ export class CreateBookingDto {
 
 /**
  * DTO for updating a booking
- * 
+ *
  * Security: Same validations as CreateBookingDto for updated fields
  */
 export class UpdateBookingDto {
@@ -271,7 +271,7 @@ export class UpdateBookingDto {
   @IsString()
   @MaxLength(255, { message: 'Pickup location must not exceed 255 characters' })
   @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
-    message: 'Pickup location contains invalid characters'
+    message: 'Pickup location contains invalid characters',
   })
   @IsOptional()
   pickupLocation?: string;
@@ -279,7 +279,7 @@ export class UpdateBookingDto {
   @IsString()
   @MaxLength(255, { message: 'Dropoff location must not exceed 255 characters' })
   @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
-    message: 'Dropoff location contains invalid characters'
+    message: 'Dropoff location contains invalid characters',
   })
   @IsOptional()
   dropoffLocation?: string;
@@ -313,7 +313,7 @@ export class UpdateBookingDto {
   depositPaid?: boolean;
 
   @IsEnum(BookingStatus, {
-    message: `Status must be one of: ${Object.values(BookingStatus).join(', ')}`
+    message: `Status must be one of: ${Object.values(BookingStatus).join(', ')}`,
   })
   @IsOptional()
   status?: BookingStatus;
@@ -321,7 +321,7 @@ export class UpdateBookingDto {
 
 /**
  * DTO for checking car availability
- * 
+ *
  * Security: Validates dates and car ID to prevent injection
  */
 export class CheckAvailabilityDto {
@@ -360,7 +360,7 @@ export class CancelBookingDto {
 
 /**
  * SECURE DTO for booking query/filtering
- * 
+ *
  * Security enhancements:
  * - status: Enum validation (prevents SQL injection)
  * - sortBy: Whitelist enum (prevents field access attacks)
@@ -379,7 +379,7 @@ export class BookingQueryDto {
   carId?: string;
 
   @IsEnum(BookingStatus, {
-    message: `Status must be one of: ${Object.values(BookingStatus).join(', ')}`
+    message: `Status must be one of: ${Object.values(BookingStatus).join(', ')}`,
   })
   @IsOptional()
   status?: BookingStatus;
@@ -406,13 +406,13 @@ export class BookingQueryDto {
 
   @IsString()
   @Matches(/^[A-Z0-9-]+$/, {
-    message: 'Booking reference must contain only uppercase letters, numbers, and hyphens'
+    message: 'Booking reference must contain only uppercase letters, numbers, and hyphens',
   })
   @IsOptional()
   bookingReference?: string;
 
   @IsIn(['true', 'false'], {
-    message: 'Deposit paid must be true or false'
+    message: 'Deposit paid must be true or false',
   })
   @IsOptional()
   depositPaid?: string; // Receives as string from query params
@@ -446,13 +446,13 @@ export class BookingQueryDto {
   limit?: number = 10;
 
   @IsEnum(BookingSortField, {
-    message: `Sort by must be one of: ${Object.values(BookingSortField).join(', ')}`
+    message: `Sort by must be one of: ${Object.values(BookingSortField).join(', ')}`,
   })
   @IsOptional()
   sortBy?: BookingSortField = BookingSortField.CREATED_AT;
 
   @IsEnum(SortOrder, {
-    message: `Sort order must be one of: ${Object.values(SortOrder).join(', ')}`
+    message: `Sort order must be one of: ${Object.values(SortOrder).join(', ')}`,
   })
   @IsOptional()
   sortOrder?: SortOrder = SortOrder.DESC;
@@ -460,7 +460,7 @@ export class BookingQueryDto {
   @IsString()
   @MaxLength(100, { message: 'Search query must not exceed 100 characters' })
   @Matches(/^[a-zA-Z0-9\s\-_]*$/, {
-    message: 'Search query can only contain letters, numbers, spaces, hyphens, and underscores'
+    message: 'Search query can only contain letters, numbers, spaces, hyphens, and underscores',
   })
   @IsOptional()
   search?: string;
@@ -535,7 +535,10 @@ export const BOOKING_VALIDATION = {
 /**
  * Helper function to validate date range
  */
-export function validateDateRange(startDate: string, endDate: string): {
+export function validateDateRange(
+  startDate: string,
+  endDate: string
+): {
   valid: boolean;
   errors: string[];
 } {
@@ -588,7 +591,7 @@ export function validateDateRange(startDate: string, endDate: string): {
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -636,13 +639,13 @@ export function buildSafeQueryParams(dto: BookingQueryDto): SafeBookingQueryPara
   // UUID filters (already validated)
   if (dto.customerId) where.customerId = dto.customerId;
   if (dto.carId) where.carId = dto.carId;
-  
+
   // Enum filter (already validated)
   if (dto.status) where.status = dto.status;
-  
+
   // Booking reference (already validated pattern)
   if (dto.bookingReference) where.bookingReference = dto.bookingReference;
-  
+
   // Boolean filter (convert from string)
   if (dto.depositPaid !== undefined) {
     where.depositPaid = dto.depositPaid === 'true';
@@ -675,13 +678,13 @@ export function buildSafeQueryParams(dto: BookingQueryDto): SafeBookingQueryPara
   const pagination = {
     page,
     limit,
-    skip: (page - 1) * limit
+    skip: (page - 1) * limit,
   };
 
   // Sort (already validated with enum whitelist)
   const sort = {
     field: dto.sortBy || BookingSortField.CREATED_AT,
-    order: dto.sortOrder || SortOrder.DESC
+    order: dto.sortOrder || SortOrder.DESC,
   };
 
   return { where, pagination, sort };
@@ -760,14 +763,11 @@ export class BookingQuerySecurity {
    * Full validation (combines all checks)
    */
   static validateQuery(dto: BookingQueryDto): { valid: boolean; errors: string[] } {
-    const errors = [
-      ...this.validateDateRanges(dto),
-      ...this.validateCostRanges(dto)
-    ];
+    const errors = [...this.validateDateRanges(dto), ...this.validateCostRanges(dto)];
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

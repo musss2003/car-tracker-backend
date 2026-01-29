@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsBoolean,
   IsUUID,
-  Min
+  Min,
 } from 'class-validator';
 
 /**

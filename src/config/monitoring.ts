@@ -12,12 +12,12 @@ export function initializeSentry(): void {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
-    
+
     // Set tracesSampleRate to capture percentage of transactions for performance monitoring
     // Production: 0.1 = 10% of transactions
     // Development: 1.0 = 100% of transactions
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    
+
     // Filter out sensitive data
     beforeSend(event) {
       // Remove sensitive headers
@@ -25,7 +25,7 @@ export function initializeSentry(): void {
         delete event.request.headers.authorization;
         delete event.request.headers.cookie;
       }
-      
+
       // Remove password fields
       if (event.request?.data) {
         const data = event.request.data as any;
@@ -35,10 +35,10 @@ export function initializeSentry(): void {
           delete data.newPassword;
         }
       }
-      
+
       return event;
     },
-    
+
     // Don't log errors in test environment
     enabled: process.env.NODE_ENV !== 'test',
   });
@@ -66,7 +66,12 @@ export function captureMessage(message: string, level: Sentry.SeverityLevel = 'i
 /**
  * Add user context to Sentry
  */
-export function setUserContext(user: { id: string; email?: string; username?: string; role?: string }): void {
+export function setUserContext(user: {
+  id: string;
+  email?: string;
+  username?: string;
+  role?: string;
+}): void {
   Sentry.setUser({
     id: user.id,
     email: user.email,

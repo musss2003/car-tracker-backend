@@ -1,5 +1,5 @@
-import express, { Request, Response } from "express";
-import authenticate from "../middlewares/verify-jwt.middleware";
+import express, { Request, Response } from 'express';
+import authenticate from '../middlewares/verify-jwt.middleware';
 import {
   getContracts,
   getContract,
@@ -17,8 +17,8 @@ import {
   getRevenueByDateRange,
   getPendingNotification,
   markNotificationSent,
-  downloadContractDocx
-} from "../controllers/contract.controller";
+  downloadContractDocx,
+} from '../controllers/contract.controller';
 
 const router = express.Router();
 
@@ -39,7 +39,7 @@ router.use(authenticate);
  *       401:
  *         description: Unauthorized
  */
-router.get("/", getContracts);
+router.get('/', getContracts);
 
 /**
  * @swagger
@@ -63,7 +63,7 @@ router.get("/", getContracts);
  *       401:
  *         description: Unauthorized
  */
-router.post("/", createContract);
+router.post('/', createContract);
 
 /**
  * @swagger
@@ -87,7 +87,7 @@ router.post("/", createContract);
  *       401:
  *         description: Unauthorized
  */
-router.post("/check-availability", checkCarAvailability);
+router.post('/check-availability', checkCarAvailability);
 
 /**
  * @swagger
@@ -111,7 +111,7 @@ router.post("/check-availability", checkCarAvailability);
  *       401:
  *         description: Unauthorized
  */
-router.post("/date-range", getContractsByDateRange);
+router.post('/date-range', getContractsByDateRange);
 
 /**
  * @swagger
@@ -143,7 +143,7 @@ router.post("/date-range", getContractsByDateRange);
  *       401:
  *         description: Unauthorized
  */
-router.post("/revenue/date-range", getRevenueByDateRange);
+router.post('/revenue/date-range', getRevenueByDateRange);
 
 /**
  * @swagger
@@ -159,7 +159,7 @@ router.post("/revenue/date-range", getRevenueByDateRange);
  *       401:
  *         description: Unauthorized
  */
-router.get("/active", getActiveContracts);
+router.get('/active', getActiveContracts);
 
 /**
  * @swagger
@@ -175,7 +175,7 @@ router.get("/active", getActiveContracts);
  *       401:
  *         description: Unauthorized
  */
-router.get("/expiring", getExpiringContracts);
+router.get('/expiring', getExpiringContracts);
 
 /**
  * @swagger
@@ -191,7 +191,7 @@ router.get("/expiring", getExpiringContracts);
  *       401:
  *         description: Unauthorized
  */
-router.get("/expired", getExpiredContracts);
+router.get('/expired', getExpiredContracts);
 
 /**
  * @swagger
@@ -207,7 +207,7 @@ router.get("/expired", getExpiredContracts);
  *       401:
  *         description: Unauthorized
  */
-router.get("/pending-notification", getPendingNotification);
+router.get('/pending-notification', getPendingNotification);
 
 /**
  * @swagger
@@ -223,7 +223,7 @@ router.get("/pending-notification", getPendingNotification);
  *       401:
  *         description: Unauthorized
  */
-router.get("/revenue/total", getTotalRevenue);
+router.get('/revenue/total', getTotalRevenue);
 
 /**
  * @swagger
@@ -248,7 +248,7 @@ router.get("/revenue/total", getTotalRevenue);
  *       404:
  *         description: Customer not found
  */
-router.get("/customer/:customerId", getContractsByCustomer);
+router.get('/customer/:customerId', getContractsByCustomer);
 
 /**
  * @swagger
@@ -273,7 +273,7 @@ router.get("/customer/:customerId", getContractsByCustomer);
  *       404:
  *         description: Car not found
  */
-router.get("/car/:carId", getContractsByCar);
+router.get('/car/:carId', getContractsByCar);
 
 /**
  * @swagger
@@ -298,7 +298,7 @@ router.get("/car/:carId", getContractsByCar);
  *       404:
  *         description: Contract not found
  */
-router.post("/:id/mark-notification-sent", markNotificationSent);
+router.post('/:id/mark-notification-sent', markNotificationSent);
 
 /**
  * @swagger
@@ -328,7 +328,7 @@ router.post("/:id/mark-notification-sent", markNotificationSent);
  *       404:
  *         description: Contract not found
  */
-router.get("/download/:id", downloadContractDocx);
+router.get('/download/:id', downloadContractDocx);
 
 /**
  * @swagger
@@ -353,7 +353,7 @@ router.get("/download/:id", downloadContractDocx);
  *       404:
  *         description: Contract not found
  */
-router.get("/:id", getContract);
+router.get('/:id', getContract);
 
 /**
  * @swagger
@@ -386,7 +386,7 @@ router.get("/:id", getContract);
  *       404:
  *         description: Contract not found
  */
-router.put("/:id", updateContract);
+router.put('/:id', updateContract);
 
 /**
  * @swagger
@@ -411,6 +411,6 @@ router.put("/:id", updateContract);
  *       404:
  *         description: Contract not found
  */
-router.delete("/:id", deleteContract);
+router.delete('/:id', deleteContract);
 
 export default router;

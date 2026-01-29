@@ -9,17 +9,8 @@ import { Cache } from '../common/decorators/cache.decorator';
  */
 export const getAuditLogs = async (req: Request, res: Response) => {
   try {
-    const {
-      userId,
-      action,
-      resource,
-      resourceId,
-      status,
-      startDate,
-      endDate,
-      page,
-      limit,
-    } = req.query;
+    const { userId, action, resource, resourceId, status, startDate, endDate, page, limit } =
+      req.query;
 
     const filters = {
       userId: userId as string | undefined,
@@ -65,7 +56,7 @@ export const getAuditLogById = async (req: Request, res: Response) => {
     const auditLogRepository = (await import('../config/db')).AppDataSource.getRepository(
       (await import('../models/audit-log.model')).AuditLog
     );
-    
+
     const log = await auditLogRepository.findOne({
       where: { id },
       relations: ['user'],
@@ -130,10 +121,7 @@ export const getAuditStatistics = async (req: Request, res: Response) => {
       endDate: endDate ? new Date(endDate as string) : undefined,
     };
 
-    const stats = await auditLogService.getStatistics(
-      filters.startDate,
-      filters.endDate
-    );
+    const stats = await auditLogService.getStatistics(filters.startDate, filters.endDate);
 
     res.json({
       success: true,
@@ -254,10 +242,7 @@ function convertToCSV(logs: any[]): string {
     log.duration || '',
   ]);
 
-  const csvContent = [
-    headers.join(','),
-    ...rows.map((row) => row.join(',')),
-  ].join('\n');
+  const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
 
   return csvContent;
 }

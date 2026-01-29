@@ -6,7 +6,7 @@ import {
   IsEnum,
   MinLength,
   MaxLength,
-  Matches
+  Matches,
 } from 'class-validator';
 import { UserRole } from '../models/user.model';
 
@@ -46,7 +46,7 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(20)
   @Matches(/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/, {
-    message: 'Invalid phone number format'
+    message: 'Invalid phone number format',
   })
   @IsOptional()
   phone?: string;
@@ -91,7 +91,7 @@ export class UpdateUserDto {
   @IsString()
   @MaxLength(20)
   @Matches(/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/, {
-    message: 'Invalid phone number format'
+    message: 'Invalid phone number format',
   })
   @IsOptional()
   phone?: string;

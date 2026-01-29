@@ -14,7 +14,8 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'Car Tracker API',
       version: '1.0.0',
-      description: 'API documentation for Car Tracker application - manage cars, contracts, customers, and more',
+      description:
+        'API documentation for Car Tracker application - manage cars, contracts, customers, and more',
       contact: {
         name: 'Car Tracker Support',
         email: 'support@cartracker.com',
@@ -68,11 +69,7 @@ const options: swaggerJsdoc.Options = {
       },
     ],
   },
-  apis: [
-    './src/routes/*.ts',
-    './src/controllers/*.ts',
-    './src/models/*.ts',
-  ],
+  apis: ['./src/routes/*.ts', './src/controllers/*.ts', './src/models/*.ts'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

@@ -1,11 +1,6 @@
-import { AppDataSource } from "../config/db";
-import {
-  AuditLog,
-  AuditAction,
-  AuditResource,
-  AuditStatus,
-} from "../models/audit-log.model";
-import logger from "../config/logger";
+import { AppDataSource } from '../config/db';
+import { AuditLog, AuditAction, AuditResource, AuditStatus } from '../models/audit-log.model';
+import logger from '../config/logger';
 
 export interface CreateAuditLogParams {
   userId?: string;
@@ -39,23 +34,23 @@ export class AuditLogService {
     if (!changes) return undefined;
 
     const sensitiveFields = [
-      "password",
-      "passwordHash",
-      "salt",
-      "token",
-      "refreshToken",
-      "accessToken",
-      "secret",
-      "apiKey",
-      "privateKey",
-      "creditCard",
-      "cvv",
-      "ssn",
-      "pin",
+      'password',
+      'passwordHash',
+      'salt',
+      'token',
+      'refreshToken',
+      'accessToken',
+      'secret',
+      'apiKey',
+      'privateKey',
+      'creditCard',
+      'cvv',
+      'ssn',
+      'pin',
     ];
 
     const sanitize = (obj: any): any => {
-      if (!obj || typeof obj !== "object") return obj;
+      if (!obj || typeof obj !== 'object') return obj;
 
       const sanitized = Array.isArray(obj) ? [...obj] : { ...obj };
 
@@ -64,8 +59,8 @@ export class AuditLogService {
 
         // Remove sensitive fields
         if (sensitiveFields.some((field) => lowerKey.includes(field))) {
-          sanitized[key] = "[REDACTED]";
-        } else if (typeof sanitized[key] === "object") {
+          sanitized[key] = '[REDACTED]';
+        } else if (typeof sanitized[key] === 'object') {
           sanitized[key] = sanitize(sanitized[key]);
         }
       }
@@ -85,21 +80,18 @@ export class AuditLogService {
   async createLog(params: CreateAuditLogParams): Promise<AuditLog | null> {
     // Validate required fields
     if (!params.action || !params.resource || !params.description) {
-      logger.warn(
-        "Attempted to create audit log with missing required fields",
-        {
-          hasAction: !!params.action,
-          hasResource: !!params.resource,
-          hasDescription: !!params.description,
-          userId: params.userId,
-        },
-      );
+      logger.warn('Attempted to create audit log with missing required fields', {
+        hasAction: !!params.action,
+        hasResource: !!params.resource,
+        hasDescription: !!params.description,
+        userId: params.userId,
+      });
       return null;
     }
 
     // Validate enums
     if (!Object.values(AuditAction).includes(params.action)) {
-      logger.warn("Invalid audit action", {
+      logger.warn('Invalid audit action', {
         action: params.action,
         userId: params.userId,
       });
@@ -107,7 +99,7 @@ export class AuditLogService {
     }
 
     if (!Object.values(AuditResource).includes(params.resource)) {
-      logger.warn("Invalid audit resource", {
+      logger.warn('Invalid audit resource', {
         resource: params.resource,
         userId: params.userId,
       });
@@ -132,8 +124,8 @@ export class AuditLogService {
 
       return await this.auditLogRepository.save(auditLog);
     } catch (error) {
-      logger.error("Failed to create audit log", {
-        error: error instanceof Error ? error.message : "Unknown error",
+      logger.error('Failed to create audit log', {
+        error: error instanceof Error ? error.message : 'Unknown error',
         params: {
           action: params.action,
           resource: params.resource,
@@ -165,16 +157,14 @@ export class AuditLogService {
         userAgent: params.userAgent,
         description: `User ${params.username} ${params.action.toLowerCase()}`,
         status:
-          params.action === AuditAction.LOGIN_FAILED
-            ? AuditStatus.FAILURE
-            : AuditStatus.SUCCESS,
+          params.action === AuditAction.LOGIN_FAILED ? AuditStatus.FAILURE : AuditStatus.SUCCESS,
         errorMessage: params.errorMessage,
       });
     } catch (error) {
-      logger.error("Failed to log auth event", {
+      logger.error('Failed to log auth event', {
         username: params.username,
         action: params.action,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       return null; // ✅ Don't break authentication flow
     }
@@ -187,11 +177,7 @@ export class AuditLogService {
     userId?: string;
     username?: string;
     userRole?: string;
-    action:
-      | AuditAction.CREATE
-      | AuditAction.READ
-      | AuditAction.UPDATE
-      | AuditAction.DELETE;
+    action: AuditAction.CREATE | AuditAction.READ | AuditAction.UPDATE | AuditAction.DELETE;
     resource: AuditResource;
     resourceId?: string;
     description: string;
@@ -214,12 +200,12 @@ export class AuditLogService {
         status: AuditStatus.SUCCESS,
       });
     } catch (error) {
-      logger.error("Failed to log CRUD operation", {
+      logger.error('Failed to log CRUD operation', {
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId,
         userId: params.userId,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       return null; // ✅ Don't break business operations
     }
@@ -232,7 +218,7 @@ export class AuditLogService {
     username: string;
     userRole: string;
     resource: AuditResource;
-    format: "PDF" | "EXCEL";
+    format: 'PDF' | 'EXCEL';
     count?: number;
     ipAddress?: string;
     userAgent?: string;
@@ -244,16 +230,16 @@ export class AuditLogService {
         userRole: params.userRole,
         action: AuditAction.EXPORT,
         resource: params.resource,
-        description: `Exported ${params.count || "all"} ${params.resource}(s) to ${params.format}`,
+        description: `Exported ${params.count || 'all'} ${params.resource}(s) to ${params.format}`,
         ipAddress: params.ipAddress,
         userAgent: params.userAgent,
       });
     } catch (error) {
-      logger.error("Failed to log export operation", {
+      logger.error('Failed to log export operation', {
         resource: params.resource,
         format: params.format,
         userId: params.userId,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       return null; // ✅ Don't break export functionality
     }
@@ -302,8 +288,8 @@ export class AuditLogService {
     // Use find instead of query builder for simpler approach
     const queryOptions: any = {
       where,
-      relations: ["user"],
-      order: { createdAt: "DESC" },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
       skip,
       take: limit,
     };
@@ -311,62 +297,58 @@ export class AuditLogService {
     // Handle date filters with query builder if needed
     if (filters.startDate || filters.endDate) {
       const queryBuilder = this.auditLogRepository
-        .createQueryBuilder("audit_log")
-        .leftJoinAndSelect("audit_log.user", "user");
+        .createQueryBuilder('audit_log')
+        .leftJoinAndSelect('audit_log.user', 'user');
 
       if (filters.userId) {
-        queryBuilder.andWhere("audit_log.user_id = :userId", {
+        queryBuilder.andWhere('audit_log.user_id = :userId', {
           userId: filters.userId,
         });
       }
 
       if (filters.action) {
-        queryBuilder.andWhere("audit_log.action = :action", {
+        queryBuilder.andWhere('audit_log.action = :action', {
           action: filters.action,
         });
       }
 
       if (filters.resource) {
-        queryBuilder.andWhere("audit_log.resource = :resource", {
+        queryBuilder.andWhere('audit_log.resource = :resource', {
           resource: filters.resource,
         });
       }
 
       if (filters.resourceId) {
-        queryBuilder.andWhere("audit_log.resource_id = :resourceId", {
+        queryBuilder.andWhere('audit_log.resource_id = :resourceId', {
           resourceId: filters.resourceId,
         });
       }
 
       if (filters.status) {
-        queryBuilder.andWhere("audit_log.status = :status", {
+        queryBuilder.andWhere('audit_log.status = :status', {
           status: filters.status,
         });
       }
 
       if (filters.startDate) {
-        queryBuilder.andWhere("audit_log.created_at >= :startDate", {
+        queryBuilder.andWhere('audit_log.created_at >= :startDate', {
           startDate: filters.startDate,
         });
       }
 
       if (filters.endDate) {
-        queryBuilder.andWhere("audit_log.created_at <= :endDate", {
+        queryBuilder.andWhere('audit_log.created_at <= :endDate', {
           endDate: filters.endDate,
         });
       }
 
-      queryBuilder
-        .skip(skip)
-        .take(limit)
-        .orderBy('"audit_log"."created_at"', "DESC");
+      queryBuilder.skip(skip).take(limit).orderBy('"audit_log"."created_at"', 'DESC');
 
       const [logs, total] = await queryBuilder.getManyAndCount();
       return { logs, total };
     }
 
-    const [logs, total] =
-      await this.auditLogRepository.findAndCount(queryOptions);
+    const [logs, total] = await this.auditLogRepository.findAndCount(queryOptions);
 
     return { logs, total };
   }
@@ -374,13 +356,10 @@ export class AuditLogService {
   /**
    * Get recent activity for a user
    */
-  async getUserRecentActivity(
-    userId: string,
-    limit: number = 10,
-  ): Promise<AuditLog[]> {
+  async getUserRecentActivity(userId: string, limit: number = 10): Promise<AuditLog[]> {
     return this.auditLogRepository.find({
       where: { userId },
-      order: { createdAt: "DESC" },
+      order: { createdAt: 'DESC' },
       take: limit,
     });
   }
@@ -390,7 +369,7 @@ export class AuditLogService {
    */
   async getStatistics(
     startDate?: Date,
-    endDate?: Date,
+    endDate?: Date
   ): Promise<{
     totalActions: number;
     actionsByType: Record<string, number>;
@@ -398,17 +377,16 @@ export class AuditLogService {
     failedActions: number;
     uniqueUsers: number;
   }> {
-    const queryBuilder =
-      this.auditLogRepository.createQueryBuilder("audit_log");
+    const queryBuilder = this.auditLogRepository.createQueryBuilder('audit_log');
 
     if (startDate) {
-      queryBuilder.andWhere("audit_log.created_at >= :startDate", {
+      queryBuilder.andWhere('audit_log.created_at >= :startDate', {
         startDate,
       });
     }
 
     if (endDate) {
-      queryBuilder.andWhere("audit_log.created_at <= :endDate", { endDate });
+      queryBuilder.andWhere('audit_log.created_at <= :endDate', { endDate });
     }
 
     const logs = await queryBuilder.getMany();
@@ -423,8 +401,7 @@ export class AuditLogService {
       actionsByType[log.action] = (actionsByType[log.action] || 0) + 1;
 
       // Count by resource
-      actionsByResource[log.resource] =
-        (actionsByResource[log.resource] || 0) + 1;
+      actionsByResource[log.resource] = (actionsByResource[log.resource] || 0) + 1;
 
       // Count failures
       if (log.status === AuditStatus.FAILURE) {
@@ -456,7 +433,7 @@ export class AuditLogService {
     const result = await this.auditLogRepository
       .createQueryBuilder()
       .delete()
-      .where("created_at < :cutoffDate", { cutoffDate })
+      .where('created_at < :cutoffDate', { cutoffDate })
       .execute();
 
     return result.affected || 0;

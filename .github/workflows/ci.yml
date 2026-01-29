@@ -7,54 +7,75 @@ on:
     branches: [main]
 
 jobs:
-  # Job 1: Lint (if you have ESLint)
+  # ✅ Job 1: Format Check (NEW)
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Prettier formatting
+        run: npm run format:check
+
+  # Job 2: Lint
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run ESLint
         run: npm run lint
-        continue-on-error: true  # Remove this after you add ESLint
+        # ✅ Removed continue-on-error
 
-  # Job 2: TypeScript Type Check
+  # Job 3: TypeScript Type Check
   type-check:
     name: Type Check
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run TypeScript compiler check
         run: npx tsc --noEmit
 
-  # Job 3: Run Tests
+  # Job 4: Run Tests
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -69,20 +90,20 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run tests
         run: npm test
         env:
@@ -92,39 +113,38 @@ jobs:
           DB_USER: test
           DB_PASSWORD: test
           DB_NAME: car_rental_test
-          JWT_SECRET: test-secret-key-for-ci
-          JWT_REFRESH_SECRET: test-refresh-secret-for-ci
+          JWT_SECRET: test-jwt-secret-for-ci-only-not-production
+          JWT_REFRESH_SECRET: test-refresh-secret-for-ci-only-not-production
 
-  # Job 4: Build
+  # Job 5: Build
   build:
     name: Build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build project
         run: npm run build
-      
+
       - name: Verify build output
         run: |
           test -f dist/app.js || (echo "Build failed: dist/app.js not found" && exit 1)
           echo "✅ Build successful: dist/app.js created"
-      
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build
           path: dist/
           retention-days: 7
-          

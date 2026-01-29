@@ -1,20 +1,20 @@
-import dotenv from "dotenv";
-import pkg from "pg";
+import dotenv from 'dotenv';
+import pkg from 'pg';
 const { Pool } = pkg;
-import { DataSource } from "typeorm";
-import { User } from "../models/user.model";
-import { Customer } from "../models/customer.model";
-import { Car } from "../models/car.model";
-import { Contract } from "../models/contract.model";
-import { Notification } from "../models/notification.model";
-import { Country } from "../models/country.model";
-import { RefreshToken } from "../models/refresh-token.model";
-import { AuditLog } from "../models/audit-log.model";
-import CarRegistration from "../models/car-registration.model";
-import CarInsurance from "../models/car-insurance.model";
-import CarServiceHistory from "../models/car-service-history.model";
-import CarIssueReport from "../models/car-issue-report.model";
-import { Booking } from "../models/booking.model";
+import { DataSource } from 'typeorm';
+import { User } from '../models/user.model';
+import { Customer } from '../models/customer.model';
+import { Car } from '../models/car.model';
+import { Contract } from '../models/contract.model';
+import { Notification } from '../models/notification.model';
+import { Country } from '../models/country.model';
+import { RefreshToken } from '../models/refresh-token.model';
+import { AuditLog } from '../models/audit-log.model';
+import CarRegistration from '../models/car-registration.model';
+import CarInsurance from '../models/car-insurance.model';
+import CarServiceHistory from '../models/car-service-history.model';
+import CarIssueReport from '../models/car-issue-report.model';
+import { Booking } from '../models/booking.model';
 
 dotenv.config();
 
@@ -34,7 +34,7 @@ export const pool = new Pool({
 
 // TypeORM DataSource configuration
 export const AppDataSource = new DataSource({
-  type: "postgres",
+  type: 'postgres',
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT),
   username: process.env.DB_USER,
@@ -43,9 +43,23 @@ export const AppDataSource = new DataSource({
   ssl: {
     rejectUnauthorized: false,
   },
-  entities: [User, Customer, Car, CarRegistration, CarInsurance, CarServiceHistory, CarIssueReport, Contract, Booking, Notification, Country, RefreshToken, AuditLog],
-  synchronize: process.env.NODE_ENV !== "production", // Only in development
-  logging: process.env.NODE_ENV === "development",
+  entities: [
+    User,
+    Customer,
+    Car,
+    CarRegistration,
+    CarInsurance,
+    CarServiceHistory,
+    CarIssueReport,
+    Contract,
+    Booking,
+    Notification,
+    Country,
+    RefreshToken,
+    AuditLog,
+  ],
+  synchronize: process.env.NODE_ENV !== 'production', // Only in development
+  logging: process.env.NODE_ENV === 'development',
   extra: {
     // ✅ Optimized Connection pool settings for scalability
     max: parseInt(process.env.DB_POOL_MAX || '100'), // Maximum pool size (increased for high traffic)
@@ -69,24 +83,24 @@ export const initializeTypeORM = async (): Promise<void> => {
     try {
       if (!AppDataSource.isInitialized) {
         await AppDataSource.initialize();
-        console.log("✅ TypeORM connected to PostgreSQL");
-        
+        console.log('✅ TypeORM connected to PostgreSQL');
+
         // Test the connection
         await AppDataSource.query('SELECT 1');
-        console.log("✅ Database connection verified");
+        console.log('✅ Database connection verified');
         break;
       }
     } catch (error) {
       retries++;
       console.error(`❌ TypeORM connection error (attempt ${retries}/${maxRetries}):`, error);
-      
+
       if (retries >= maxRetries) {
-        console.error("❌ Failed to connect to database after maximum retries");
+        console.error('❌ Failed to connect to database after maximum retries');
         throw error;
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 2000 * retries));
+      await new Promise((resolve) => setTimeout(resolve, 2000 * retries));
     }
   }
 };

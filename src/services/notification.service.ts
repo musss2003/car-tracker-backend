@@ -70,10 +70,7 @@ export class NotificationService extends BaseService<Notification> {
   /**
    * Get notification by ID with authorization check
    */
-  async getNotificationById(
-    notificationId: string,
-    userId: string
-  ): Promise<Notification> {
+  async getNotificationById(notificationId: string, userId: string): Promise<Notification> {
     const notification = await this.notificationRepository.findByIdWithRelations(notificationId);
 
     if (!notification) {

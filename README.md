@@ -35,6 +35,7 @@ Enterprise-grade Node.js backend for comprehensive vehicle fleet management and 
 ## ✨ Features
 
 ### Core Functionality
+
 - 🚗 **Fleet Management** - Complete CRUD operations for vehicles with detailed specifications
 - 👥 **Customer Management** - Customer profiles with rental history and contact information
 - 📝 **Contract Management** - Rental agreements with dates, pricing, and status tracking
@@ -46,6 +47,7 @@ Enterprise-grade Node.js backend for comprehensive vehicle fleet management and 
 - 🌍 **Multi-country Support** - Country and municipality data management
 
 ### Advanced Features
+
 - ⚡ **Redis Caching** - Decorator-based caching with automatic invalidation (5-minute TTL)
 - 🛡️ **Rate Limiting** - Redis-backed rate limiters (4 types: API, Auth, Write, Read)
 - 📦 **Response Compression** - Gzip compression reducing payload size by 60-80%
@@ -140,6 +142,7 @@ Enterprise-grade Node.js backend for comprehensive vehicle fleet management and 
 ## 🛠️ Tech Stack
 
 ### Core Technologies
+
 - **Runtime:** Node.js 18+
 - **Language:** TypeScript 5.0
 - **Framework:** Express.js 4.18
@@ -148,6 +151,7 @@ Enterprise-grade Node.js backend for comprehensive vehicle fleet management and 
 - **Cache:** Redis 6+ (ioredis)
 
 ### Key Libraries
+
 - **Authentication:** jsonwebtoken, bcrypt
 - **Real-time:** Socket.IO
 - **Email:** nodemailer
@@ -158,6 +162,7 @@ Enterprise-grade Node.js backend for comprehensive vehicle fleet management and 
 - **Compression:** compression
 
 ### Development Tools
+
 - **Testing:** Jest, Supertest
 - **Linting:** ESLint
 - **Formatting:** Prettier
@@ -176,6 +181,7 @@ Before you begin, ensure you have the following installed:
 - **Git** for version control
 
 ### System Requirements
+
 - **RAM:** 4GB minimum, 8GB recommended
 - **Disk:** 10GB free space
 - **OS:** Linux, macOS, or Windows (WSL recommended)
@@ -185,17 +191,20 @@ Before you begin, ensure you have the following installed:
 ## 🚀 Installation
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/musss2003/car-tracker-backend.git
 cd car-tracker-backend
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
 This will install all required packages including:
+
 - Express.js and TypeScript
 - PostgreSQL and Redis clients
 - Authentication and security packages
@@ -204,6 +213,7 @@ This will install all required packages including:
 ### 3. Install Redis (if not already installed)
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt update
 sudo apt install redis-server
@@ -212,12 +222,14 @@ sudo systemctl enable redis
 ```
 
 **macOS:**
+
 ```bash
 brew install redis
 brew services start redis
 ```
 
 **Verify Redis:**
+
 ```bash
 redis-cli ping
 # Expected: PONG
@@ -424,6 +436,7 @@ curl http://localhost:5000/health
 ## 📚 API Documentation
 
 ### Base URL
+
 ```
 Development: http://localhost:5000/api
 Production: https://api.yourdomain.com/api
@@ -431,78 +444,79 @@ Production: https://api.yourdomain.com/api
 
 ### Authentication Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/auth/register` | Register new user | No |
-| POST | `/auth/login` | Login user | No |
-| POST | `/auth/logout` | Logout user | Yes |
-| GET | `/auth/session-check` | Verify session | Yes |
-| POST | `/auth/refresh` | Refresh access token | Yes |
+| Method | Endpoint              | Description          | Auth Required |
+| ------ | --------------------- | -------------------- | ------------- |
+| POST   | `/auth/register`      | Register new user    | No            |
+| POST   | `/auth/login`         | Login user           | No            |
+| POST   | `/auth/logout`        | Logout user          | Yes           |
+| GET    | `/auth/session-check` | Verify session       | Yes           |
+| POST   | `/auth/refresh`       | Refresh access token | Yes           |
 
 ### User Management
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/users` | Get all users | Admin |
-| GET | `/users/:id` | Get user by ID | Yes |
-| POST | `/users` | Create user | Admin |
-| PUT | `/users/:id` | Update user | Admin/Self |
-| DELETE | `/users/:id` | Delete user | Admin |
-| POST | `/users/:id/reset-password` | Reset password | Admin |
-| PUT | `/users/:id/change-password` | Change password | Self |
+| Method | Endpoint                     | Description     | Auth Required |
+| ------ | ---------------------------- | --------------- | ------------- |
+| GET    | `/users`                     | Get all users   | Admin         |
+| GET    | `/users/:id`                 | Get user by ID  | Yes           |
+| POST   | `/users`                     | Create user     | Admin         |
+| PUT    | `/users/:id`                 | Update user     | Admin/Self    |
+| DELETE | `/users/:id`                 | Delete user     | Admin         |
+| POST   | `/users/:id/reset-password`  | Reset password  | Admin         |
+| PUT    | `/users/:id/change-password` | Change password | Self          |
 
 ### Car Management
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/cars` | Get all cars | Yes |
-| GET | `/cars/:id` | Get car by ID | Yes |
-| POST | `/cars` | Create car | Admin |
-| PUT | `/cars/:id` | Update car | Admin |
-| DELETE | `/cars/:id` | Delete car | Admin |
-| GET | `/cars/available` | Get available cars | Yes |
+| Method | Endpoint          | Description        | Auth Required |
+| ------ | ----------------- | ------------------ | ------------- |
+| GET    | `/cars`           | Get all cars       | Yes           |
+| GET    | `/cars/:id`       | Get car by ID      | Yes           |
+| POST   | `/cars`           | Create car         | Admin         |
+| PUT    | `/cars/:id`       | Update car         | Admin         |
+| DELETE | `/cars/:id`       | Delete car         | Admin         |
+| GET    | `/cars/available` | Get available cars | Yes           |
 
 ### Customer Management
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/customers` | Get all customers | Yes |
-| GET | `/customers/:id` | Get customer by ID | Yes |
-| POST | `/customers` | Create customer | Yes |
-| PUT | `/customers/:id` | Update customer | Yes |
-| DELETE | `/customers/:id` | Delete customer | Admin |
+| Method | Endpoint         | Description        | Auth Required |
+| ------ | ---------------- | ------------------ | ------------- |
+| GET    | `/customers`     | Get all customers  | Yes           |
+| GET    | `/customers/:id` | Get customer by ID | Yes           |
+| POST   | `/customers`     | Create customer    | Yes           |
+| PUT    | `/customers/:id` | Update customer    | Yes           |
+| DELETE | `/customers/:id` | Delete customer    | Admin         |
 
 ### Contract Management
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/contracts` | Get all contracts | Yes |
-| GET | `/contracts/:id` | Get contract by ID | Yes |
-| POST | `/contracts` | Create contract | Yes |
-| PUT | `/contracts/:id` | Update contract | Yes |
-| DELETE | `/contracts/:id` | Delete contract | Admin |
-| GET | `/contracts/expiring` | Get expiring contracts | Admin |
+| Method | Endpoint              | Description            | Auth Required |
+| ------ | --------------------- | ---------------------- | ------------- |
+| GET    | `/contracts`          | Get all contracts      | Yes           |
+| GET    | `/contracts/:id`      | Get contract by ID     | Yes           |
+| POST   | `/contracts`          | Create contract        | Yes           |
+| PUT    | `/contracts/:id`      | Update contract        | Yes           |
+| DELETE | `/contracts/:id`      | Delete contract        | Admin         |
+| GET    | `/contracts/expiring` | Get expiring contracts | Admin         |
 
 ### Audit Logs
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/audit-logs` | Get audit logs | Admin |
-| GET | `/audit-logs/:id` | Get log by ID | Admin |
-| GET | `/audit-logs/user/:userId` | Get user activity | Admin |
-| GET | `/audit-logs/stats` | Get statistics | Admin |
+| Method | Endpoint                   | Description       | Auth Required |
+| ------ | -------------------------- | ----------------- | ------------- |
+| GET    | `/audit-logs`              | Get audit logs    | Admin         |
+| GET    | `/audit-logs/:id`          | Get log by ID     | Admin         |
+| GET    | `/audit-logs/user/:userId` | Get user activity | Admin         |
+| GET    | `/audit-logs/stats`        | Get statistics    | Admin         |
 
 ### Notifications
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/notifications` | Get user notifications | Yes |
-| PUT | `/notifications/:id/read` | Mark as read | Yes |
-| DELETE | `/notifications/:id` | Delete notification | Yes |
+| Method | Endpoint                  | Description            | Auth Required |
+| ------ | ------------------------- | ---------------------- | ------------- |
+| GET    | `/notifications`          | Get user notifications | Yes           |
+| PUT    | `/notifications/:id/read` | Mark as read           | Yes           |
+| DELETE | `/notifications/:id`      | Delete notification    | Yes           |
 
 ### Request/Response Examples
 
 **Login Request:**
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -513,6 +527,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 ```
 
 **Login Response:**
+
 ```json
 {
   "id": "uuid-here",
@@ -524,6 +539,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 ```
 
 **Get Cars (with Auth):**
+
 ```bash
 curl -X GET http://localhost:5000/api/cars \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
@@ -534,6 +550,7 @@ curl -X GET http://localhost:5000/api/cars \
 ## ⚡ Performance Features
 
 ### 1. Redis Caching
+
 - **Cache Decorator:** `@Cache({ ttl: 300, prefix: 'cars' })`
 - **Default TTL:** 5 minutes
 - **Cache Hit Rate:** 80-95% (after warm-up)
@@ -541,6 +558,7 @@ curl -X GET http://localhost:5000/api/cars \
 - **Pattern Invalidation:** `invalidateCachePattern('cars:*')`
 
 **Example:**
+
 ```typescript
 @Cache({ ttl: 300, prefix: 'cars' })
 async getAllCars() {
@@ -550,14 +568,15 @@ async getAllCars() {
 
 ### 2. Rate Limiting
 
-| Limiter | Requests | Window | Applied To |
-|---------|----------|--------|------------|
-| API Limiter | 100 | 15 min | All API routes |
-| Auth Limiter | 5 | 15 min | Login/Register |
-| Write Limiter | 50 | 15 min | POST/PUT/DELETE |
-| Read Limiter | 200 | 15 min | GET requests |
+| Limiter       | Requests | Window | Applied To      |
+| ------------- | -------- | ------ | --------------- |
+| API Limiter   | 100      | 15 min | All API routes  |
+| Auth Limiter  | 5        | 15 min | Login/Register  |
+| Write Limiter | 50       | 15 min | POST/PUT/DELETE |
+| Read Limiter  | 200      | 15 min | GET requests    |
 
 ### 3. Response Compression
+
 - **Algorithm:** Gzip (level 6)
 - **Size Reduction:** 60-80%
 - **Automatic:** All responses > 1KB
@@ -566,17 +585,20 @@ async getAllCars() {
 ### 4. Database Optimization
 
 **Connection Pooling:**
+
 - Max connections: 100
 - Min connections: 20
 - Idle timeout: 30s
 - Query timeout: 30s
 
 **Indexes:**
+
 - User: email, username, role
 - Car: licensePlate, status, manufacturer, category
 - Contract: customerId, carId, dates (composite)
 
 ### 5. Background Jobs
+
 - **Queue:** BullMQ with Redis
 - **Workers:** 5 concurrent
 - **Rate Limit:** 10 jobs/second
@@ -585,19 +607,20 @@ async getAllCars() {
 
 ### Performance Metrics
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Response Time (cached) | 100-500ms | 5-20ms | 90-95% |
-| Concurrent Connections | 10 | 100 | 10x |
-| Email Operations | 2-5s | <100ms | 95%+ |
-| Database Query (indexed) | 100-500ms | 10-50ms | 80-90% |
-| Response Size (compressed) | 100KB | 20-40KB | 60-80% |
+| Metric                     | Before    | After   | Improvement |
+| -------------------------- | --------- | ------- | ----------- |
+| Response Time (cached)     | 100-500ms | 5-20ms  | 90-95%      |
+| Concurrent Connections     | 10        | 100     | 10x         |
+| Email Operations           | 2-5s      | <100ms  | 95%+        |
+| Database Query (indexed)   | 100-500ms | 10-50ms | 80-90%      |
+| Response Size (compressed) | 100KB     | 20-40KB | 60-80%      |
 
 ---
 
 ## 🔒 Security
 
 ### Authentication & Authorization
+
 - ✅ JWT-based authentication with refresh tokens
 - ✅ HTTP-only cookies for token storage
 - ✅ Role-based access control (RBAC)
@@ -605,6 +628,7 @@ async getAllCars() {
 - ✅ Token expiration and rotation
 
 ### Data Protection
+
 - ✅ Input validation and sanitization
 - ✅ SQL injection prevention (TypeORM)
 - ✅ XSS protection
@@ -613,6 +637,7 @@ async getAllCars() {
 - ✅ Sensitive data filtering in logs
 
 ### Security Headers
+
 ```typescript
 {
   "X-Content-Type-Options": "nosniff",
@@ -623,6 +648,7 @@ async getAllCars() {
 ```
 
 ### Audit Logging
+
 - All user actions logged
 - IP address and user agent tracking
 - Success/failure status
@@ -634,6 +660,7 @@ async getAllCars() {
 ## 📊 Monitoring
 
 ### Sentry Integration
+
 - **Error Tracking:** Automatic exception capture
 - **Performance Monitoring:** 10% of transactions (production)
 - **User Context:** ID, username, email, role
@@ -641,6 +668,7 @@ async getAllCars() {
 - **Filtering:** Passwords and sensitive data removed
 
 ### Application Logs
+
 ```typescript
 // Info logs
 console.log('✅ Server started on port 5000');
@@ -653,6 +681,7 @@ console.error('❌ Cache miss: audit-logs:...');
 ```
 
 ### Health Checks
+
 ```bash
 # Server health
 GET /health
@@ -662,6 +691,7 @@ GET /api/status
 ```
 
 ### Metrics to Monitor
+
 - Response times (P50, P95, P99)
 - Error rate
 - Cache hit rate
@@ -675,6 +705,7 @@ GET /api/status
 ## 🧪 Testing
 
 ### Run Tests
+
 ```bash
 # Run all tests
 npm test
@@ -690,6 +721,7 @@ npm test -- --watch
 ```
 
 ### Test Structure
+
 ```
 tests/
 ├── unit/
@@ -704,6 +736,7 @@ tests/
 ```
 
 ### Manual Testing
+
 ```bash
 # Test rate limiting
 for i in {1..110}; do curl http://localhost:5000/api/cars; done
@@ -723,6 +756,7 @@ curl -H "Accept-Encoding: gzip" -I http://localhost:5000/api/cars
 ### Docker Deployment
 
 **Dockerfile:**
+
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
@@ -735,13 +769,14 @@ CMD ["npm", "start"]
 ```
 
 **docker-compose.yml:**
+
 ```yaml
 version: '3.8'
 services:
   app:
     build: .
     ports:
-      - "5000:5000"
+      - '5000:5000'
     environment:
       - NODE_ENV=production
       - REDIS_HOST=redis
@@ -771,6 +806,7 @@ volumes:
 ```
 
 ### Production Checklist
+
 - [ ] Set `NODE_ENV=production`
 - [ ] Configure strong JWT secrets
 - [ ] Set up HTTPS/SSL certificates
@@ -882,6 +918,7 @@ car-tracker-backend/
 We welcome contributions! Please follow these guidelines:
 
 ### Development Workflow
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
@@ -889,6 +926,7 @@ We welcome contributions! Please follow these guidelines:
 5. Open a Pull Request
 
 ### Code Standards
+
 - Follow TypeScript best practices
 - Write unit tests for new features
 - Update documentation as needed
@@ -896,6 +934,7 @@ We welcome contributions! Please follow these guidelines:
 - Add comments for complex logic
 
 ### Commit Message Format
+
 ```
 type(scope): subject
 
@@ -932,7 +971,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔗 Related Projects
 
 - **Frontend:** [car-tracker-frontend](https://github.com/musss2003/car-tracker-frontend)
-- **Mobile App:** [car-tracker-mobile](https://github.com/musss2003/car-tracker-mobile) *(coming soon)*
+- **Mobile App:** [car-tracker-mobile](https://github.com/musss2003/car-tracker-mobile) _(coming soon)_
 
 ---
 
@@ -961,4 +1000,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ by the Car Tracker Team**
 
-*Last updated: December 4, 2025*
+_Last updated: December 4, 2025_

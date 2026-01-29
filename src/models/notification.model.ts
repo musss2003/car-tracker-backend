@@ -6,7 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  Index
+  Index,
 } from 'typeorm';
 import { User } from './user.model';
 
@@ -15,7 +15,7 @@ import { User } from './user.model';
  */
 export enum NotificationStatus {
   NEW = 'new',
-  SEEN = 'seen'
+  SEEN = 'seen',
 }
 
 /**
@@ -57,7 +57,7 @@ export class Notification {
   @Column({
     type: 'enum',
     enum: NotificationStatus,
-    default: NotificationStatus.NEW
+    default: NotificationStatus.NEW,
   })
   status: NotificationStatus;
 

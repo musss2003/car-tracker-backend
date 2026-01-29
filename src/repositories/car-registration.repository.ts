@@ -25,7 +25,7 @@ export class CarRegistrationRepository extends BaseRepository<CarRegistration> {
    */
   async findActiveByCarId(carId: string): Promise<CarRegistration | null> {
     const now = new Date();
-    
+
     return this.repository
       .createQueryBuilder('registration')
       .where('registration.carId = :carId', { carId })

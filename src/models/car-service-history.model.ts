@@ -6,78 +6,78 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Index
-} from "typeorm";
-import { Car } from "./car.model";
-import { User } from "./user.model";
+  Index,
+} from 'typeorm';
+import { Car } from './car.model';
+import { User } from './user.model';
 
-@Entity("car_service_history")
+@Entity('car_service_history')
 @Index(['carId'])
 @Index(['serviceDate'])
 @Index(['nextServiceDate'])
 export class CarServiceHistory {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   // User who created the record
-  @Column({ name: "created_by" })
+  @Column({ name: 'created_by' })
   createdById: string;
 
   @ManyToOne(() => User, { eager: true })
-  @JoinColumn({ name: "created_by" })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   // Relation to Car (cannot be deleted)
-  @Column({ name: "car_id" })
+  @Column({ name: 'car_id' })
   carId: string;
 
-  @ManyToOne(() => Car, { eager: true, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "car_id" })
+  @ManyToOne(() => Car, { eager: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'car_id' })
   car: Car;
 
   // Service details
-  @Column({ name: "service_date", type: "date" })
+  @Column({ name: 'service_date', type: 'date' })
   serviceDate: Date;
 
-  @Column({ type: "integer", nullable: true })
+  @Column({ type: 'integer', nullable: true })
   mileage?: number;
 
-  @Column({ name: "service_type", type: "varchar", length: 100 })
+  @Column({ name: 'service_type', type: 'varchar', length: 100 })
   serviceType: string;
 
-  @Column({ type: "text", nullable: true })
+  @Column({ type: 'text', nullable: true })
   description?: string;
 
   // Next service info
-  @Column({ name: "next_service_km", type: "integer", nullable: true })
+  @Column({ name: 'next_service_km', type: 'integer', nullable: true })
   nextServiceKm?: number;
 
-  @Column({ name: "next_service_date", type: "date", nullable: true })
+  @Column({ name: 'next_service_date', type: 'date', nullable: true })
   nextServiceDate?: Date;
 
   // Cost
-  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   cost?: number;
 
   // Additional fields (like Contract pattern)
-  @Column({ name: "additional_notes", type: "text", nullable: true })
+  @Column({ name: 'additional_notes', type: 'text', nullable: true })
   additionalNotes?: string;
 
-  @Column({ name: "notification_sent", type: "boolean", default: false })
+  @Column({ name: 'notification_sent', type: 'boolean', default: false })
   notificationSent: boolean;
 
   // User who last updated
-  @Column({ name: "updated_by", nullable: true })
+  @Column({ name: 'updated_by', nullable: true })
   updatedById?: string;
 
   @ManyToOne(() => User, { eager: true, nullable: true })
-  @JoinColumn({ name: "updated_by" })
+  @JoinColumn({ name: 'updated_by' })
   updatedBy?: User;
 
-  @UpdateDateColumn({ name: "updated_at", nullable: true })
+  @UpdateDateColumn({ name: 'updated_at', nullable: true })
   updatedAt?: Date;
 }
 

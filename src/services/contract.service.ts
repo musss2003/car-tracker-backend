@@ -20,7 +20,9 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
   async create(data: CreateContractDto, context: AuditContext): Promise<Contract> {
     // Verify customer exists
     const customerRepository = AppDataSource.getRepository(Customer);
-    const customer = await customerRepository.findOne({ where: { id: data.customerId, isDeleted: false } });
+    const customer = await customerRepository.findOne({
+      where: { id: data.customerId, isDeleted: false },
+    });
     if (!customer) {
       throw new NotFoundError('Customer not found');
     }
@@ -46,7 +48,7 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
     const contractData = {
       ...data,
       createdById: context.userId,
-      notificationSent: false
+      notificationSent: false,
     };
 
     return super.create(contractData as any, context);
@@ -79,7 +81,9 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
     // If customer is being updated, verify it exists
     if (data.customerId) {
       const customerRepository = AppDataSource.getRepository(Customer);
-      const customer = await customerRepository.findOne({ where: { id: data.customerId, isDeleted: false } });
+      const customer = await customerRepository.findOne({
+        where: { id: data.customerId, isDeleted: false },
+      });
       if (!customer) {
         throw new NotFoundError('Customer not found');
       }
@@ -96,7 +100,7 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
 
     const updateData = {
       ...data,
-      updatedById: context.userId
+      updatedById: context.userId,
     };
 
     return super.update(id, updateData, context);
@@ -206,9 +210,11 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
    */
   protected getUpdateDescription(before: Contract, after: Contract): string {
     const changes: string[] = [];
-    
+
     if (before.startDate !== after.startDate || before.endDate !== after.endDate) {
-      changes.push(`dates: ${before.startDate}-${before.endDate} → ${after.startDate}-${after.endDate}`);
+      changes.push(
+        `dates: ${before.startDate}-${before.endDate} → ${after.startDate}-${after.endDate}`
+      );
     }
     if (before.dailyRate !== after.dailyRate) {
       changes.push(`daily rate: ${before.dailyRate} → ${after.dailyRate}`);
@@ -222,7 +228,7 @@ export class ContractService extends BaseService<Contract, CreateContractDto, Up
     if (before.carId !== after.carId) {
       changes.push(`car changed`);
     }
-    
+
     const customerName = after.customer?.name || 'customer';
     const carInfo = after.car?.licensePlate || 'car';
     return `Updated contract for ${customerName} with car ${carInfo}${changes.length ? ` (${changes.join(', ')})` : ''}`;

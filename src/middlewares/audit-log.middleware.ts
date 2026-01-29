@@ -15,11 +15,7 @@ declare global {
  * Middleware to automatically log API requests
  * Place this after authentication middleware to have access to req.user
  */
-export const auditLogMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const auditLogMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   // Record start time for duration calculation
   req.startTime = Date.now();
 
@@ -100,7 +96,7 @@ function extractResourceFromPath(path: string): AuditResource {
   if (path.includes('/car-insurance')) return AuditResource.CAR_INSURANCE;
   if (path.includes('/car-registration')) return AuditResource.CAR_REGISTRATION;
   if (path.includes('/car-service-history')) return AuditResource.CAR_SERVICE_HISTORY;
-  
+
   // Then check general resources
   if (path.includes('/contract')) return AuditResource.CONTRACT;
   if (path.includes('/customer')) return AuditResource.CUSTOMER;
@@ -217,12 +213,7 @@ export const logAudit = {
   /**
    * Log an export operation
    */
-  export: (
-    resource: AuditResource,
-    format: 'PDF' | 'EXCEL',
-    count: number,
-    req: Request
-  ) => {
+  export: (resource: AuditResource, format: 'PDF' | 'EXCEL', count: number, req: Request) => {
     const user = (req as any).user;
     const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];

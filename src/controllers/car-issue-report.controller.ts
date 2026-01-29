@@ -22,9 +22,7 @@ export const createCarIssueReport = asyncHandler(async (req: Request, res: Respo
 
   const report = await carIssueReportService.create(data, context);
 
-  res.status(201).json(
-    createSuccessResponse(report, 'Issue report created successfully')
-  );
+  res.status(201).json(createSuccessResponse(report, 'Issue report created successfully'));
 });
 
 /**
@@ -77,9 +75,7 @@ export const updateCarIssueReportStatus = asyncHandler(async (req: Request, res:
   // Don't modify DTO - pass context to service which will handle updatedById
   const updated = await carIssueReportService.update(id, data, context);
 
-  res.json(
-    createSuccessResponse(updated, 'Issue report updated successfully')
-  );
+  res.json(createSuccessResponse(updated, 'Issue report updated successfully'));
 });
 
 /**
@@ -112,10 +108,7 @@ export const getNewCarIssueReports = asyncHandler(async (req: Request, res: Resp
 export const getNewCarIssueReportsByCar = asyncHandler(async (req: Request, res: Response) => {
   const { carId, status } = req.params;
 
-  const reports = await carIssueReportService.getByCarIdAndStatus(
-    carId,
-    status as IssueStatus
-  );
+  const reports = await carIssueReportService.getByCarIdAndStatus(carId, status as IssueStatus);
 
   res.json(createSuccessResponse(reports));
 });
@@ -127,9 +120,7 @@ export const getNewCarIssueReportsByCar = asyncHandler(async (req: Request, res:
 export const getIssueReportsByStatus = asyncHandler(async (req: Request, res: Response) => {
   const { status } = req.params;
 
-  const reports = await carIssueReportService.getByStatus(
-    status as IssueStatus
-  );
+  const reports = await carIssueReportService.getByStatus(status as IssueStatus);
 
   res.json(createSuccessResponse(reports));
 });
@@ -141,9 +132,7 @@ export const getIssueReportsByStatus = asyncHandler(async (req: Request, res: Re
 export const getIssueReportsBySeverity = asyncHandler(async (req: Request, res: Response) => {
   const { severity } = req.params;
 
-  const reports = await carIssueReportService.getBySeverity(
-    severity as IssueSeverity
-  );
+  const reports = await carIssueReportService.getBySeverity(severity as IssueSeverity);
 
   res.json(createSuccessResponse(reports));
 });

@@ -1,8 +1,8 @@
-import express from "express";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-import authenticate from "../middlewares/verify-jwt.middleware";
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import authenticate from '../middlewares/verify-jwt.middleware';
 
 const router = express.Router();
 
@@ -11,22 +11,22 @@ router.use(authenticate);
 // Configure multer for private storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "../../private_uploads");
+    const dir = path.join(__dirname, '../../private_uploads');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
   },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
-  }
+  },
 });
 
 /**
@@ -66,14 +66,14 @@ const upload = multer({
  *       401:
  *         description: Unauthorized
  */
-router.post("/upload", upload.single("document"), (req, res) => {
+router.post('/upload', upload.single('document'), (req, res) => {
   if (!req.file) {
-    res.status(400).json({ message: "No file uploaded" });
+    res.status(400).json({ message: 'No file uploaded' });
     return;
   }
 
   // Store reference in DB if you want (e.g. req.file.filename)
-  res.json({ message: "File uploaded successfully", filename: req.file.filename });
+  res.json({ message: 'File uploaded successfully', filename: req.file.filename });
 });
 
 /**
@@ -114,19 +114,19 @@ router.post("/upload", upload.single("document"), (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.get("/documents/:filename", (req, res) => {
+router.get('/documents/:filename', (req, res) => {
   const filename = req.params.filename;
-  
+
   // Basic validation to prevent directory traversal
   if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-    res.status(400).json({ message: "Invalid filename" });
+    res.status(400).json({ message: 'Invalid filename' });
     return;
   }
 
-  const filePath = path.join(__dirname, "../../private_uploads", filename);
+  const filePath = path.join(__dirname, '../../private_uploads', filename);
 
   if (!fs.existsSync(filePath)) {
-    res.status(404).json({ message: "File not found" });
+    res.status(404).json({ message: 'File not found' });
     return;
   }
 
@@ -140,10 +140,10 @@ router.get("/documents/:filename", (req, res) => {
     '.webp': 'image/webp',
     '.pdf': 'application/pdf',
   };
-  
+
   const contentType = contentTypeMap[ext] || 'application/octet-stream';
   res.setHeader('Content-Type', contentType);
-  
+
   // For inline viewing (not forcing download)
   res.sendFile(filePath);
 });

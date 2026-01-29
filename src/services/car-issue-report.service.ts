@@ -1,20 +1,14 @@
-import CarIssueReport, {
-  IssueSeverity,
-  IssueStatus,
-} from "../models/car-issue-report.model";
-import Car from "../models/car.model";
-import { BaseService } from "../common/services/base.service";
-import { AuditResource } from "../models/audit-log.model";
+import CarIssueReport, { IssueSeverity, IssueStatus } from '../models/car-issue-report.model';
+import Car from '../models/car.model';
+import { BaseService } from '../common/services/base.service';
+import { AuditResource } from '../models/audit-log.model';
 import carIssueReportRepository, {
   CarIssueReportRepository,
-} from "../repositories/car-issue-report.repository";
-import { AppDataSource } from "../config/db";
-import {
-  CreateCarIssueReportDto,
-  UpdateCarIssueReportDto,
-} from "../dto/car-issue-report.dto";
-import { NotFoundError, ValidationError } from "../common/errors";
-import { AuditContext } from "../common/interfaces";
+} from '../repositories/car-issue-report.repository';
+import { AppDataSource } from '../config/db';
+import { CreateCarIssueReportDto, UpdateCarIssueReportDto } from '../dto/car-issue-report.dto';
+import { NotFoundError, ValidationError } from '../common/errors';
+import { AuditContext } from '../common/interfaces';
 
 /**
  * Service for CarIssueReport business logic
@@ -33,14 +27,11 @@ export class CarIssueReportService extends BaseService<
   /**
    * Create a new issue report with validation
    */
-  async create(
-    data: CreateCarIssueReportDto,
-    context?: AuditContext,
-  ): Promise<CarIssueReport> {
+  async create(data: CreateCarIssueReportDto, context?: AuditContext): Promise<CarIssueReport> {
     // Verify car exists
     const car = await this.carRepository.findOne({ where: { id: data.carId } });
     if (!car) {
-      throw new NotFoundError("Car", data.carId);
+      throw new NotFoundError('Car', data.carId);
     }
 
     // Create issue report
@@ -50,10 +41,7 @@ export class CarIssueReportService extends BaseService<
   /**
    * Get all issue reports for a specific car
    */
-  async getByCarId(
-    carId: string,
-    context?: AuditContext,
-  ): Promise<CarIssueReport[]> {
+  async getByCarId(carId: string, context?: AuditContext): Promise<CarIssueReport[]> {
     const repo = this.repository as CarIssueReportRepository;
     return repo.findByCarId(carId);
   }
@@ -85,10 +73,7 @@ export class CarIssueReportService extends BaseService<
   /**
    * Get issues by car and status
    */
-  async getByCarIdAndStatus(
-    carId: string,
-    status: IssueStatus,
-  ): Promise<CarIssueReport[]> {
+  async getByCarIdAndStatus(carId: string, status: IssueStatus): Promise<CarIssueReport[]> {
     const repo = this.repository as CarIssueReportRepository;
     return repo.findByCarIdAndStatus(carId, status);
   }
@@ -96,10 +81,7 @@ export class CarIssueReportService extends BaseService<
   /**
    * Count issues by car and status
    */
-  async countByCarIdAndStatus(
-    carId: string,
-    status: IssueStatus,
-  ): Promise<number> {
+  async countByCarIdAndStatus(carId: string, status: IssueStatus): Promise<number> {
     const repo = this.repository as CarIssueReportRepository;
     return repo.countByCarIdAndStatus(carId, status);
   }
@@ -108,16 +90,13 @@ export class CarIssueReportService extends BaseService<
    * Custom audit description for create operations
    */
   protected getCreateDescription(entity: CarIssueReport): string {
-    return `Created issue report for car ${entity.carId}${entity.severity ? ` - ${entity.severity}` : ""}`;
+    return `Created issue report for car ${entity.carId}${entity.severity ? ` - ${entity.severity}` : ''}`;
   }
 
   /**
    * Custom audit description for update operations
    */
-  protected getUpdateDescription(
-    before: CarIssueReport,
-    after: CarIssueReport,
-  ): string {
+  protected getUpdateDescription(before: CarIssueReport, after: CarIssueReport): string {
     const changes: string[] = [];
 
     if (before.status !== after.status) {
@@ -130,7 +109,7 @@ export class CarIssueReportService extends BaseService<
       changes.push(`description updated`);
     }
 
-    return `Updated issue report ${after.id}${changes.length ? ` (${changes.join(", ")})` : ""}`;
+    return `Updated issue report ${after.id}${changes.length ? ` (${changes.join(', ')})` : ''}`;
   }
 
   /**

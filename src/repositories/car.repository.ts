@@ -15,7 +15,7 @@ export class CarRepository extends BaseRepository<Car> {
   async findByLicensePlate(licensePlate: string): Promise<Car | null> {
     return this.repository.findOne({
       where: { licensePlate, isDeleted: false },
-      relations: ['createdBy', 'updatedBy', 'archivedBy', 'deletedBy']
+      relations: ['createdBy', 'updatedBy', 'archivedBy', 'deletedBy'],
     });
   }
 
@@ -26,7 +26,7 @@ export class CarRepository extends BaseRepository<Car> {
     return this.repository.find({
       where: { manufacturer, isDeleted: false },
       relations: ['createdBy', 'updatedBy'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -37,7 +37,7 @@ export class CarRepository extends BaseRepository<Car> {
     return this.repository.find({
       where: { status: status as any, isDeleted: false },
       relations: ['createdBy', 'updatedBy'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -49,10 +49,10 @@ export class CarRepository extends BaseRepository<Car> {
       where: {
         isDeleted: false,
         isArchived: false,
-        status: 'available'
+        status: 'available',
       },
       relations: ['createdBy', 'updatedBy'],
-      order: { manufacturer: 'ASC', model: 'ASC' }
+      order: { manufacturer: 'ASC', model: 'ASC' },
     });
   }
 
@@ -63,7 +63,7 @@ export class CarRepository extends BaseRepository<Car> {
     return this.repository.find({
       where: { category: category as any, isDeleted: false },
       relations: ['createdBy', 'updatedBy'],
-      order: { pricePerDay: 'ASC' }
+      order: { pricePerDay: 'ASC' },
     });
   }
 
@@ -93,11 +93,11 @@ export class CarRepository extends BaseRepository<Car> {
       .select('contract.carId')
       .where('contract.startDate <= :endDate AND contract.endDate >= :startDate', {
         startDate,
-        endDate
+        endDate,
       })
       .getMany();
 
-    const conflictingCarIds = conflictingContracts.map(c => c.carId);
+    const conflictingCarIds = conflictingContracts.map((c) => c.carId);
 
     // Get available cars (excluding conflicting ones)
     const query = this.repository
@@ -136,7 +136,7 @@ export class CarRepository extends BaseRepository<Car> {
     await this.repository.update(carId, {
       isArchived: true,
       archivedAt: new Date(),
-      archivedById: userId
+      archivedById: userId,
     });
   }
 
@@ -147,7 +147,7 @@ export class CarRepository extends BaseRepository<Car> {
     await this.repository.update(carId, {
       isArchived: false,
       archivedAt: undefined,
-      archivedById: undefined
+      archivedById: undefined,
     } as any);
   }
 
@@ -158,7 +158,7 @@ export class CarRepository extends BaseRepository<Car> {
     await this.repository.update(carId, {
       mileage,
       updatedById: userId,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
   }
 
@@ -180,10 +180,10 @@ export class CarRepository extends BaseRepository<Car> {
    */
   async findByIds(ids: string[]): Promise<Car[]> {
     if (ids.length === 0) return [];
-    
+
     return this.repository.find({
       where: { id: In(ids), isDeleted: false },
-      relations: ['createdBy', 'updatedBy']
+      relations: ['createdBy', 'updatedBy'],
     });
   }
 }

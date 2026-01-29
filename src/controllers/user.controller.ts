@@ -1,11 +1,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  ChangePasswordDto,
-  ResetPasswordDto
-} from '../dto/user.dto';
+import { CreateUserDto, UpdateUserDto, ChangePasswordDto, ResetPasswordDto } from '../dto/user.dto';
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse, createErrorResponse } from '../common/dto/response.dto';
 import { AuditContext } from '../common/interfaces/base-service.interface';

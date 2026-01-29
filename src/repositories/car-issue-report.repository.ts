@@ -53,10 +53,7 @@ export class CarIssueReportRepository extends BaseRepository<CarIssueReport> {
   /**
    * Find issues by car and status
    */
-  async findByCarIdAndStatus(
-    carId: string,
-    status: IssueStatus
-  ): Promise<CarIssueReport[]> {
+  async findByCarIdAndStatus(carId: string, status: IssueStatus): Promise<CarIssueReport[]> {
     return this.repository.find({
       where: { carId, status },
       relations: ['reportedBy', 'resolvedBy'],

@@ -52,9 +52,33 @@ describe('CostAnalyticsService - Optimized', () => {
 
     it('should calculate averages correctly', () => {
       const monthlyCosts = [
-        { month: 'January', year: 2024, service: 100, insurance: 200, registration: 0, issues: 0, total: 300 },
-        { month: 'February', year: 2024, service: 200, insurance: 200, registration: 0, issues: 0, total: 400 },
-        { month: 'March', year: 2024, service: 150, insurance: 200, registration: 0, issues: 0, total: 350 },
+        {
+          month: 'January',
+          year: 2024,
+          service: 100,
+          insurance: 200,
+          registration: 0,
+          issues: 0,
+          total: 300,
+        },
+        {
+          month: 'February',
+          year: 2024,
+          service: 200,
+          insurance: 200,
+          registration: 0,
+          issues: 0,
+          total: 400,
+        },
+        {
+          month: 'March',
+          year: 2024,
+          service: 150,
+          insurance: 200,
+          registration: 0,
+          issues: 0,
+          total: 350,
+        },
       ];
 
       const averages = (service as any).calculateAverages(monthlyCosts);
@@ -74,11 +98,51 @@ describe('CostAnalyticsService - Optimized', () => {
 
     it('should calculate projections based on recent months', () => {
       const monthlyCosts = [
-        { month: 'January', year: 2024, service: 100, insurance: 200, registration: 0, issues: 0, total: 300 },
-        { month: 'February', year: 2024, service: 200, insurance: 200, registration: 0, issues: 0, total: 400 },
-        { month: 'March', year: 2024, service: 300, insurance: 300, registration: 0, issues: 0, total: 600 },
-        { month: 'April', year: 2024, service: 400, insurance: 400, registration: 0, issues: 0, total: 800 },
-        { month: 'May', year: 2024, service: 500, insurance: 500, registration: 0, issues: 0, total: 1000 },
+        {
+          month: 'January',
+          year: 2024,
+          service: 100,
+          insurance: 200,
+          registration: 0,
+          issues: 0,
+          total: 300,
+        },
+        {
+          month: 'February',
+          year: 2024,
+          service: 200,
+          insurance: 200,
+          registration: 0,
+          issues: 0,
+          total: 400,
+        },
+        {
+          month: 'March',
+          year: 2024,
+          service: 300,
+          insurance: 300,
+          registration: 0,
+          issues: 0,
+          total: 600,
+        },
+        {
+          month: 'April',
+          year: 2024,
+          service: 400,
+          insurance: 400,
+          registration: 0,
+          issues: 0,
+          total: 800,
+        },
+        {
+          month: 'May',
+          year: 2024,
+          service: 500,
+          insurance: 500,
+          registration: 0,
+          issues: 0,
+          total: 1000,
+        },
       ];
 
       const projections = (service as any).calculateProjections(monthlyCosts);
@@ -102,7 +166,7 @@ describe('CostAnalyticsService - Optimized', () => {
       const merged = (service as any).mergeMonthlyBreakdowns(serviceMonthly, insuranceMonthly);
 
       expect(merged.length).toBe(3);
-      
+
       const jan = merged.find((m: any) => m.month === 'January');
       expect(jan.service).toBe(100);
       expect(jan.insurance).toBe(300);

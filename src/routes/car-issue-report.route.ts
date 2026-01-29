@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router } from 'express';
 import {
   createCarIssueReport,
   getAllCarIssueReports,
@@ -11,9 +11,9 @@ import {
   getIssueReportsByStatus,
   getIssueReportsBySeverity,
   getIssueReportAuditLogs,
-  getActiveIssueReportsCount
-} from "../controllers/car-issue-report.controller";
-import authenticate from "../middlewares/verify-jwt.middleware";
+  getActiveIssueReportsCount,
+} from '../controllers/car-issue-report.controller';
+import authenticate from '../middlewares/verify-jwt.middleware';
 
 const router = Router();
 
@@ -37,7 +37,7 @@ router.use(authenticate);
  *       201:
  *         description: Issue report created successfully
  */
-router.post("/", createCarIssueReport);
+router.post('/', createCarIssueReport);
 
 /**
  * @swagger
@@ -51,7 +51,7 @@ router.post("/", createCarIssueReport);
  *       200:
  *         description: List of all issue reports
  */
-router.get("/", getAllCarIssueReports);
+router.get('/', getAllCarIssueReports);
 
 /**
  * @swagger
@@ -65,7 +65,7 @@ router.get("/", getAllCarIssueReports);
  *       200:
  *         description: List of new issue reports
  */
-router.get("/reports/new", getNewCarIssueReports);
+router.get('/reports/new', getNewCarIssueReports);
 
 /**
  * @swagger
@@ -85,7 +85,7 @@ router.get("/reports/new", getNewCarIssueReports);
  *       200:
  *         description: List of issues with specified status
  */
-router.get("/status/:status", getIssueReportsByStatus);
+router.get('/status/:status', getIssueReportsByStatus);
 
 /**
  * @swagger
@@ -106,7 +106,7 @@ router.get("/status/:status", getIssueReportsByStatus);
  *       200:
  *         description: List of issues with specified severity
  */
-router.get("/severity/:severity", getIssueReportsBySeverity);
+router.get('/severity/:severity', getIssueReportsBySeverity);
 
 /**
  * @swagger
@@ -126,7 +126,7 @@ router.get("/severity/:severity", getIssueReportsBySeverity);
  *       200:
  *         description: List of car's issues
  */
-router.get("/car/:carId", getCarIssueReportsForCar);
+router.get('/car/:carId', getCarIssueReportsForCar);
 
 /**
  * @swagger
@@ -146,7 +146,7 @@ router.get("/car/:carId", getCarIssueReportsForCar);
  *       200:
  *         description: List of new issues for car
  */
-router.get("/car/:carId/new", getNewCarIssueReportsByCar);
+router.get('/car/:carId/new', getNewCarIssueReportsByCar);
 
 /**
  * @swagger
@@ -166,7 +166,7 @@ router.get("/car/:carId/new", getNewCarIssueReportsByCar);
  *       200:
  *         description: Active issues count
  */
-router.get("/car/:carId/active-count", getActiveIssueReportsCount);
+router.get('/car/:carId/active-count', getActiveIssueReportsCount);
 
 /**
  * @swagger
@@ -186,7 +186,7 @@ router.get("/car/:carId/active-count", getActiveIssueReportsCount);
  *       200:
  *         description: Audit logs for issue
  */
-router.get("/:id/audit-logs", getIssueReportAuditLogs);
+router.get('/:id/audit-logs', getIssueReportAuditLogs);
 
 /**
  * @swagger
@@ -206,7 +206,7 @@ router.get("/:id/audit-logs", getIssueReportAuditLogs);
  *       200:
  *         description: Issue report details
  */
-router.get("/:id", getSingleCarIssueReport);
+router.get('/:id', getSingleCarIssueReport);
 
 /**
  * @swagger
@@ -231,7 +231,7 @@ router.get("/:id", getSingleCarIssueReport);
  *       200:
  *         description: Issue report updated successfully
  */
-router.patch("/:id", updateCarIssueReportStatus);
+router.patch('/:id', updateCarIssueReportStatus);
 
 /**
  * @swagger
@@ -251,6 +251,6 @@ router.patch("/:id", updateCarIssueReportStatus);
  *       200:
  *         description: Issue report deleted successfully
  */
-router.delete("/:id", deleteCarIssueReport);
+router.delete('/:id', deleteCarIssueReport);
 
 export default router;

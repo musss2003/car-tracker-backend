@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import * as bcrypt from "bcrypt";
-import { AppDataSource } from "../config/db";
-import { User, UserRole } from "../models/user.model";
-import { RefreshToken } from "../models/refresh-token.model";
-import dotenv from "dotenv";
-import { logAudit } from "../middlewares/audit-log.middleware";
-import { captureException, setUserContext, clearUserContext } from "../config/monitoring";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcrypt';
+import { AppDataSource } from '../config/db';
+import { User, UserRole } from '../models/user.model';
+import { RefreshToken } from '../models/refresh-token.model';
+import dotenv from 'dotenv';
+import { logAudit } from '../middlewares/audit-log.middleware';
+import { captureException, setUserContext, clearUserContext } from '../config/monitoring';
 
 dotenv.config();
 
@@ -17,10 +17,10 @@ const REFRESH_TOKEN_DURATION = process.env.REFRESH_TOKEN_DURATION;
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production" ? true : false,
-  sameSite: process.env.NODE_ENV === "production" ? 'none' as const : 'lax' as const,
+  secure: process.env.NODE_ENV === 'production' ? true : false,
+  sameSite: process.env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
   maxAge: 7 * 24 * 60 * 60 * 1000,
-  partitioned: process.env.NODE_ENV === "production" ? true : false, // Fix for cross-site cookie warning
+  partitioned: process.env.NODE_ENV === 'production' ? true : false, // Fix for cross-site cookie warning
 };
 
 interface JwtPayload {
@@ -28,14 +28,9 @@ interface JwtPayload {
 }
 
 // REGISTER
-export const register = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { username, email, password, name, citizenshipId, profilePhotoUrl } =
-      req.body;
+    const { username, email, password, name, citizenshipId, profilePhotoUrl } = req.body;
 
     const userRepository = AppDataSource.getRepository(User);
 
@@ -45,7 +40,7 @@ export const register = async (
     });
 
     if (existingUser) {
-      res.status(400).json({ message: "User already exists" });
+      res.status(400).json({ message: 'User already exists' });
       return;
     }
 
@@ -77,7 +72,7 @@ export const register = async (
 
     // 6. Send refresh token as HTTP-only cookie
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     res.status(201).json({
       id: savedUser.id,
@@ -87,21 +82,17 @@ export const register = async (
       accessToken,
     });
   } catch (error: any) {
-    console.error("Register error:", error);
+    console.error('Register error:', error);
     captureException(error, {
       tags: { operation: 'register' },
-      extra: { username: req.body.username, email: req.body.email }
+      extra: { username: req.body.username, email: req.body.email },
     });
     next(error);
   }
 };
 
 // LOGIN
-export const login = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { username, password } = req.body;
 
   try {
@@ -111,8 +102,8 @@ export const login = async (
     const user = await userRepository.findOne({ where: { username } });
     if (!user) {
       // Log failed login attempt
-      await logAudit.loginFailed(username, "User not found", req);
-      res.status(404).json({ message: "User not found" });
+      await logAudit.loginFailed(username, 'User not found', req);
+      res.status(404).json({ message: 'User not found' });
       return;
     }
 
@@ -120,8 +111,8 @@ export const login = async (
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       // Log failed login attempt
-      await logAudit.loginFailed(username, "Invalid credentials", req);
-      res.status(401).json({ message: "Invalid credentials" });
+      await logAudit.loginFailed(username, 'Invalid credentials', req);
+      res.status(401).json({ message: 'Invalid credentials' });
       return;
     }
 
@@ -142,7 +133,7 @@ export const login = async (
 
     // 6. Send refresh token as HTTP-only cookie
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     // 7. Log successful login
     await logAudit.login(user.id, user.username, req);
@@ -164,20 +155,17 @@ export const login = async (
       role: user.role,
     });
   } catch (error: any) {
-    console.error("Login error:", error);
+    console.error('Login error:', error);
     captureException(error, {
       tags: { operation: 'login' },
-      extra: { username: req.body.username }
+      extra: { username: req.body.username },
     });
     next(error);
   }
 };
 
 // UPDATE USER ROLE
-export const updateUserRole = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const updateUserRole = async (req: Request, res: Response): Promise<Response> => {
   const { userId, newRole } = req.body;
 
   try {
@@ -186,14 +174,14 @@ export const updateUserRole = async (
     const updateResult = await userRepository.update(userId, { role: newRole });
 
     if (updateResult.affected === 0) {
-      return res.status(404).send("User not found");
+      return res.status(404).send('User not found');
     }
 
-    return res.send("User role updated successfully");
+    return res.send('User role updated successfully');
   } catch (error: any) {
     captureException(error, {
       tags: { operation: 'update-user-role' },
-      extra: { userId: req.body.userId, newRole: req.body.newRole }
+      extra: { userId: req.body.userId, newRole: req.body.newRole },
     });
     return res.status(500).send(error.message);
   }
@@ -207,29 +195,24 @@ export const sessionCheck = async (
 ): Promise<void> => {
   const authHeader = req.headers.authorization;
 
-  const accessToken = authHeader && authHeader.split(" ")[1]; // Bearer <token>
+  const accessToken = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
   const refreshToken = req.cookies?.refreshToken;
 
   if (!accessToken && !refreshToken) {
-    res
-      .status(401)
-      .json({ authenticated: false, message: "No token provided" });
+    res.status(401).json({ authenticated: false, message: 'No token provided' });
     return;
   }
 
   // Step 1: Try to verify access token (if provided)
   if (accessToken) {
     try {
-      const decoded = jwt.verify(
-        accessToken,
-        ACCESS_TOKEN_SECRET || ""
-      ) as JwtPayload;
+      const decoded = jwt.verify(accessToken, ACCESS_TOKEN_SECRET || '') as JwtPayload;
 
       const user = await getUserById(decoded.id);
 
       if (!user) {
-        console.log("User not found for decoded token ID:", decoded.id);
+        console.log('User not found for decoded token ID:', decoded.id);
         // Don't return here - fall through to refresh token check
       } else {
         // Access token is valid and user exists
@@ -243,16 +226,13 @@ export const sessionCheck = async (
         return;
       }
     } catch (accessTokenError: any) {
-      console.log(
-        "Access token verification failed:",
-        accessTokenError.message
-      );
+      console.log('Access token verification failed:', accessTokenError.message);
 
       // Log the specific error type for debugging
       if (accessTokenError instanceof jwt.TokenExpiredError) {
-        console.log("Access token expired, trying refresh token...");
+        console.log('Access token expired, trying refresh token...');
       } else if (accessTokenError instanceof jwt.JsonWebTokenError) {
-        console.log("Access token invalid, trying refresh token...");
+        console.log('Access token invalid, trying refresh token...');
       }
     }
   }
@@ -262,10 +242,7 @@ export const sessionCheck = async (
     try {
       const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
 
-      const decoded = jwt.verify(
-        refreshToken,
-        REFRESH_TOKEN_SECRET || ""
-      ) as JwtPayload;
+      const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET || '') as JwtPayload;
 
       const userId = decoded.id;
 
@@ -285,9 +262,7 @@ export const sessionCheck = async (
       }
 
       if (!valid) {
-        res
-          .status(403)
-          .json({ authenticated: false, message: "Invalid refresh token" });
+        res.status(403).json({ authenticated: false, message: 'Invalid refresh token' });
         return;
       }
 
@@ -296,7 +271,7 @@ export const sessionCheck = async (
 
       await storeRefreshToken(userId, newRefreshToken);
 
-      res.cookie("refreshToken", newRefreshToken, cookieOptions);
+      res.cookie('refreshToken', newRefreshToken, cookieOptions);
 
       res.status(200).json({
         authenticated: true,
@@ -308,13 +283,10 @@ export const sessionCheck = async (
       });
       return;
     } catch (refreshTokenError: any) {
-      console.error(
-        "Error during refresh token validation:",
-        refreshTokenError.message
-      );
+      console.error('Error during refresh token validation:', refreshTokenError.message);
       res.status(500).json({
         authenticated: false,
-        message: "Internal server error during refresh",
+        message: 'Internal server error during refresh',
       });
       return;
     }
@@ -323,31 +295,23 @@ export const sessionCheck = async (
   // Step 3: If we get here, both tokens failed or were missing
   res.status(401).json({
     authenticated: false,
-    message:
-      "Authentication failed - both access and refresh tokens are invalid or missing",
+    message: 'Authentication failed - both access and refresh tokens are invalid or missing',
   });
 };
 
 // LOGOUT
-export const logout = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const refreshToken = req.cookies?.refreshToken;
 
   try {
     if (!refreshToken) {
-      res.status(401).json({ message: "Refresh token not found" });
+      res.status(401).json({ message: 'Refresh token not found' });
       return;
     }
 
     const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
 
-    const decoded = jwt.verify(
-      refreshToken,
-      REFRESH_TOKEN_SECRET || ""
-    ) as JwtPayload;
+    const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET || '') as JwtPayload;
 
     const userId = decoded.id;
 
@@ -360,7 +324,7 @@ export const logout = async (
 
     // Clear the cookie (must match the same settings as when it was set)
 
-    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
 
     // Log logout
     if (user) {
@@ -369,7 +333,7 @@ export const logout = async (
 
     res.sendStatus(204); // Successfully logged out
   } catch (error: any) {
-    console.error("Logout error:", error);
+    console.error('Logout error:', error);
     next(error); // Pass error to the error-handling middleware
   }
 };
@@ -379,7 +343,7 @@ const getUserById = async (id: string): Promise<User> => {
   const userRepository = AppDataSource.getRepository(User);
   const user = await userRepository.findOne({ where: { id } });
   if (!user) {
-    throw new Error("User not found");
+    throw new Error('User not found');
   }
   return user;
 };
@@ -387,14 +351,14 @@ const getUserById = async (id: string): Promise<User> => {
 export function generateAccessToken(user: User) {
   return jwt.sign(
     { id: user.id, username: user.username, role: user.role },
-    ACCESS_TOKEN_SECRET || "",
-    { expiresIn: ACCESS_TOKEN_DURATION || "15m" }
+    ACCESS_TOKEN_SECRET || '',
+    { expiresIn: ACCESS_TOKEN_DURATION || '15m' }
   );
 }
 
 export function generateRefreshToken(user: User) {
-  return jwt.sign({ id: user.id }, REFRESH_TOKEN_SECRET || "", {
-    expiresIn: REFRESH_TOKEN_DURATION || "7d",
+  return jwt.sign({ id: user.id }, REFRESH_TOKEN_SECRET || '', {
+    expiresIn: REFRESH_TOKEN_DURATION || '7d',
   });
 }
 

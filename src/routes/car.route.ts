@@ -19,10 +19,9 @@ import {
   archiveCar,
   unarchiveCar,
   updateCarMileage,
-  getCarsWithLowMileage
+  getCarsWithLowMileage,
 } from '../controllers/car.controller';
 import authenticate from '../middlewares/verify-jwt.middleware';
-
 
 /**
  * @swagger

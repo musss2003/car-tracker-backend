@@ -57,7 +57,5 @@ export const asyncHandler = (fn: Function) => {
  * Place this before the error handler
  */
 export const notFoundHandler = (req: Request, res: Response) => {
-  res.status(404).json(
-    createErrorResponse(`Route ${req.originalUrl} not found`)
-  );
+  res.status(404).json(createErrorResponse(`Route ${req.originalUrl} not found`));
 };

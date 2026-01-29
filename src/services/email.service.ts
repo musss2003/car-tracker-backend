@@ -40,7 +40,7 @@ export const sendCredentialsEmail = async (
   name?: string
 ): Promise<void> => {
   const transporter = createTransporter();
-  
+
   if (!transporter) {
     console.log(`📧 [SKIPPED] Would send credentials email to ${email}`);
     console.log(`   Username: ${username}`);
@@ -135,7 +135,7 @@ export const sendPasswordResetEmail = async (
   name?: string
 ): Promise<void> => {
   const transporter = createTransporter();
-  
+
   if (!transporter) {
     console.log(`📧 [SKIPPED] Would send password reset email to ${email}`);
     console.log(`   Username: ${username}`);
@@ -232,7 +232,7 @@ Ako niste zatražili resetovanje lozinke, odmah kontaktirajte administratora sis
  */
 export const testEmailConfiguration = async (): Promise<boolean> => {
   const transporter = createTransporter();
-  
+
   if (!transporter) {
     console.log('❌ Email not configured');
     return false;

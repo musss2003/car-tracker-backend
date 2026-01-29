@@ -8,9 +8,11 @@ import { logAudit } from '../decorators/audit.decorator';
  * Base service class with integrated audit logging
  * Extend this for entity-specific services
  */
-export abstract class BaseService<T extends ObjectLiteral, CreateDTO = any, UpdateDTO = any>
-  implements IBaseService<T, CreateDTO, UpdateDTO>
-{
+export abstract class BaseService<
+  T extends ObjectLiteral,
+  CreateDTO = any,
+  UpdateDTO = any,
+> implements IBaseService<T, CreateDTO, UpdateDTO> {
   constructor(
     protected repository: BaseRepository<T>,
     protected auditResource: AuditResource
@@ -21,7 +23,7 @@ export abstract class BaseService<T extends ObjectLiteral, CreateDTO = any, Upda
    */
   async getById(id: string, context?: AuditContext): Promise<T> {
     const entity = await this.repository.findById(id);
-    
+
     if (!entity) {
       throw new Error(`${this.auditResource} with ID ${id} not found`);
     }
@@ -113,7 +115,7 @@ export abstract class BaseService<T extends ObjectLiteral, CreateDTO = any, Upda
   async update(id: string, data: UpdateDTO, context?: AuditContext): Promise<T> {
     // Get current state for audit trail
     const beforeEntity = await this.repository.findById(id);
-    
+
     if (!beforeEntity) {
       throw new Error(`${this.auditResource} with ID ${id} not found`);
     }
@@ -143,7 +145,7 @@ export abstract class BaseService<T extends ObjectLiteral, CreateDTO = any, Upda
   async delete(id: string, context?: AuditContext): Promise<boolean> {
     // Get entity before deletion for audit trail
     const entity = await this.repository.findById(id);
-    
+
     if (!entity) {
       throw new Error(`${this.auditResource} with ID ${id} not found`);
     }

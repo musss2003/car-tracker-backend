@@ -5,7 +5,7 @@ import {
   IsEnum,
   IsArray,
   IsUUID,
-  MaxLength
+  MaxLength,
 } from 'class-validator';
 import { NotificationStatus } from '../models/notification.model';
 

@@ -1,29 +1,23 @@
-import { BaseService } from "../common/services/base.service";
-import { Booking, BookingStatus } from "../models/booking.model";
-import {
-  CreateBookingDto,
-  UpdateBookingDto,
-  BookingQueryDto,
-} from "../dto/booking.dto";
-import bookingRepository, {
-  BookingRepository,
-} from "../repositories/booking.repository";
-import { AuditContext } from "../common/interfaces/base-service.interface";
+import { BaseService } from '../common/services/base.service';
+import { Booking, BookingStatus } from '../models/booking.model';
+import { CreateBookingDto, UpdateBookingDto, BookingQueryDto } from '../dto/booking.dto';
+import bookingRepository, { BookingRepository } from '../repositories/booking.repository';
+import { AuditContext } from '../common/interfaces/base-service.interface';
 import {
   ValidationError,
   NotFoundError,
   ConflictError,
   BadRequestError,
   BusinessRuleError,
-} from "../common/errors/app-error";
-import logger from "../config/logger";
+} from '../common/errors/app-error';
+import logger from '../config/logger';
 
 // Import types - actual instances injected via constructor or imported at use
-import type { Car } from "../models/car.model";
-import type { Customer } from "../models/customer.model";
-import type { Contract } from "../models/contract.model";
-import { AuditAction, AuditResource } from "../models/audit-log.model";
-import { logAudit } from "../common";
+import type { Car } from '../models/car.model';
+import type { Customer } from '../models/customer.model';
+import type { Contract } from '../models/contract.model';
+import { AuditAction, AuditResource } from '../models/audit-log.model';
+import { logAudit } from '../common';
 
 /**
  * Booking Service
@@ -36,11 +30,7 @@ import { logAudit } from "../common";
  * - Booking expiration
  * - Convert to contract
  */
-export class BookingService extends BaseService<
-  Booking,
-  CreateBookingDto,
-  UpdateBookingDto
-> {
+export class BookingService extends BaseService<Booking, CreateBookingDto, UpdateBookingDto> {
   private carRepository: {
     findById: (id: string) => Promise<Car | null>;
   } | null = null;
@@ -59,7 +49,7 @@ export class BookingService extends BaseService<
     customerRepo?: { findById: (id: string) => Promise<Customer | null> },
     contractSvc?: {
       create: (data: any, context: AuditContext) => Promise<Contract>;
-    },
+    }
   ) {
     super(bookingRepo, AuditResource.BOOKING);
     // Allow dependency injection or use dynamic imports
@@ -73,17 +63,15 @@ export class BookingService extends BaseService<
    */
   private async loadDependencies(): Promise<void> {
     if (!this.carRepository) {
-      const { default: carRepo } =
-        await import("../repositories/car.repository");
+      const { default: carRepo } = await import('../repositories/car.repository');
       this.carRepository = carRepo;
     }
     if (!this.customerRepository) {
-      const { default: customerRepo } =
-        await import("../repositories/customer.repository");
+      const { default: customerRepo } = await import('../repositories/customer.repository');
       this.customerRepository = customerRepo;
     }
     if (!this.contractService) {
-      const { default: contractSvc } = await import("./contract.service");
+      const { default: contractSvc } = await import('./contract.service');
       this.contractService = contractSvc;
     }
   }
@@ -100,24 +88,21 @@ export class BookingService extends BaseService<
    * 6. Generates unique booking reference
    * 7. Sets expiration date
    */
-  async create(
-    data: CreateBookingDto,
-    context: AuditContext,
-  ): Promise<Booking> {
+  async create(data: CreateBookingDto, context: AuditContext): Promise<Booking> {
     await this.loadDependencies();
 
     // 1. Validate customer exists
     const customer = await this.customerRepository!.findById(data.customerId);
     if (!customer) {
-      throw new NotFoundError("Customer not found");
+      throw new NotFoundError('Customer not found');
     }
 
     // 2. Validate car exists and is active
     const car = await this.carRepository!.findById(data.carId);
     if (!car) {
-      throw new NotFoundError("Car not found");
+      throw new NotFoundError('Car not found');
     }
-    if (car.status !== "available") {
+    if (car.status !== 'available') {
       throw new BadRequestError(`Car is not available (status: ${car.status})`);
     }
 
@@ -127,37 +112,29 @@ export class BookingService extends BaseService<
 
     // Check for Invalid Date
     if (isNaN(startDate.getTime())) {
-      throw new ValidationError("Invalid start date format");
+      throw new ValidationError('Invalid start date format');
     }
     if (isNaN(endDate.getTime())) {
-      throw new ValidationError("Invalid end date format");
+      throw new ValidationError('Invalid end date format');
     }
 
     this.validateDates(startDate, endDate);
 
     // 4. Check car availability (no conflicts)
-    const isAvailable = await this.checkAvailability(
-      data.carId,
-      startDate,
-      endDate,
-    );
+    const isAvailable = await this.checkAvailability(data.carId, startDate, endDate);
     if (!isAvailable) {
       const conflicts = await this.bookingRepo.getConflictingBookings(
         data.carId,
         startDate,
-        endDate,
+        endDate
       );
       throw new ConflictError(
-        `Car is not available for the selected dates. ${conflicts.length} conflicting booking(s) found.`,
+        `Car is not available for the selected dates. ${conflicts.length} conflicting booking(s) found.`
       );
     }
 
     // 5. Calculate estimated cost
-    const estimatedCost = this.calculateEstimatedCost(
-      car.pricePerDay,
-      startDate,
-      endDate,
-    );
+    const estimatedCost = this.calculateEstimatedCost(car.pricePerDay, startDate, endDate);
 
     // 6. Calculate extras cost
     let extrasCost = 0;
@@ -207,11 +184,7 @@ export class BookingService extends BaseService<
   /**
    * Update booking with validation
    */
-  async update(
-    id: string,
-    data: UpdateBookingDto,
-    context: AuditContext,
-  ): Promise<Booking> {
+  async update(id: string, data: UpdateBookingDto, context: AuditContext): Promise<Booking> {
     await this.loadDependencies();
 
     const existingBooking = await this.getById(id);
@@ -227,18 +200,13 @@ export class BookingService extends BaseService<
     };
 
     // Copy non-date fields directly
-    if (data.pickupLocation !== undefined)
-      updateData.pickupLocation = data.pickupLocation;
-    if (data.dropoffLocation !== undefined)
-      updateData.dropoffLocation = data.dropoffLocation;
-    if (data.additionalDrivers !== undefined)
-      updateData.additionalDrivers = data.additionalDrivers;
+    if (data.pickupLocation !== undefined) updateData.pickupLocation = data.pickupLocation;
+    if (data.dropoffLocation !== undefined) updateData.dropoffLocation = data.dropoffLocation;
+    if (data.additionalDrivers !== undefined) updateData.additionalDrivers = data.additionalDrivers;
     if (data.extras !== undefined) updateData.extras = data.extras;
     if (data.notes !== undefined) updateData.notes = data.notes;
-    if (data.depositAmount !== undefined)
-      updateData.depositAmount = data.depositAmount;
-    if (data.depositPaid !== undefined)
-      updateData.depositPaid = data.depositPaid;
+    if (data.depositAmount !== undefined) updateData.depositAmount = data.depositAmount;
+    if (data.depositPaid !== undefined) updateData.depositPaid = data.depositPaid;
     if (data.status !== undefined) updateData.status = data.status;
 
     // If dates are being updated, recheck availability and recalculate cost
@@ -250,7 +218,7 @@ export class BookingService extends BaseService<
       if (data.startDate) {
         startDate = new Date(data.startDate);
         if (isNaN(startDate.getTime())) {
-          throw new ValidationError("Invalid start date format");
+          throw new ValidationError('Invalid start date format');
         }
       } else {
         startDate = existingBooking.startDate;
@@ -259,7 +227,7 @@ export class BookingService extends BaseService<
       if (data.endDate) {
         endDate = new Date(data.endDate);
         if (isNaN(endDate.getTime())) {
-          throw new ValidationError("Invalid end date format");
+          throw new ValidationError('Invalid end date format');
         }
       } else {
         endDate = existingBooking.endDate;
@@ -271,11 +239,11 @@ export class BookingService extends BaseService<
         existingBooking.carId,
         startDate,
         endDate,
-        id, // Exclude current booking
+        id // Exclude current booking
       );
 
       if (!isAvailable) {
-        throw new ConflictError("Car is not available for the updated dates");
+        throw new ConflictError('Car is not available for the updated dates');
       }
 
       // Convert string dates to Date objects
@@ -289,11 +257,7 @@ export class BookingService extends BaseService<
       // Recalculate cost if dates changed
       const car = await this.carRepository!.findById(existingBooking.carId);
       if (car) {
-        const newBaseCost = this.calculateEstimatedCost(
-          car.pricePerDay,
-          startDate,
-          endDate,
-        );
+        const newBaseCost = this.calculateEstimatedCost(car.pricePerDay, startDate, endDate);
 
         // Recalculate extras cost if present
         let extrasCost = 0;
@@ -324,14 +288,9 @@ export class BookingService extends BaseService<
     carId: string,
     startDate: Date,
     endDate: Date,
-    excludeBookingId?: string,
+    excludeBookingId?: string
   ): Promise<boolean> {
-    return await this.bookingRepo.checkCarAvailability(
-      carId,
-      startDate,
-      endDate,
-      excludeBookingId,
-    );
+    return await this.bookingRepo.checkCarAvailability(carId, startDate, endDate, excludeBookingId);
   }
 
   /**
@@ -353,27 +312,27 @@ export class BookingService extends BaseService<
 
     // Validation 1: Status must be PENDING (BadRequestError)
     if (booking.status !== BookingStatus.PENDING) {
-      logger.warn("Attempted to confirm non-pending booking", {
+      logger.warn('Attempted to confirm non-pending booking', {
         bookingId: id,
         bookingReference: booking.bookingReference,
         currentStatus: booking.status,
         userId: context.userId,
       });
       throw new BadRequestError(
-        `Cannot confirm booking with status: ${booking.status}. Only PENDING bookings can be confirmed.`,
+        `Cannot confirm booking with status: ${booking.status}. Only PENDING bookings can be confirmed.`
       );
     }
 
     // Validation 2: Deposit must be paid (BusinessRuleError)
     if (!booking.depositPaid) {
-      logger.warn("Attempted to confirm booking without deposit payment", {
+      logger.warn('Attempted to confirm booking without deposit payment', {
         bookingId: id,
         bookingReference: booking.bookingReference,
         depositPaid: booking.depositPaid,
         userId: context.userId,
       });
       throw new BusinessRuleError(
-        "Cannot confirm booking: deposit payment is required but not paid.",
+        'Cannot confirm booking: deposit payment is required but not paid.'
       );
     }
 
@@ -383,7 +342,7 @@ export class BookingService extends BaseService<
       const expiresAt = new Date(booking.expiresAt);
 
       if (now > expiresAt) {
-        logger.warn("Attempted to confirm expired booking", {
+        logger.warn('Attempted to confirm expired booking', {
           bookingId: id,
           bookingReference: booking.bookingReference,
           expiresAt: booking.expiresAt,
@@ -391,13 +350,13 @@ export class BookingService extends BaseService<
           userId: context.userId,
         });
         throw new BusinessRuleError(
-          `Cannot confirm booking: booking expired on ${expiresAt.toISOString()}.`,
+          `Cannot confirm booking: booking expired on ${expiresAt.toISOString()}.`
         );
       }
     }
 
     // All validations passed - confirm booking
-    logger.info("Confirming booking", {
+    logger.info('Confirming booking', {
       bookingId: id,
       bookingReference: booking.bookingReference,
       userId: context.userId,
@@ -416,27 +375,19 @@ export class BookingService extends BaseService<
    * - Updates status to CANCELLED
    * - Records cancellation timestamp and reason
    */
-  async cancelBooking(
-    id: string,
-    reason: string,
-    context: AuditContext,
-  ): Promise<Booking> {
+  async cancelBooking(id: string, reason: string, context: AuditContext): Promise<Booking> {
     if (!reason || reason.trim().length < 10) {
-      throw new ValidationError(
-        "Cancellation reason must be at least 10 characters",
-      );
+      throw new ValidationError('Cancellation reason must be at least 10 characters');
     }
 
     const booking = await this.getById(id);
 
     // Validate status
     if (booking.status === BookingStatus.CANCELLED) {
-      throw new BusinessRuleError("Booking is already cancelled");
+      throw new BusinessRuleError('Booking is already cancelled');
     }
     if (booking.status === BookingStatus.CONVERTED) {
-      throw new BusinessRuleError(
-        "Cannot cancel a booking that has been converted to a contract",
-      );
+      throw new BusinessRuleError('Cannot cancel a booking that has been converted to a contract');
     }
 
     // Update booking
@@ -462,7 +413,7 @@ export class BookingService extends BaseService<
    */
   async convertToContract(
     id: string,
-    context: AuditContext,
+    context: AuditContext
   ): Promise<{ booking: Booking; contract: any }> {
     await this.loadDependencies();
 
@@ -470,28 +421,22 @@ export class BookingService extends BaseService<
 
     // Validate status
     if (booking.status !== BookingStatus.CONFIRMED) {
-      throw new BusinessRuleError(
-        `Cannot convert booking with status: ${booking.status}`,
-      );
+      throw new BusinessRuleError(`Cannot convert booking with status: ${booking.status}`);
     }
 
     // Validate deposit is paid
     if (!booking.depositPaid) {
-      throw new BusinessRuleError(
-        "Deposit must be paid before converting to contract",
-      );
+      throw new BusinessRuleError('Deposit must be paid before converting to contract');
     }
 
     // Validate booking hasn't expired
     if (new Date() > booking.expiresAt) {
-      throw new BusinessRuleError(
-        "Booking has expired and cannot be converted",
-      );
+      throw new BusinessRuleError('Booking has expired and cannot be converted');
     }
 
     // Ensure contractService is loaded
     if (!this.contractService) {
-      throw new Error("Contract service is not available");
+      throw new Error('Contract service is not available');
     }
 
     // Create contract from booking
@@ -547,7 +492,7 @@ export class BookingService extends BaseService<
       const expiredBookings = await this.bookingRepo.findExpiredBookings();
 
       if (expiredBookings.length === 0) {
-        logger.debug("No expired bookings found");
+        logger.debug('No expired bookings found');
         return { expired: 0, bookings: [], failed: 0 };
       }
 
@@ -555,7 +500,7 @@ export class BookingService extends BaseService<
       const bookingReferences = expiredBookings.map((b) => b.bookingReference);
 
       // Application log: Operation started
-      logger.info("Starting bulk expiration of bookings", {
+      logger.info('Starting bulk expiration of bookings', {
         count: bookingIds.length,
         bookingReferences: bookingReferences.slice(0, 10), // First 10 for reference
       });
@@ -565,18 +510,18 @@ export class BookingService extends BaseService<
         const affectedCount = await this.bookingRepo.bulkUpdateStatus(
           bookingIds,
           BookingStatus.EXPIRED,
-          "system",
+          'system'
         );
 
         // Re-fetch updated bookings to return them
         const updatedBookings = await Promise.all(
-          bookingIds.map((id) => this.bookingRepo.findById(id)),
+          bookingIds.map((id) => this.bookingRepo.findById(id))
         );
 
         const results = updatedBookings.filter((b): b is Booking => b !== null);
 
         // Application log: Operation succeeded
-        logger.info("Successfully expired bookings", {
+        logger.info('Successfully expired bookings', {
           expired: affectedCount,
           requested: bookingIds.length,
           bookingReferences: bookingReferences.slice(0, 10),
@@ -584,14 +529,14 @@ export class BookingService extends BaseService<
 
         // Audit log: Record the bulk operation for compliance
         await logAudit({
-          resource: "BOOKING" as AuditResource,
-          action: "UPDATE" as AuditAction,
-          resourceId: "bulk-operation",
-          description: `Bulk expired ${affectedCount} bookings: ${bookingReferences.slice(0, 5).join(", ")}${bookingReferences.length > 5 ? "..." : ""}`,
+          resource: 'BOOKING' as AuditResource,
+          action: 'UPDATE' as AuditAction,
+          resourceId: 'bulk-operation',
+          description: `Bulk expired ${affectedCount} bookings: ${bookingReferences.slice(0, 5).join(', ')}${bookingReferences.length > 5 ? '...' : ''}`,
           context: {
-            userId: "system",
-            userRole: "system",
-            username: "system",
+            userId: 'system',
+            userRole: 'system',
+            username: 'system',
           },
           afterData: {
             count: affectedCount,
@@ -607,11 +552,10 @@ export class BookingService extends BaseService<
           failed: 0,
         };
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
         // Application log: Operation failed
-        logger.error("Failed to expire bookings in bulk", {
+        logger.error('Failed to expire bookings in bulk', {
           count: bookingIds.length,
           error: errorMessage,
           stack: error instanceof Error ? error.stack : undefined,
@@ -620,14 +564,14 @@ export class BookingService extends BaseService<
 
         // Audit log: Record the failure
         await logAudit({
-          resource: "BOOKING" as AuditResource,
+          resource: 'BOOKING' as AuditResource,
           action: AuditAction.UPDATE,
-          resourceId: "bulk-operation-failed",
+          resourceId: 'bulk-operation-failed',
           description: `Failed to bulk expire ${bookingIds.length} bookings: ${errorMessage}`,
           context: {
-            userId: "system",
-            userRole: "system",
-            username: "system",
+            userId: 'system',
+            userRole: 'system',
+            username: 'system',
           },
           beforeData: {
             count: bookingIds.length,
@@ -645,10 +589,9 @@ export class BookingService extends BaseService<
       }
     } catch (error) {
       // Catch errors from findExpiredBookings
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      logger.error("Failed to find expired bookings", {
+      logger.error('Failed to find expired bookings', {
         error: errorMessage,
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -667,13 +610,8 @@ export class BookingService extends BaseService<
   async expireBooking(id: string, context: AuditContext): Promise<Booking> {
     const booking = await this.getById(id);
 
-    if (
-      booking.status !== BookingStatus.PENDING &&
-      booking.status !== BookingStatus.CONFIRMED
-    ) {
-      throw new BusinessRuleError(
-        `Cannot expire booking with status: ${booking.status}`,
-      );
+    if (booking.status !== BookingStatus.PENDING && booking.status !== BookingStatus.CONFIRMED) {
+      throw new BusinessRuleError(`Cannot expire booking with status: ${booking.status}`);
     }
 
     const updated = await this.update(
@@ -681,7 +619,7 @@ export class BookingService extends BaseService<
       {
         status: BookingStatus.EXPIRED,
       },
-      context,
+      context
     );
 
     return updated;
@@ -690,11 +628,7 @@ export class BookingService extends BaseService<
   /**
    * Calculate estimated cost based on car daily rate and date range
    */
-  calculateEstimatedCost(
-    dailyRate: number,
-    startDate: Date,
-    endDate: Date,
-  ): number {
+  calculateEstimatedCost(dailyRate: number, startDate: Date, endDate: Date): number {
     const days = this.calculateDays(startDate, endDate);
     return dailyRate * days;
   }
@@ -729,7 +663,7 @@ export class BookingService extends BaseService<
       },
     } as any);
 
-    const sequence = String(count + 1).padStart(5, "0");
+    const sequence = String(count + 1).padStart(5, '0');
     return `BKG-${year}-${sequence}`;
   }
 
@@ -740,14 +674,10 @@ export class BookingService extends BaseService<
   private calculateExpirationDate(startDate: Date): Date {
     const now = new Date();
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const oneDayBeforeStart = new Date(
-      startDate.getTime() - 24 * 60 * 60 * 1000,
-    );
+    const oneDayBeforeStart = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
 
     // Use the sooner of the two
-    return sevenDaysFromNow < oneDayBeforeStart
-      ? sevenDaysFromNow
-      : oneDayBeforeStart;
+    return sevenDaysFromNow < oneDayBeforeStart ? sevenDaysFromNow : oneDayBeforeStart;
   }
 
   /**
@@ -762,28 +692,25 @@ export class BookingService extends BaseService<
 
     // Start date must be today or in the future
     if (start < now) {
-      throw new ValidationError("Start date must be today or in the future");
+      throw new ValidationError('Start date must be today or in the future');
     }
 
     // End date must be after start date
     if (endDate <= startDate) {
-      throw new ValidationError("End date must be after start date");
+      throw new ValidationError('End date must be after start date');
     }
 
     // Check maximum duration (e.g., 365 days)
     const days = this.calculateDays(startDate, endDate);
     if (days > 365) {
-      throw new ValidationError("Booking duration cannot exceed 365 days");
+      throw new ValidationError('Booking duration cannot exceed 365 days');
     }
   }
 
   /**
    * Validate status transitions
    */
-  private validateStatusTransition(
-    currentStatus: BookingStatus,
-    newStatus: BookingStatus,
-  ): void {
+  private validateStatusTransition(currentStatus: BookingStatus, newStatus: BookingStatus): void {
     const validTransitions: Record<BookingStatus, BookingStatus[]> = {
       [BookingStatus.PENDING]: [
         BookingStatus.CONFIRMED,
@@ -802,7 +729,7 @@ export class BookingService extends BaseService<
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
       throw new BusinessRuleError(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`,
+        `Invalid status transition from ${currentStatus} to ${newStatus}`
       );
     }
   }
@@ -812,7 +739,7 @@ export class BookingService extends BaseService<
    */
   async getByCustomerId(
     customerId: string,
-    options: { page?: number; limit?: number } = {},
+    options: { page?: number; limit?: number } = {}
   ): Promise<any> {
     return await this.bookingRepo.findByCustomer(customerId, options);
   }
@@ -820,10 +747,7 @@ export class BookingService extends BaseService<
   /**
    * Get bookings by car
    */
-  async getByCarId(
-    carId: string,
-    options: { page?: number; limit?: number } = {},
-  ): Promise<any> {
+  async getByCarId(carId: string, options: { page?: number; limit?: number } = {}): Promise<any> {
     return await this.bookingRepo.findByCar(carId, options);
   }
 
@@ -839,7 +763,7 @@ export class BookingService extends BaseService<
    */
   async getUpcomingBookings(days: number = 7): Promise<Booking[]> {
     if (days < 1 || days > 365) {
-      throw new ValidationError("Days must be between 1 and 365");
+      throw new ValidationError('Days must be between 1 and 365');
     }
     return await this.bookingRepo.findUpcomingBookings(days);
   }
@@ -849,7 +773,7 @@ export class BookingService extends BaseService<
    */
   async getExpiringBookings(days: number = 1): Promise<Booking[]> {
     if (days < 1 || days > 30) {
-      throw new ValidationError("Days must be between 1 and 30");
+      throw new ValidationError('Days must be between 1 and 30');
     }
     return await this.bookingRepo.findExpiringBookings(days);
   }
@@ -875,10 +799,7 @@ export class BookingService extends BaseService<
   /**
    * Find all bookings with secure filtering
    */
-  async findAll(
-    queryDto: BookingQueryDto,
-    context: AuditContext,
-  ): Promise<any> {
+  async findAll(queryDto: BookingQueryDto, context: AuditContext): Promise<any> {
     return await this.bookingRepo.findWithFilters(queryDto);
   }
 
@@ -896,10 +817,10 @@ export class BookingService extends BaseService<
       changes.push(`status: ${before.status} → ${after.status}`);
     }
     if (before.depositPaid !== after.depositPaid && after.depositPaid) {
-      changes.push("deposit paid");
+      changes.push('deposit paid');
     }
 
-    return `Updated booking ${after.bookingReference}${changes.length ? ` (${changes.join(", ")})` : ""}`;
+    return `Updated booking ${after.bookingReference}${changes.length ? ` (${changes.join(', ')})` : ''}`;
   }
 
   protected getDeleteDescription(entity: Booking): string {

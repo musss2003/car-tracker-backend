@@ -44,12 +44,7 @@ export const createCustomer = asyncHandler(async (req: Request, res: Response) =
 
   // Send notification to admins
   try {
-    await notifyAdmins(
-      `Novi korisnik dodat: ${customer.name}`,
-      'customer-new',
-      context.userId,
-      io
-    );
+    await notifyAdmins(`Novi korisnik dodat: ${customer.name}`, 'customer-new', context.userId, io);
   } catch (notifError) {
     console.error('Error sending notification:', notifError);
   }
@@ -175,16 +170,16 @@ export const getRecentCustomers = asyncHandler(async (req: Request, res: Respons
  */
 export const getCustomerContracts = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(id)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid customer ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   const contracts = await contractService.getByCustomerId(id);
   res.json(createSuccessResponse(contracts, 'Customer contracts retrieved successfully'));
 });

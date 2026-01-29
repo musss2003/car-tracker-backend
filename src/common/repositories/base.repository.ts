@@ -12,9 +12,7 @@ import { IBaseRepository } from '../interfaces/base-repository.interface';
  * Base repository implementation with common CRUD operations
  * Extend this class for entity-specific repositories
  */
-export abstract class BaseRepository<T extends ObjectLiteral>
-  implements IBaseRepository<T>
-{
+export abstract class BaseRepository<T extends ObjectLiteral> implements IBaseRepository<T> {
   constructor(protected repository: Repository<T>) {}
 
   async findById(id: string, options?: FindOneOptions<T>): Promise<T | null> {
@@ -76,9 +74,7 @@ export abstract class BaseRepository<T extends ObjectLiteral>
   async delete(id: string): Promise<boolean> {
     // Check if entity has soft delete column
     const metadata = this.repository.metadata;
-    const hasSoftDelete = metadata.columns.some(
-      (col) => col.propertyName === 'deletedAt'
-    );
+    const hasSoftDelete = metadata.columns.some((col) => col.propertyName === 'deletedAt');
 
     if (hasSoftDelete) {
       const result = await this.repository.softDelete({ id } as any);

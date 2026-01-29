@@ -8,7 +8,7 @@ import {
   Max,
   MinLength,
   MaxLength,
-  IsDateString
+  IsDateString,
 } from 'class-validator';
 import { FuelType, TransmissionType, CarCategory, CarStatus } from '../models/car.model';
 

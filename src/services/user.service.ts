@@ -36,10 +36,7 @@ export class UserService extends BaseService<User> {
    */
   async createUser(data: CreateUserDto, context: AuditContext): Promise<Partial<User>> {
     // Check if user already exists
-    const existingUser = await this.userRepository.findByUsernameOrEmail(
-      data.username,
-      data.email
-    );
+    const existingUser = await this.userRepository.findByUsernameOrEmail(data.username, data.email);
 
     if (existingUser) {
       throw new ConflictError('User with this username or email already exists');
@@ -71,12 +68,7 @@ export class UserService extends BaseService<User> {
     // Send notification to admins
     if (this.io) {
       try {
-        await notifyAdmins(
-          `Novi korisnik: ${data.username}`,
-          'user-new',
-          context.userId,
-          this.io
-        );
+        await notifyAdmins(`Novi korisnik: ${data.username}`, 'user-new', context.userId, this.io);
       } catch (error) {
         console.error('Failed to send notification:', error);
       }

@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsDateString,
-  IsOptional,
-  IsUUID
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString, IsOptional, IsUUID } from 'class-validator';
 
 /**
  * DTO for creating a new car registration record

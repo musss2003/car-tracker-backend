@@ -1,14 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum UserRole {
-  ADMIN = "admin",
-  EMPLOYEE = "employee",
-  USER = "user",
+  ADMIN = 'admin',
+  EMPLOYEE = 'employee',
+  USER = 'user',
 }
 
 @Entity('users')
 @Index(['email']) // Index for email lookups
-@Index(['username']) // Index for username lookups  
+@Index(['username']) // Index for username lookups
 @Index(['role']) // Index for role-based queries
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -41,7 +48,7 @@ export class User {
   @Column({
     type: 'enum',
     enum: UserRole,
-    default: UserRole.USER
+    default: UserRole.USER,
   })
   role: UserRole;
 

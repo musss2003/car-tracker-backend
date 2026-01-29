@@ -6,7 +6,7 @@ import {
   IsEnum,
   IsUUID,
   IsDateString,
-  MinLength
+  MinLength,
 } from 'class-validator';
 
 /**
@@ -62,5 +62,5 @@ export class UpdateCarIssueReportDto {
 
   @IsDateString()
   @IsOptional()
-  resolvedAt?: string;  // String in DTO, Date in entity
+  resolvedAt?: string; // String in DTO, Date in entity
 }

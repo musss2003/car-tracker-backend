@@ -27,9 +27,7 @@ export const createInsuranceRecord = asyncHandler(async (req: Request, res: Resp
   const context = extractAuditContext(req);
   const record = await carInsuranceService.create(data, context);
 
-  res.status(201).json(
-    createSuccessResponse(record, 'Insurance record created successfully')
-  );
+  res.status(201).json(createSuccessResponse(record, 'Insurance record created successfully'));
 });
 
 /**
@@ -69,9 +67,7 @@ export const updateInsuranceRecord = asyncHandler(async (req: Request, res: Resp
 
   const updated = await carInsuranceService.update(id, data, context);
 
-  res.json(
-    createSuccessResponse(updated, 'Insurance record updated successfully')
-  );
+  res.json(createSuccessResponse(updated, 'Insurance record updated successfully'));
 });
 
 /**

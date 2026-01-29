@@ -9,7 +9,7 @@ const router = Router();
  * Returns all routes in JSON format
  */
 export const getRoutesJSON = (app: Application) => (req: Request, res: Response) => {
-    res.status(200).json(endPoints(app));
+  res.status(200).json(endPoints(app));
 };
 
 /**
@@ -17,273 +17,128 @@ export const getRoutesJSON = (app: Application) => (req: Request, res: Response)
  * Interactive HTML documentation page
  */
 export const getAPIDocs = (app: Application) => (req: Request, res: Response) => {
-    const routes = endPoints(app);
-    
-    // Group routes by base path
-    const groupedRoutes: Record<string, any[]> = {};
-    routes.forEach(route => {
-        const basePath = route.path.split('/')[1] || 'root';
-        if (!groupedRoutes[basePath]) {
-            groupedRoutes[basePath] = [];
-        }
-        groupedRoutes[basePath].push(route);
-    });
+  const routes = endPoints(app);
 
-    // Helper function to map routes to TypeORM models
-    const getModelFromPath = (path: string): string => {
-        if (path.includes('/users')) return 'User';
-        if (path.includes('/cars') && path.includes('/insurance')) return 'CarInsurance';
-        if (path.includes('/cars') && path.includes('/issues')) return 'CarIssueReport';
-        if (path.includes('/cars') && path.includes('/registrations')) return 'CarRegistration';
-        if (path.includes('/cars') && path.includes('/service')) return 'CarServiceHistory';
-        if (path.includes('/cars')) return 'Car';
-        if (path.includes('/contracts')) return 'Contract';
-        if (path.includes('/customers')) return 'Customer';
-        if (path.includes('/notifications')) return 'Notification';
-        if (path.includes('/countries')) return 'Country';
-        if (path.includes('/audit-logs')) return 'AuditLog';
-        if (path.includes('/auth')) return 'Auth';
-        return 'Other';
-    };
+  // Group routes by base path
+  const groupedRoutes: Record<string, any[]> = {};
+  routes.forEach((route) => {
+    const basePath = route.path.split('/')[1] || 'root';
+    if (!groupedRoutes[basePath]) {
+      groupedRoutes[basePath] = [];
+    }
+    groupedRoutes[basePath].push(route);
+  });
 
-    // Helper function to determine response format based on path
-    const getResponseFormat = (path: string, method: string): string => {
-        // Auth endpoints return direct format
-        if (path.includes('/auth/login') || path.includes('/auth/register')) {
-            return JSON.stringify({
-                id: 'string (UUID)',
-                username: 'string',
-                email: 'string',
-                role: 'string ("user" | "admin" | "employee")',
-                accessToken: 'string (JWT)'
-            }, null, 2);
-        }
-        
-        // Determine data type based on path
-        let dataFormat = '{}';
-        
-        if (path.includes('/users')) {
-            if (method === 'GET' && !path.includes(':id')) {
-                dataFormat = JSON.stringify([{
-                    id: 'string',
-                    username: 'string',
-                    email: 'string',
-                    role: 'string',
-                    name: 'string',
-                    profilePhotoUrl: 'string (optional)',
-                    lastActiveAt: 'string (ISO date)',
-                    createdAt: 'string (ISO date)'
-                }], null, 2);
-            } else {
-                dataFormat = JSON.stringify({
-                    id: 'string',
-                    username: 'string',
-                    email: 'string',
-                    role: 'string',
-                    name: 'string',
-                    phone: 'string (optional)',
-                    address: 'string (optional)',
-                    profilePhotoUrl: 'string (optional)',
-                    lastActiveAt: 'string (ISO date)',
-                    createdAt: 'string (ISO date)',
-                    updatedAt: 'string (ISO date)'
-                }, null, 2);
-            }
-        } else if (path.includes('/cars')) {
-            if (method === 'GET' && !path.includes(':id')) {
-                dataFormat = JSON.stringify([{
-                    id: 'string',
-                    licensePlate: 'string',
-                    manufacturer: 'string',
-                    model: 'string',
-                    year: 'number',
-                    color: 'string',
-                    mileage: 'number',
-                    status: 'string ("available" | "rented" | "maintenance")',
-                    pricePerDay: 'number',
-                    category: 'string',
-                    fuelType: 'string',
-                    transmission: 'string',
-                    seats: 'number',
-                    photoUrl: 'string (optional)',
-                    createdAt: 'string (ISO date)'
-                }], null, 2);
-            } else {
-                dataFormat = JSON.stringify({
-                    id: 'string',
-                    licensePlate: 'string',
-                    manufacturer: 'string',
-                    model: 'string',
-                    year: 'number',
-                    color: 'string',
-                    mileage: 'number',
-                    status: 'string',
-                    pricePerDay: 'number',
-                    category: 'string',
-                    fuelType: 'string',
-                    transmission: 'string',
-                    seats: 'number',
-                    photoUrl: 'string (optional)',
-                    createdAt: 'string (ISO date)',
-                    updatedAt: 'string (ISO date)'
-                }, null, 2);
-            }
-        } else if (path.includes('/contracts')) {
-            if (method === 'GET' && !path.includes(':id')) {
-                dataFormat = JSON.stringify([{
-                    id: 'string',
-                    carId: 'string',
-                    customerId: 'string',
-                    startDate: 'string (ISO date)',
-                    endDate: 'string (ISO date)',
-                    totalAmount: 'number',
-                    status: 'string ("active" | "completed" | "cancelled")',
-                    notes: 'string (optional)',
-                    documentUrl: 'string (optional)',
-                    createdAt: 'string (ISO date)'
-                }], null, 2);
-            } else {
-                dataFormat = JSON.stringify({
-                    id: 'string',
-                    carId: 'string',
-                    customerId: 'string',
-                    startDate: 'string (ISO date)',
-                    endDate: 'string (ISO date)',
-                    totalAmount: 'number',
-                    status: 'string',
-                    notes: 'string (optional)',
-                    documentUrl: 'string (optional)',
-                    createdAt: 'string (ISO date)',
-                    updatedAt: 'string (ISO date)'
-                }, null, 2);
-            }
-        } else if (path.includes('/customers')) {
-            if (method === 'GET' && !path.includes(':id')) {
-                dataFormat = JSON.stringify([{
-                    id: 'string',
-                    name: 'string',
-                    email: 'string',
-                    phone: 'string',
-                    address: 'string',
-                    city: 'string',
-                    country: 'string',
-                    idOfPerson: 'string (optional)',
-                    createdAt: 'string (ISO date)'
-                }], null, 2);
-            } else {
-                dataFormat = JSON.stringify({
-                    id: 'string',
-                    name: 'string',
-                    email: 'string',
-                    phone: 'string',
-                    address: 'string',
-                    city: 'string',
-                    country: 'string',
-                    passportNumber: 'string (optional)',
-                    driverLicenseNumber: 'string (optional)',
-                    idOfPerson: 'string (optional)',
-                    createdAt: 'string (ISO date)',
-                    updatedAt: 'string (ISO date)'
-                }, null, 2);
-            }
-        } else if (path.includes('/notifications')) {
-            dataFormat = JSON.stringify([{
-                id: 'string',
-                recipientId: 'string',
-                senderId: 'string (optional)',
-                type: 'string',
-                message: 'string',
-                status: 'string ("unread" | "read")',
-                createdAt: 'string (ISO date)'
-            }], null, 2);
-        } else if (path.includes('/audit-logs')) {
-            dataFormat = JSON.stringify({
-                logs: [{
-                    id: 'string',
-                    userId: 'string',
-                    action: 'string',
-                    resourceType: 'string',
-                    resourceId: 'string (optional)',
-                    details: 'object (optional)',
-                    ipAddress: 'string',
-                    userAgent: 'string',
-                    createdAt: 'string (ISO date)'
-                }],
-                pagination: {
-                    page: 'number',
-                    limit: 'number',
-                    total: 'number',
-                    totalPages: 'number'
-                }
-            }, null, 2);
-        } else if (method === 'DELETE') {
-            dataFormat = JSON.stringify({
-                message: 'string',
-                deletedId: 'string'
-            }, null, 2);
-        } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
-            dataFormat = JSON.stringify({
-                id: 'string',
-                message: 'string (optional)',
-                createdAt: 'string (ISO date, optional)',
-                updatedAt: 'string (ISO date, optional)'
-            }, null, 2);
-        }
-        
-        // Wrap in standard API response format (except auth endpoints)
-        if (path.includes('/auth/login') || path.includes('/auth/register')) {
-            return dataFormat;
-        }
-        
-        return JSON.stringify({
-            success: 'boolean',
-            data: JSON.parse(dataFormat),
-            message: 'string (optional)',
-            timestamp: 'string (ISO 8601)'
-        }, null, 2);
-    };
+  // Helper function to map routes to TypeORM models
+  const getModelFromPath = (path: string): string => {
+    if (path.includes('/users')) return 'User';
+    if (path.includes('/cars') && path.includes('/insurance')) return 'CarInsurance';
+    if (path.includes('/cars') && path.includes('/issues')) return 'CarIssueReport';
+    if (path.includes('/cars') && path.includes('/registrations')) return 'CarRegistration';
+    if (path.includes('/cars') && path.includes('/service')) return 'CarServiceHistory';
+    if (path.includes('/cars')) return 'Car';
+    if (path.includes('/contracts')) return 'Contract';
+    if (path.includes('/customers')) return 'Customer';
+    if (path.includes('/notifications')) return 'Notification';
+    if (path.includes('/countries')) return 'Country';
+    if (path.includes('/audit-logs')) return 'AuditLog';
+    if (path.includes('/auth')) return 'Auth';
+    return 'Other';
+  };
 
-    // Response format mappings with basic data types
-    const responseFormats: Record<string, any> = {
-        // Standard API Response
-        'standard': {
-            success: 'boolean',
-            data: 'T (varies by endpoint)',
-            message: 'string (optional)',
-            timestamp: 'string (ISO 8601)'
+  // Helper function to determine response format based on path
+  const getResponseFormat = (path: string, method: string): string => {
+    // Auth endpoints return direct format
+    if (path.includes('/auth/login') || path.includes('/auth/register')) {
+      return JSON.stringify(
+        {
+          id: 'string (UUID)',
+          username: 'string',
+          email: 'string',
+          role: 'string ("user" | "admin" | "employee")',
+          accessToken: 'string (JWT)',
         },
-        // Auth endpoints
-        'auth': {
-            id: 'string (UUID)',
+        null,
+        2
+      );
+    }
+
+    // Determine data type based on path
+    let dataFormat = '{}';
+
+    if (path.includes('/users')) {
+      if (method === 'GET' && !path.includes(':id')) {
+        dataFormat = JSON.stringify(
+          [
+            {
+              id: 'string',
+              username: 'string',
+              email: 'string',
+              role: 'string',
+              name: 'string',
+              profilePhotoUrl: 'string (optional)',
+              lastActiveAt: 'string (ISO date)',
+              createdAt: 'string (ISO date)',
+            },
+          ],
+          null,
+          2
+        );
+      } else {
+        dataFormat = JSON.stringify(
+          {
+            id: 'string',
             username: 'string',
             email: 'string',
-            role: 'string ("user" | "admin" | "employee")',
-            accessToken: 'string (JWT)'
-        },
-        // User object
-        'user': {
-            id: 'string (UUID)',
-            username: 'string',
-            email: 'string',
-            name: 'string',
             role: 'string',
-            profilePhotoUrl: 'string (optional)',
+            name: 'string',
             phone: 'string (optional)',
             address: 'string (optional)',
+            profilePhotoUrl: 'string (optional)',
             lastActiveAt: 'string (ISO date)',
             createdAt: 'string (ISO date)',
-            updatedAt: 'string (ISO date)'
-        },
-        // Car object
-        'car': {
-            id: 'string (UUID)',
+            updatedAt: 'string (ISO date)',
+          },
+          null,
+          2
+        );
+      }
+    } else if (path.includes('/cars')) {
+      if (method === 'GET' && !path.includes(':id')) {
+        dataFormat = JSON.stringify(
+          [
+            {
+              id: 'string',
+              licensePlate: 'string',
+              manufacturer: 'string',
+              model: 'string',
+              year: 'number',
+              color: 'string',
+              mileage: 'number',
+              status: 'string ("available" | "rented" | "maintenance")',
+              pricePerDay: 'number',
+              category: 'string',
+              fuelType: 'string',
+              transmission: 'string',
+              seats: 'number',
+              photoUrl: 'string (optional)',
+              createdAt: 'string (ISO date)',
+            },
+          ],
+          null,
+          2
+        );
+      } else {
+        dataFormat = JSON.stringify(
+          {
+            id: 'string',
             licensePlate: 'string',
             manufacturer: 'string',
             model: 'string',
             year: 'number',
             color: 'string',
             mileage: 'number',
-            status: 'string ("available" | "rented" | "maintenance")',
+            status: 'string',
             pricePerDay: 'number',
             category: 'string',
             fuelType: 'string',
@@ -291,25 +146,74 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
             seats: 'number',
             photoUrl: 'string (optional)',
             createdAt: 'string (ISO date)',
-            updatedAt: 'string (ISO date)'
-        },
-        // Contract object
-        'contract': {
-            id: 'string (UUID)',
-            carId: 'string (UUID)',
-            customerId: 'string (UUID)',
+            updatedAt: 'string (ISO date)',
+          },
+          null,
+          2
+        );
+      }
+    } else if (path.includes('/contracts')) {
+      if (method === 'GET' && !path.includes(':id')) {
+        dataFormat = JSON.stringify(
+          [
+            {
+              id: 'string',
+              carId: 'string',
+              customerId: 'string',
+              startDate: 'string (ISO date)',
+              endDate: 'string (ISO date)',
+              totalAmount: 'number',
+              status: 'string ("active" | "completed" | "cancelled")',
+              notes: 'string (optional)',
+              documentUrl: 'string (optional)',
+              createdAt: 'string (ISO date)',
+            },
+          ],
+          null,
+          2
+        );
+      } else {
+        dataFormat = JSON.stringify(
+          {
+            id: 'string',
+            carId: 'string',
+            customerId: 'string',
             startDate: 'string (ISO date)',
             endDate: 'string (ISO date)',
             totalAmount: 'number',
-            status: 'string ("active" | "completed" | "cancelled")',
+            status: 'string',
             notes: 'string (optional)',
             documentUrl: 'string (optional)',
             createdAt: 'string (ISO date)',
-            updatedAt: 'string (ISO date)'
-        },
-        // Customer object
-        'customer': {
-            id: 'string (UUID)',
+            updatedAt: 'string (ISO date)',
+          },
+          null,
+          2
+        );
+      }
+    } else if (path.includes('/customers')) {
+      if (method === 'GET' && !path.includes(':id')) {
+        dataFormat = JSON.stringify(
+          [
+            {
+              id: 'string',
+              name: 'string',
+              email: 'string',
+              phone: 'string',
+              address: 'string',
+              city: 'string',
+              country: 'string',
+              idOfPerson: 'string (optional)',
+              createdAt: 'string (ISO date)',
+            },
+          ],
+          null,
+          2
+        );
+      } else {
+        dataFormat = JSON.stringify(
+          {
+            id: 'string',
             name: 'string',
             email: 'string',
             phone: 'string',
@@ -320,28 +224,192 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
             driverLicenseNumber: 'string (optional)',
             idOfPerson: 'string (optional)',
             createdAt: 'string (ISO date)',
-            updatedAt: 'string (ISO date)'
-        },
-        // Notification object
-        'notification': {
-            id: 'string (UUID)',
-            recipientId: 'string (UUID)',
-            senderId: 'string (UUID, optional)',
+            updatedAt: 'string (ISO date)',
+          },
+          null,
+          2
+        );
+      }
+    } else if (path.includes('/notifications')) {
+      dataFormat = JSON.stringify(
+        [
+          {
+            id: 'string',
+            recipientId: 'string',
+            senderId: 'string (optional)',
             type: 'string',
             message: 'string',
             status: 'string ("unread" | "read")',
-            createdAt: 'string (ISO date)'
-        },
-        // Pagination format
-        'pagination': {
+            createdAt: 'string (ISO date)',
+          },
+        ],
+        null,
+        2
+      );
+    } else if (path.includes('/audit-logs')) {
+      dataFormat = JSON.stringify(
+        {
+          logs: [
+            {
+              id: 'string',
+              userId: 'string',
+              action: 'string',
+              resourceType: 'string',
+              resourceId: 'string (optional)',
+              details: 'object (optional)',
+              ipAddress: 'string',
+              userAgent: 'string',
+              createdAt: 'string (ISO date)',
+            },
+          ],
+          pagination: {
             page: 'number',
             limit: 'number',
             total: 'number',
-            totalPages: 'number'
-        }
-    };
+            totalPages: 'number',
+          },
+        },
+        null,
+        2
+      );
+    } else if (method === 'DELETE') {
+      dataFormat = JSON.stringify(
+        {
+          message: 'string',
+          deletedId: 'string',
+        },
+        null,
+        2
+      );
+    } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+      dataFormat = JSON.stringify(
+        {
+          id: 'string',
+          message: 'string (optional)',
+          createdAt: 'string (ISO date, optional)',
+          updatedAt: 'string (ISO date, optional)',
+        },
+        null,
+        2
+      );
+    }
 
-    const html = `
+    // Wrap in standard API response format (except auth endpoints)
+    if (path.includes('/auth/login') || path.includes('/auth/register')) {
+      return dataFormat;
+    }
+
+    return JSON.stringify(
+      {
+        success: 'boolean',
+        data: JSON.parse(dataFormat),
+        message: 'string (optional)',
+        timestamp: 'string (ISO 8601)',
+      },
+      null,
+      2
+    );
+  };
+
+  // Response format mappings with basic data types
+  const responseFormats: Record<string, any> = {
+    // Standard API Response
+    standard: {
+      success: 'boolean',
+      data: 'T (varies by endpoint)',
+      message: 'string (optional)',
+      timestamp: 'string (ISO 8601)',
+    },
+    // Auth endpoints
+    auth: {
+      id: 'string (UUID)',
+      username: 'string',
+      email: 'string',
+      role: 'string ("user" | "admin" | "employee")',
+      accessToken: 'string (JWT)',
+    },
+    // User object
+    user: {
+      id: 'string (UUID)',
+      username: 'string',
+      email: 'string',
+      name: 'string',
+      role: 'string',
+      profilePhotoUrl: 'string (optional)',
+      phone: 'string (optional)',
+      address: 'string (optional)',
+      lastActiveAt: 'string (ISO date)',
+      createdAt: 'string (ISO date)',
+      updatedAt: 'string (ISO date)',
+    },
+    // Car object
+    car: {
+      id: 'string (UUID)',
+      licensePlate: 'string',
+      manufacturer: 'string',
+      model: 'string',
+      year: 'number',
+      color: 'string',
+      mileage: 'number',
+      status: 'string ("available" | "rented" | "maintenance")',
+      pricePerDay: 'number',
+      category: 'string',
+      fuelType: 'string',
+      transmission: 'string',
+      seats: 'number',
+      photoUrl: 'string (optional)',
+      createdAt: 'string (ISO date)',
+      updatedAt: 'string (ISO date)',
+    },
+    // Contract object
+    contract: {
+      id: 'string (UUID)',
+      carId: 'string (UUID)',
+      customerId: 'string (UUID)',
+      startDate: 'string (ISO date)',
+      endDate: 'string (ISO date)',
+      totalAmount: 'number',
+      status: 'string ("active" | "completed" | "cancelled")',
+      notes: 'string (optional)',
+      documentUrl: 'string (optional)',
+      createdAt: 'string (ISO date)',
+      updatedAt: 'string (ISO date)',
+    },
+    // Customer object
+    customer: {
+      id: 'string (UUID)',
+      name: 'string',
+      email: 'string',
+      phone: 'string',
+      address: 'string',
+      city: 'string',
+      country: 'string',
+      passportNumber: 'string (optional)',
+      driverLicenseNumber: 'string (optional)',
+      idOfPerson: 'string (optional)',
+      createdAt: 'string (ISO date)',
+      updatedAt: 'string (ISO date)',
+    },
+    // Notification object
+    notification: {
+      id: 'string (UUID)',
+      recipientId: 'string (UUID)',
+      senderId: 'string (UUID, optional)',
+      type: 'string',
+      message: 'string',
+      status: 'string ("unread" | "read")',
+      createdAt: 'string (ISO date)',
+    },
+    // Pagination format
+    pagination: {
+      page: 'number',
+      limit: 'number',
+      total: 'number',
+      totalPages: 'number',
+    },
+  };
+
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -676,27 +744,36 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
             </div>
             
             <div id="routeGroups">
-                ${Object.entries(groupedRoutes).map(([group, groupRoutes]) => `
+                ${Object.entries(groupedRoutes)
+                  .map(
+                    ([group, groupRoutes]) => `
                     <div class="group" data-group="${group}">
                         <h2 class="group-title">
                             <span>${group === 'api' ? '🔌 API Routes' : group === 'root' ? '🏠 Root Routes' : '📁 ' + group.toUpperCase()}</span>
                             <span class="count">${groupRoutes.length}</span>
                         </h2>
-                        ${groupRoutes.map(route => {
-                            const isAuthRequired = route.middlewares?.some((m: string) => 
-                                m.includes('verifyJWT') || m.includes('authenticate')
+                        ${groupRoutes
+                          .map((route) => {
+                            const isAuthRequired = route.middlewares?.some(
+                              (m: string) => m.includes('verifyJWT') || m.includes('authenticate')
                             );
-                            const isAdminOnly = route.middlewares?.some((m: string) => 
-                                m.includes('admin') || m.includes('verifyRole')
+                            const isAdminOnly = route.middlewares?.some(
+                              (m: string) => m.includes('admin') || m.includes('verifyRole')
                             );
-                            const isNoAuth = route.middlewares?.some((m: string) => 
-                                m.includes('anonymous')
+                            const isNoAuth = route.middlewares?.some((m: string) =>
+                              m.includes('anonymous')
                             );
-                            
-                            const cardClass = isAdminOnly ? 'admin-only' : isNoAuth ? 'no-auth' : isAuthRequired ? 'auth-required' : '';
-                            
+
+                            const cardClass = isAdminOnly
+                              ? 'admin-only'
+                              : isNoAuth
+                                ? 'no-auth'
+                                : isAuthRequired
+                                  ? 'auth-required'
+                                  : '';
+
                             const modelName = getModelFromPath(route.path);
-                            
+
                             return `
                                 <div class="route-card ${cardClass}" data-path="${route.path}" data-methods="${route.methods.join(' ')}" data-auth="${isAdminOnly ? 'admin' : isNoAuth ? 'public' : isAuthRequired ? 'authenticated' : 'public'}" data-model="${modelName}">
                                     <div class="route-path">
@@ -704,27 +781,42 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
                                         <button class="copy-btn" onclick="copyToClipboard('${route.path}')">📋 Copy</button>
                                     </div>
                                     <div class="methods">
-                                        ${route.methods.map((method: string) => `
+                                        ${route.methods
+                                          .map(
+                                            (method: string) => `
                                             <span class="method ${method.toLowerCase()}">${method}</span>
-                                        `).join('')}
+                                        `
+                                          )
+                                          .join('')}
                                     </div>
-                                    ${route.middlewares && route.middlewares.length > 0 ? `
+                                    ${
+                                      route.middlewares && route.middlewares.length > 0
+                                        ? `
                                         <div class="middlewares">
                                             <strong>Middlewares:</strong>
-                                            ${route.middlewares.map((mw: string) => `
+                                            ${route.middlewares
+                                              .map(
+                                                (mw: string) => `
                                                 <span class="middleware-tag">${mw}</span>
-                                            `).join('')}
+                                            `
+                                              )
+                                              .join('')}
                                         </div>
-                                    ` : ''}
+                                    `
+                                        : ''
+                                    }
                                     <div class="response-format">
                                         <div class="response-format-title">📤 Response Format:</div>
                                         <pre>${getResponseFormat(route.path, route.methods[0]).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
                                     </div>
                                 </div>
                             `;
-                        }).join('')}
+                          })
+                          .join('')}
                     </div>
-                `).join('')}
+                `
+                  )
+                  .join('')}
             </div>
         </div>
         
@@ -945,8 +1037,8 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
 </body>
 </html>
     `;
-    
-    res.send(html);
+
+  res.send(html);
 };
 
 export default router;

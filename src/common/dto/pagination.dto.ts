@@ -33,7 +33,7 @@ export function createPaginationResponse<T>(
   limit: number
 ): PaginationResponseDto<T> {
   const totalPages = Math.ceil(total / limit);
-  
+
   return {
     data,
     pagination: {
