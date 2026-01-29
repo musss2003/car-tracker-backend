@@ -6,60 +6,60 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Index
-} from "typeorm";
-import { Car } from "./car.model";
-import { User } from "./user.model";
+  Index,
+} from 'typeorm';
+import { Car } from './car.model';
+import { User } from './user.model';
 
-@Entity("car_registration")
+@Entity('car_registration')
 @Index(['carId'])
 @Index(['registrationExpiry'])
 export class CarRegistration {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   // User who created the record
-  @Column({ name: "created_by" })
+  @Column({ name: 'created_by' })
   createdById: string;
 
   @ManyToOne(() => User, { eager: true })
-  @JoinColumn({ name: "created_by" })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   // Relation to Car (cannot be deleted)
-  @Column({ name: "car_id" })
+  @Column({ name: 'car_id' })
   carId: string;
 
-  @ManyToOne(() => Car, { eager: true, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "car_id" })
+  @ManyToOne(() => Car, { eager: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'car_id' })
   car: Car;
 
   // Registration dates
-  @Column({ name: "registration_expiry", type: "date" })
+  @Column({ name: 'registration_expiry', type: 'date' })
   registrationExpiry: Date;
 
-  @Column({ name: "renewal_date", type: "date" })
+  @Column({ name: 'renewal_date', type: 'date' })
   renewalDate: Date;
 
   // Additional fields (like Contract pattern)
-  @Column({ name: "additional_notes", type: "text", nullable: true })
+  @Column({ name: 'additional_notes', type: 'text', nullable: true })
   additionalNotes?: string;
 
-  @Column({ name: "notification_sent", type: "boolean", default: false })
+  @Column({ name: 'notification_sent', type: 'boolean', default: false })
   notificationSent: boolean;
 
   // User who last updated
-  @Column({ name: "updated_by", nullable: true })
+  @Column({ name: 'updated_by', nullable: true })
   updatedById?: string;
 
   @ManyToOne(() => User, { eager: true, nullable: true })
-  @JoinColumn({ name: "updated_by" })
+  @JoinColumn({ name: 'updated_by' })
   updatedBy?: User;
 
-  @UpdateDateColumn({ name: "updated_at", nullable: true })
+  @UpdateDateColumn({ name: 'updated_at', nullable: true })
   updatedAt?: Date;
 }
 

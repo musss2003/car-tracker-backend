@@ -1,49 +1,55 @@
-import express, { Application, Request, Response, NextFunction, ErrorRequestHandler } from "express";
-import cors from "cors";
-import compression from "compression";
-import { initializeTypeORM, AppDataSource } from "./config/db";
-import { initializeSentry } from "./config/monitoring";
-import { closeRedis } from "./config/redis";
-import { apiLimiter, authLimiter } from "./middlewares/rate-limit.middleware";
-import authRoutes from "./routes/auth.route";
-import userRoutes from "./routes/user.route";
-import contractRoutes from "./routes/contract.route";
-import carRoutes from "./routes/car.route";
-import carAnalyticsRoutes from "./routes/car-analytics.route";
-import carRegistrationRoutes from "./routes/car-registration.route";
-import carInsuranceRoutes from "./routes/car-insurance.route";
-import carServiceRoutes from "./routes/car-service-history.route";
-import carIssueReportRoutes from "./routes/car-issue-report.route";
-import customerRoutes from "./routes/customer.route";
-import notificationRoutes from "./routes/notification.route";
-import countryRoutes from "./routes/country.route";
-import documentsRoutes from "./routes/upload.route";
-import auditLogRoutes from "./routes/audit-log.route";
-import activityRoutes from "./routes/activity.route";
-import { getRoutesJSON, getAPIDocs } from "./routes/docs.route";
-import { auditLogMiddleware } from "./middlewares/audit-log.middleware";
-import { errorHandler, notFoundHandler } from "./common/errors/error-handler";
-import { closeEmailQueue } from "./queues/email.queue";
-import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-import path from "path";
-import http from "http";
-import { Server } from "socket.io"; // Using Socket.IO
-import { Notification, NotificationStatus } from "./models/notification.model"; // Import the TypeORM Notification model
-import { User } from "./models/user.model"; // Import User model for online status tracking
-import "reflect-metadata"; // Required for TypeORM
-import { testEmailConfiguration } from "./services/email.service";
+import express, {
+  Application,
+  Request,
+  Response,
+  NextFunction,
+  ErrorRequestHandler,
+} from 'express';
+import cors from 'cors';
+import compression from 'compression';
+import { initializeTypeORM, AppDataSource } from './config/db';
+import { initializeSentry } from './config/monitoring';
+import { closeRedis } from './config/redis';
+import { apiLimiter, authLimiter } from './middlewares/rate-limit.middleware';
+import authRoutes from './routes/auth.route';
+import userRoutes from './routes/user.route';
+import contractRoutes from './routes/contract.route';
+import carRoutes from './routes/car.route';
+import carAnalyticsRoutes from './routes/car-analytics.route';
+import carRegistrationRoutes from './routes/car-registration.route';
+import carInsuranceRoutes from './routes/car-insurance.route';
+import carServiceRoutes from './routes/car-service-history.route';
+import carIssueReportRoutes from './routes/car-issue-report.route';
+import customerRoutes from './routes/customer.route';
+import notificationRoutes from './routes/notification.route';
+import countryRoutes from './routes/country.route';
+import documentsRoutes from './routes/upload.route';
+import auditLogRoutes from './routes/audit-log.route';
+import activityRoutes from './routes/activity.route';
+import { getRoutesJSON, getAPIDocs } from './routes/docs.route';
+import { auditLogMiddleware } from './middlewares/audit-log.middleware';
+import { errorHandler, notFoundHandler } from './common/errors/error-handler';
+import { closeEmailQueue } from './queues/email.queue';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import http from 'http';
+import { Server } from 'socket.io'; // Using Socket.IO
+import { Notification, NotificationStatus } from './models/notification.model'; // Import the TypeORM Notification model
+import { User } from './models/user.model'; // Import User model for online status tracking
+import 'reflect-metadata'; // Required for TypeORM
+import { testEmailConfiguration } from './services/email.service';
 import {
   scheduleExpiringContractsCheck,
   scheduleExpiredContractsCheck,
   setSocketIO,
-} from "./scripts/contractScheduler";
-import * as Sentry from "@sentry/node";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import morgan from "morgan";
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "./config/swagger";
+} from './scripts/contractScheduler';
+import * as Sentry from '@sentry/node';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 
 dotenv.config();
 
@@ -53,19 +59,19 @@ initializeSentry();
 const app: Application = express();
 
 // ✅ 1. Trust proxy (VAŽNO zbog Nginx-a i X-Forwarded-For)
-app.set("trust proxy", 1);
+app.set('trust proxy', 1);
 
 // ✅ 2. Sakrij Express header
-app.disable("x-powered-by");
+app.disable('x-powered-by');
 
 // ✅ 3. Logging (po želji, ali korisno)
-if (process.env.NODE_ENV !== "production") {
-  app.use(morgan("dev"));
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
 }
 
 // ✅ 4. Body parsers sa limitima
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ✅ 5. Helmet – security headeri
 app.use(
@@ -78,9 +84,9 @@ const server = http.createServer(app); // Create the HTTP server
 // ✅ 6. CORS configuration - allow specific origins with credentials
 // Filter out undefined values to prevent CORS bypass vulnerability
 const allowedOrigins = [
-  "https://car-tracker-frontend-lime.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:5174",
+  'https://car-tracker-frontend-lime.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:5174',
   process.env.BASE_URL,
 ].filter((origin): origin is string => typeof origin === 'string' && origin.length > 0);
 
@@ -94,41 +100,40 @@ app.use(
         return callback(null, true);
       }
       console.warn(`❌ CORS blocked origin: ${origin}`);
-      return callback(new Error("Not allowed by CORS"), false);
+      return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Forwarded-For"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Forwarded-For'],
   })
 );
 
 // ✅ 7. Globalni rate limiter (iznad ruta)
 const globalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuta
-  max: 100,            // 100 requestova po minuti po IP
+  max: 100, // 100 requestova po minuti po IP
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 app.use(globalLimiter);
 
-
 // Initialize Socket.IO with CORS configuration (only for WebSocket transport)
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"],
+    methods: ['GET', 'POST'],
     credentials: true,
   },
   // Allow WebSocket transport
-  transports: ["websocket", "polling"],
+  transports: ['websocket', 'polling'],
 });
 
 // ✅ Response compression (gzip)
 app.use(
   compression({
     filter: (req: Request, res: Response) => {
-      if (req.headers["x-no-compression"]) {
+      if (req.headers['x-no-compression']) {
         return false;
       }
       return compression.filter(req, res);
@@ -153,9 +158,9 @@ app.use((req, res, next) => {
 app.use(auditLogMiddleware);
 
 // Handle WebSocket connections
-io.on("connection", (socket) => {
+io.on('connection', (socket) => {
   // Handle user going online
-  socket.on("user:online", async (userId: string) => {
+  socket.on('user:online', async (userId: string) => {
     try {
       // Add user to online users map
       if (!onlineUsers.has(userId)) {
@@ -174,19 +179,19 @@ io.on("connection", (socket) => {
       (socket as any).userId = userId;
 
       // Broadcast to all clients that this user is online
-      io.emit("user:status", { userId, isOnline: true });
+      io.emit('user:status', { userId, isOnline: true });
     } catch (err) {
-      console.error("Error marking user online:", err);
+      console.error('Error marking user online:', err);
     }
   });
 
   // Handle joining a specific room for a user (kept for backward compatibility)
-  socket.on("join", (userId: string) => {
+  socket.on('join', (userId: string) => {
     socket.join(userId); // Join a room with the user's ID
   });
 
   // Emit a notification to a specific user
-  socket.on("sendNotification", async (data) => {
+  socket.on('sendNotification', async (data) => {
     const { recipientId, type, message, senderId } = data;
 
     try {
@@ -201,14 +206,14 @@ io.on("connection", (socket) => {
       });
 
       const savedNotification = await notificationRepository.save(notification);
-      io.to(recipientId).emit("receiveNotification", savedNotification);
+      io.to(recipientId).emit('receiveNotification', savedNotification);
     } catch (err) {
-      console.error("Error sending notification:", err);
+      console.error('Error sending notification:', err);
     }
   });
 
   // Listen for a mark-as-read event from the client
-  socket.on("markAsRead", async (notificationId) => {
+  socket.on('markAsRead', async (notificationId) => {
     try {
       const notificationRepository = AppDataSource.getRepository(Notification);
       const notification = await notificationRepository.findOne({
@@ -217,20 +222,18 @@ io.on("connection", (socket) => {
 
       if (notification) {
         notification.status = NotificationStatus.SEEN;
-        const updatedNotification = await notificationRepository.save(
-          notification
-        );
+        const updatedNotification = await notificationRepository.save(notification);
 
         // Notify the client that the status has been updated
-        socket.emit("notificationUpdated", updatedNotification);
+        socket.emit('notificationUpdated', updatedNotification);
       }
     } catch (err) {
-      console.error("Error updating notification:", err);
+      console.error('Error updating notification:', err);
     }
   });
 
   // Listen for a bulk mark-as-read event
-  socket.on("markAllAsRead", async (recipientId) => {
+  socket.on('markAllAsRead', async (recipientId) => {
     try {
       const notificationRepository = AppDataSource.getRepository(Notification);
       const updateResult = await notificationRepository.update(
@@ -239,15 +242,15 @@ io.on("connection", (socket) => {
       );
 
       // Notify the client about the bulk update
-      socket.emit("allNotificationsUpdated", {
+      socket.emit('allNotificationsUpdated', {
         affected: updateResult.affected,
       });
     } catch (err) {
-      console.error("Error updating notifications:", err);
+      console.error('Error updating notifications:', err);
     }
   });
 
-  socket.on("disconnect", async () => {
+  socket.on('disconnect', async () => {
     // Handle user going offline
     const userId = (socket as any).userId;
     if (userId && onlineUsers.has(userId)) {
@@ -263,21 +266,21 @@ io.on("connection", (socket) => {
           const userRepository = AppDataSource.getRepository(User);
           await userRepository.update(userId, { lastActiveAt: new Date() });
         } catch (err) {
-          console.error("Error updating last active:", err);
+          console.error('Error updating last active:', err);
         }
 
         // Broadcast to all clients that this user is offline
-        io.emit("user:status", { userId, isOnline: false });
+        io.emit('user:status', { userId, isOnline: false });
       }
     }
   });
 });
 // Middleware to serve static files
-app.use("/src/assets", express.static(path.join(__dirname, "src/assets")));
+app.use('/src/assets', express.static(path.join(__dirname, 'src/assets')));
 
-app.get("/src/assets/contract_template.docx", (req, res) => {
-  res.setHeader("Cache-Control", "no-store");
-  res.sendFile(path.join(__dirname, "src/assets/contract_template.docx"));
+app.get('/src/assets/contract_template.docx', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'src/assets/contract_template.docx'));
 });
 
 // Initialize database connection
@@ -287,15 +290,15 @@ const startServer = async () => {
     await initializeTypeORM();
 
     // Test email configuration (non-blocking)
-    console.log("📧 Testing email configuration...");
+    console.log('📧 Testing email configuration...');
     testEmailConfiguration().catch((err) => {
-      console.warn("⚠️  Email service not configured or failed:", err.message);
+      console.warn('⚠️  Email service not configured or failed:', err.message);
     });
 
     // Start the server only after successful database connection
-    const PORT = parseInt(process.env.PORT || "5001", 10);
+    const PORT = parseInt(process.env.PORT || '5001', 10);
 
-    server.listen(PORT, "0.0.0.0", () => {
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Database connected and ready`);
       console.log(`🔌 Socket.IO server initialized and ready`);
@@ -309,7 +312,7 @@ const startServer = async () => {
       console.log(`⏰ Scheduled tasks initialized`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 };
@@ -320,18 +323,18 @@ const gracefulShutdown = async (signal: string) => {
 
   // Stop accepting new connections
   server.close(async () => {
-    console.log("✅ HTTP server closed");
+    console.log('✅ HTTP server closed');
 
     try {
       // Close Socket.IO
       io.close(() => {
-        console.log("✅ Socket.IO closed");
+        console.log('✅ Socket.IO closed');
       });
 
       // Close database connections
       if (AppDataSource.isInitialized) {
         await AppDataSource.destroy();
-        console.log("✅ Database connections closed");
+        console.log('✅ Database connections closed');
       }
 
       // Close Redis connections
@@ -340,99 +343,103 @@ const gracefulShutdown = async (signal: string) => {
       // Close email queue
       await closeEmailQueue();
 
-      console.log("✅ Graceful shutdown complete");
+      console.log('✅ Graceful shutdown complete');
       process.exit(0);
     } catch (error) {
-      console.error("❌ Error during shutdown:", error);
+      console.error('❌ Error during shutdown:', error);
       process.exit(1);
     }
   });
 
   // Force shutdown after 35 seconds
   setTimeout(() => {
-    console.error("⚠️  Forced shutdown after timeout");
+    console.error('⚠️  Forced shutdown after timeout');
     process.exit(1);
   }, 35000);
 };
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle unhandled promise rejections
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
   Sentry.captureException(reason);
 });
 
 // Handle uncaught exceptions
-process.on("uncaughtException", (error) => {
-  console.error("❌ Uncaught Exception:", error);
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
   Sentry.captureException(error);
-  gracefulShutdown("UNCAUGHT_EXCEPTION");
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
 
 // Note: Multer is configured per-route, not globally
 // Each route that needs file upload should configure its own multer middleware
 
 // Routes with rate limiting
-app.use("/api/auth", authLimiter, authRoutes); // ✅ Strict rate limit for auth
-app.use("/api/users", apiLimiter, userRoutes);
-app.use("/api/contracts", apiLimiter, contractRoutes);
-app.use("/api/cars", apiLimiter, carAnalyticsRoutes); // Analytics routes (must be before general car routes)
-app.use("/api/cars", apiLimiter, carRoutes);
-app.use("/api/car-registration", apiLimiter, carRegistrationRoutes);
-app.use("/api/car-insurance", apiLimiter, carInsuranceRoutes);
-app.use("/api/car-service-history", apiLimiter, carServiceRoutes);
-app.use("/api/car-issue-report", apiLimiter, carIssueReportRoutes);
-app.use("/api/customers", apiLimiter, customerRoutes);
-app.use("/api/notifications", apiLimiter, notificationRoutes);
-app.use("/api/countries", apiLimiter, countryRoutes);
-app.use("/api/audit-logs", apiLimiter, auditLogRoutes);
-app.use("/api/activity", apiLimiter, activityRoutes);
-app.use("/api", apiLimiter, documentsRoutes);
+app.use('/api/auth', authLimiter, authRoutes); // ✅ Strict rate limit for auth
+app.use('/api/users', apiLimiter, userRoutes);
+app.use('/api/contracts', apiLimiter, contractRoutes);
+app.use('/api/cars', apiLimiter, carAnalyticsRoutes); // Analytics routes (must be before general car routes)
+app.use('/api/cars', apiLimiter, carRoutes);
+app.use('/api/car-registration', apiLimiter, carRegistrationRoutes);
+app.use('/api/car-insurance', apiLimiter, carInsuranceRoutes);
+app.use('/api/car-service-history', apiLimiter, carServiceRoutes);
+app.use('/api/car-issue-report', apiLimiter, carIssueReportRoutes);
+app.use('/api/customers', apiLimiter, customerRoutes);
+app.use('/api/notifications', apiLimiter, notificationRoutes);
+app.use('/api/countries', apiLimiter, countryRoutes);
+app.use('/api/audit-logs', apiLimiter, auditLogRoutes);
+app.use('/api/activity', apiLimiter, activityRoutes);
+app.use('/api', apiLimiter, documentsRoutes);
 
 // Health check endpoint
-app.get("/health", async (req: Request, res: Response) => {
+app.get('/health', async (req: Request, res: Response) => {
   try {
     // Test database connection
-    await AppDataSource.query("SELECT 1");
+    await AppDataSource.query('SELECT 1');
     res.status(200).json({
-      status: "ok",
-      database: "connected",
+      status: 'ok',
+      database: 'connected',
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
-      status: "error",
-      database: "disconnected",
-      error: error instanceof Error ? error.message : "Unknown error",
+      status: 'error',
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString(),
     });
   }
 });
 
 // Documentation routes (ONLY in development - security risk in production)
-if (process.env.NODE_ENV !== "production") {
-  app.get("/routes", getRoutesJSON(app));
-  app.get("/api-docs", getAPIDocs(app));
-  
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/routes', getRoutesJSON(app));
+  app.get('/api-docs', getAPIDocs(app));
+
   // Swagger UI
-  app.use("/api/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Car Tracker API Docs',
-  }));
-  app.get("/api/swagger.json", (req, res) => {
+  app.use(
+    '/api/swagger',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Car Tracker API Docs',
+    })
+  );
+  app.get('/api/swagger.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
   });
-  
-  console.log("📚 API documentation available at:");
-  console.log("   - Swagger UI: /api/swagger");
-  console.log("   - OpenAPI JSON: /api/swagger.json");
-  console.log("   - Routes list: /routes");
-  console.log("   - HTML docs: /api-docs");
+
+  console.log('📚 API documentation available at:');
+  console.log('   - Swagger UI: /api/swagger');
+  console.log('   - OpenAPI JSON: /api/swagger.json');
+  console.log('   - Routes list: /routes');
+  console.log('   - HTML docs: /api-docs');
 } else {
-  console.log("🔒 API documentation endpoints disabled in production");
+  console.log('🔒 API documentation endpoints disabled in production');
 }
 
 // Error handling middleware - must be last
@@ -440,10 +447,10 @@ app.use(notFoundHandler);
 
 // ✅ CORS error handler (must be before generic error handler)
 const corsErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  if (err.message === "Not allowed by CORS") {
-    res.status(403).json({ 
-      error: "CORS origin denied",
-      message: "Your origin is not allowed to access this resource"
+  if (err.message === 'Not allowed by CORS') {
+    res.status(403).json({
+      error: 'CORS origin denied',
+      message: 'Your origin is not allowed to access this resource',
     });
     return;
   }

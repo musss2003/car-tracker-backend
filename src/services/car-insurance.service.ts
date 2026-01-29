@@ -2,7 +2,9 @@ import CarInsurance from '../models/car-insurance.model';
 import Car from '../models/car.model';
 import { BaseService } from '../common/services/base.service';
 import { AuditResource } from '../models/audit-log.model';
-import carInsuranceRepository, { CarInsuranceRepository } from '../repositories/car-insurance.repository';
+import carInsuranceRepository, {
+  CarInsuranceRepository,
+} from '../repositories/car-insurance.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarInsuranceDto, UpdateCarInsuranceDto } from '../dto/car-insurance.dto';
 import { NotFoundError } from '../common/errors';
@@ -73,7 +75,7 @@ export class CarInsuranceService extends BaseService<
    */
   protected getUpdateDescription(before: CarInsurance, after: CarInsurance): string {
     const changes: string[] = [];
-    
+
     if (before.provider !== after.provider) {
       changes.push(`provider: ${before.provider} → ${after.provider}`);
     }

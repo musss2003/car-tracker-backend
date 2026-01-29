@@ -6,104 +6,104 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Index
-} from "typeorm";
-import { Car } from "./car.model";
-import { User } from "./user.model";
+  Index,
+} from 'typeorm';
+import { Car } from './car.model';
+import { User } from './user.model';
 
 export enum IssueSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 export enum IssueStatus {
   OPEN = 'open',
   IN_PROGRESS = 'in_progress',
-  RESOLVED = 'resolved'
+  RESOLVED = 'resolved',
 }
 
-@Entity("car_issue_reports")
+@Entity('car_issue_reports')
 @Index(['carId'])
 @Index(['status'])
 @Index(['severity'])
 export class CarIssueReport {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   // Relation to Car (cannot be deleted)
-  @Column({ name: "car_id" })
+  @Column({ name: 'car_id' })
   carId: string;
 
-  @ManyToOne(() => Car, { eager: true, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "car_id" })
+  @ManyToOne(() => Car, { eager: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'car_id' })
   car: Car;
 
   // Who reported it
-  @Column({ name: "reported_by" })
+  @Column({ name: 'reported_by' })
   reportedById: string;
 
   @ManyToOne(() => User, { eager: true })
-  @JoinColumn({ name: "reported_by" })
+  @JoinColumn({ name: 'reported_by' })
   reportedBy: User;
 
-  @CreateDateColumn({ name: "reported_at" })
+  @CreateDateColumn({ name: 'reported_at' })
   reportedAt: Date;
 
   // Description of the issue
-  @Column({ type: "text" })
+  @Column({ type: 'text' })
   description: string;
 
   // Optional diagnostic PDF
-  @Column({ name: "diagnostic_pdf_url", type: "text", nullable: true })
+  @Column({ name: 'diagnostic_pdf_url', type: 'text', nullable: true })
   diagnosticPdfUrl?: string;
 
   // Severity (use enum)
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: IssueSeverity,
-    nullable: true
+    nullable: true,
   })
   severity?: IssueSeverity;
 
   // Status (use enum)
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: IssueStatus,
-    default: IssueStatus.OPEN
+    default: IssueStatus.OPEN,
   })
   status: IssueStatus;
 
   // Who resolved it (optional)
-  @Column({ name: "resolved_by", nullable: true })
+  @Column({ name: 'resolved_by', nullable: true })
   resolvedById?: string;
 
   @ManyToOne(() => User, { eager: false, nullable: true })
-  @JoinColumn({ name: "resolved_by" })
+  @JoinColumn({ name: 'resolved_by' })
   resolvedBy?: User;
 
   // When resolved
-  @Column({ name: "resolved_at", type: "timestamp", nullable: true })
+  @Column({ name: 'resolved_at', type: 'timestamp', nullable: true })
   resolvedAt?: Date;
 
   // Additional notes (like Contract pattern)
-  @Column({ name: "additional_notes", type: "text", nullable: true })
+  @Column({ name: 'additional_notes', type: 'text', nullable: true })
   additionalNotes?: string;
 
   // Notification tracking (like Contract pattern)
-  @Column({ name: "notification_sent", type: "boolean", default: false })
+  @Column({ name: 'notification_sent', type: 'boolean', default: false })
   notificationSent: boolean;
 
   // Who last updated
-  @Column({ name: "updated_by", nullable: true })
+  @Column({ name: 'updated_by', nullable: true })
   updatedById?: string;
 
   @ManyToOne(() => User, { eager: true, nullable: true })
-  @JoinColumn({ name: "updated_by" })
+  @JoinColumn({ name: 'updated_by' })
   updatedBy?: User;
 
-  @UpdateDateColumn({ name: "updated_at", nullable: true })
+  @UpdateDateColumn({ name: 'updated_at', nullable: true })
   updatedAt?: Date;
 }
 

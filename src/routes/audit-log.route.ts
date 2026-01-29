@@ -198,13 +198,17 @@ router.get('/user/:userId/recent', getUserRecentActivity);
  *       404:
  *         description: Audit log not found
  */
-router.get('/:id', verifyRole(['admin']), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await getAuditLogById(req, res);
-  } catch (err) {
-    next(err);
+router.get(
+  '/:id',
+  verifyRole(['admin']),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await getAuditLogById(req, res);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 /**
  * @swagger

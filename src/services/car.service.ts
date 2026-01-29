@@ -27,7 +27,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
       ...data,
       category: data.category || 'economy',
       status: data.status || 'available',
-      createdById: context.userId
+      createdById: context.userId,
     };
 
     return super.create(carData as any, context);
@@ -39,7 +39,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
   async update(id: string, data: UpdateCarDto, context: AuditContext): Promise<Car> {
     const updateData = {
       ...data,
-      updatedById: context.userId
+      updatedById: context.userId,
     };
 
     return super.update(id, updateData, context);
@@ -119,7 +119,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
     const car = await this.getById(id);
     const userId = context.userId || 'system';
     await this.carRepository.archiveCar(id, userId);
-    
+
     // Log audit manually for archive action
     const { logAudit } = await import('../common/decorators/audit.decorator');
     await logAudit({
@@ -130,7 +130,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
       beforeData: car,
       afterData: { ...car, isArchived: true, archivedAt: new Date(), archivedById: userId },
       description: `Archived car: ${car.manufacturer} ${car.model} (${car.licensePlate})`,
-      includeChanges: true
+      includeChanges: true,
     });
   }
 
@@ -140,7 +140,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
   async unarchiveCar(id: string, context: AuditContext): Promise<void> {
     const car = await this.getById(id);
     await this.carRepository.unarchiveCar(id);
-    
+
     // Log audit manually for unarchive action
     const { logAudit } = await import('../common/decorators/audit.decorator');
     await logAudit({
@@ -151,7 +151,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
       beforeData: car,
       afterData: { ...car, isArchived: false, archivedAt: undefined, archivedById: undefined },
       description: `Unarchived car: ${car.manufacturer} ${car.model} (${car.licensePlate})`,
-      includeChanges: true
+      includeChanges: true,
     });
   }
 
@@ -177,7 +177,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
       beforeData: { mileage: car.mileage },
       afterData: { mileage },
       description: `Updated mileage for car ${car.manufacturer} ${car.model} from ${car.mileage || 0} to ${mileage} km`,
-      includeChanges: true
+      includeChanges: true,
     });
 
     return this.getById(id);
@@ -202,7 +202,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
 
   protected getUpdateDescription(before: Car, after: Car): string {
     const changes: string[] = [];
-    
+
     if (before.status !== after.status) {
       changes.push(`status: ${before.status} → ${after.status}`);
     }
@@ -212,7 +212,7 @@ export class CarService extends BaseService<Car, CreateCarDto, UpdateCarDto> {
     if (before.pricePerDay !== after.pricePerDay) {
       changes.push(`price: ${before.pricePerDay} → ${after.pricePerDay}`);
     }
-    
+
     return `Updated car: ${after.manufacturer} ${after.model} (${after.licensePlate})${changes.length ? ` (${changes.join(', ')})` : ''}`;
   }
 

@@ -2,7 +2,6 @@ import express from 'express';
 import { getCountries } from '../controllers/country.controller';
 import authenticate from '../middlewares/verify-jwt.middleware';
 
-
 const router = express.Router();
 
 // Middleware to verify JWT for all contract routes
@@ -21,6 +20,5 @@ router.use(authenticate);
  *         description: List of all countries
  */
 router.get('/', getCountries);
-
 
 export default router;

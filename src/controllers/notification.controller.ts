@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
 import { NotificationService } from '../services/notification.service';
-import {
-  CreateNotificationDto,
-  UpdateNotificationDto
-} from '../dto/notification.dto';
+import { CreateNotificationDto, UpdateNotificationDto } from '../dto/notification.dto';
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse, createErrorResponse } from '../common/dto/response.dto';
 import { AuditContext } from '../common/interfaces/base-service.interface';
@@ -142,9 +139,7 @@ export const markAllNotificationsAsRead = asyncHandler(async (req: Request, res:
   };
 
   const affected = await notificationService.markAllAsRead(userId, context);
-  res.json(
-    createSuccessResponse({ affected }, 'All notifications marked as read')
-  );
+  res.json(createSuccessResponse({ affected }, 'All notifications marked as read'));
 });
 
 /**

@@ -1,6 +1,6 @@
 // routes/carRegistrationRoutes.js
-import express from "express";
-import authenticate from "../middlewares/verify-jwt.middleware";
+import express from 'express';
+import authenticate from '../middlewares/verify-jwt.middleware';
 import {
   createCarRegistration,
   getCarRegistrations,
@@ -10,8 +10,8 @@ import {
   getActiveRegistration,
   getExpiringRegistrations,
   getRegistrationAuditLogs,
-  getRegistrationDaysRemaining
-} from "../controllers/car-registration.controller";
+  getRegistrationDaysRemaining,
+} from '../controllers/car-registration.controller';
 
 const router = express.Router();
 
@@ -36,7 +36,7 @@ router.use(authenticate);
  *       201:
  *         description: Registration created successfully
  */
-router.post("/", createCarRegistration);
+router.post('/', createCarRegistration);
 
 /**
  * @swagger
@@ -50,7 +50,7 @@ router.post("/", createCarRegistration);
  *       200:
  *         description: List of expiring registrations
  */
-router.get("/expiring", getExpiringRegistrations);
+router.get('/expiring', getExpiringRegistrations);
 
 /**
  * @swagger
@@ -70,7 +70,7 @@ router.get("/expiring", getExpiringRegistrations);
  *       200:
  *         description: Audit logs
  */
-router.get("/:id/audit-logs", getRegistrationAuditLogs);
+router.get('/:id/audit-logs', getRegistrationAuditLogs);
 
 /**
  * @swagger
@@ -90,7 +90,7 @@ router.get("/:id/audit-logs", getRegistrationAuditLogs);
  *       200:
  *         description: Registration details
  */
-router.get("/:id", getRegistrationRecord);
+router.get('/:id', getRegistrationRecord);
 
 /**
  * @swagger
@@ -110,7 +110,7 @@ router.get("/:id", getRegistrationRecord);
  *       200:
  *         description: Registration updated successfully
  */
-router.put("/:id", updateCarRegistration);
+router.put('/:id', updateCarRegistration);
 
 /**
  * @swagger
@@ -130,7 +130,7 @@ router.put("/:id", updateCarRegistration);
  *       200:
  *         description: Registration deleted successfully
  */
-router.delete("/:id", deleteCarRegistration);
+router.delete('/:id', deleteCarRegistration);
 
 /**
  * @swagger
@@ -150,7 +150,7 @@ router.delete("/:id", deleteCarRegistration);
  *       200:
  *         description: Car registration history
  */
-router.get("/car/:carId", getCarRegistrations);
+router.get('/car/:carId', getCarRegistrations);
 
 /**
  * @swagger
@@ -170,7 +170,7 @@ router.get("/car/:carId", getCarRegistrations);
  *       200:
  *         description: Active registration
  */
-router.get("/car/:carId/active", getActiveRegistration);
+router.get('/car/:carId/active', getActiveRegistration);
 
 /**
  * @swagger
@@ -190,6 +190,6 @@ router.get("/car/:carId/active", getActiveRegistration);
  *       200:
  *         description: Days remaining
  */
-router.get("/car/:carId/days-remaining", getRegistrationDaysRemaining);
+router.get('/car/:carId/days-remaining', getRegistrationDaysRemaining);
 
 export default router;

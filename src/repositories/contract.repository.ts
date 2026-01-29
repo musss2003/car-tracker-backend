@@ -15,7 +15,7 @@ export class ContractRepository extends BaseRepository<Contract> {
     return this.repository.find({
       where: { customerId },
       relations: ['customer', 'car', 'createdBy', 'updatedBy'],
-      order: { startDate: 'DESC' }
+      order: { startDate: 'DESC' },
     });
   }
 
@@ -26,7 +26,7 @@ export class ContractRepository extends BaseRepository<Contract> {
     return this.repository.find({
       where: { carId },
       relations: ['customer', 'car', 'createdBy', 'updatedBy'],
-      order: { startDate: 'DESC' }
+      order: { startDate: 'DESC' },
     });
   }
 
@@ -97,7 +97,12 @@ export class ContractRepository extends BaseRepository<Contract> {
   /**
    * Check if car is available for date range
    */
-  async isCarAvailable(carId: string, startDate: Date, endDate: Date, excludeContractId?: string): Promise<boolean> {
+  async isCarAvailable(
+    carId: string,
+    startDate: Date,
+    endDate: Date,
+    excludeContractId?: string
+  ): Promise<boolean> {
     const query = this.repository
       .createQueryBuilder('contract')
       .where('contract.carId = :carId', { carId })
@@ -120,7 +125,7 @@ export class ContractRepository extends BaseRepository<Contract> {
       .createQueryBuilder('contract')
       .select('SUM(contract.totalAmount)', 'total')
       .getRawOne();
-    
+
     return parseFloat(result?.total || '0');
   }
 
@@ -134,7 +139,7 @@ export class ContractRepository extends BaseRepository<Contract> {
       .where('contract.startDate >= :startDate', { startDate })
       .andWhere('contract.endDate <= :endDate', { endDate })
       .getRawOne();
-    
+
     return parseFloat(result?.total || '0');
   }
 
@@ -145,7 +150,7 @@ export class ContractRepository extends BaseRepository<Contract> {
     return this.repository.find({
       where: { notificationSent: false },
       relations: ['customer', 'car', 'createdBy'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -162,7 +167,7 @@ export class ContractRepository extends BaseRepository<Contract> {
   async findAll(): Promise<Contract[]> {
     return this.repository.find({
       relations: ['customer', 'car', 'createdBy', 'updatedBy'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -172,7 +177,7 @@ export class ContractRepository extends BaseRepository<Contract> {
   async findById(id: string): Promise<Contract | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['customer', 'car', 'createdBy', 'updatedBy']
+      relations: ['customer', 'car', 'createdBy', 'updatedBy'],
     });
   }
 }

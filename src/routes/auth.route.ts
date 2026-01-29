@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { register, login, logout, sessionCheck } from '../controllers/auth.controller';
 import authenticate from '../middlewares/verify-jwt.middleware';
 // Import verifyRole if needed
-// import { verifyRole } from '../middlewares/verifyRole'; 
+// import { verifyRole } from '../middlewares/verifyRole';
 
 const router = express.Router();
 

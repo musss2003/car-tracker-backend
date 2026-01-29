@@ -2,7 +2,9 @@
 import js from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
-import jestPlugin from "eslint-plugin-jest"; // ✅ Import Jest plugin
+import jestPlugin from "eslint-plugin-jest";
+import prettierPlugin from "eslint-plugin-prettier";
+import prettierConfig from "eslint-config-prettier";
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
@@ -19,7 +21,6 @@ export default [
         project: "./tsconfig.json",
       },
       globals: {
-        // ✅ Add Node.js globals
         console: "readonly",
         process: "readonly",
         __dirname: "readonly",
@@ -32,18 +33,24 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tseslint,
+      prettier: prettierPlugin, // ✅ Add Prettier plugin
     },
     rules: {
+      ...prettierConfig.rules, // ✅ Disable ESLint rules that conflict with Prettier
+      "prettier/prettier": "error", // ✅ Show Prettier errors as ESLint errors
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error", 
-        { argsIgnorePattern: "^_" }
+        { 
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_", // ✅ Also ignore vars starting with _
+        }
       ],
       "no-console": "off",
     },
   },
   
-  // ✅ Test files - Jest configuration
+  // Test files - Jest configuration
   {
     files: [
       "**/__tests__/**/*.ts",
@@ -58,7 +65,6 @@ export default [
         project: "./tsconfig.json",
       },
       globals: {
-        // ✅ Jest globals
         describe: "readonly",
         it: "readonly",
         test: "readonly",
@@ -72,14 +78,20 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tseslint,
-      jest: jestPlugin, // ✅ Add Jest plugin
+      jest: jestPlugin,
+      prettier: prettierPlugin, // ✅ Add Prettier to tests too
     },
     rules: {
-      ...jestPlugin.configs.recommended.rules, // ✅ Jest recommended rules
-      "@typescript-eslint/no-explicit-any": "off", // Allow 'any' in tests
+      ...jestPlugin.configs.recommended.rules,
+      ...prettierConfig.rules, // ✅ Disable conflicts for tests
+      "prettier/prettier": "error", // ✅ Prettier errors in tests
+      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_" }
+        { 
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        }
       ],
     },
   },

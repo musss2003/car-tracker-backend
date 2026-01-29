@@ -14,7 +14,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
   async findByPassportNumber(passportNumber: string): Promise<Customer | null> {
     return this.repository.findOne({
       where: { passportNumber, isDeleted: false },
-      relations: ['createdBy', 'updatedBy']
+      relations: ['createdBy', 'updatedBy'],
     });
   }
 
@@ -24,7 +24,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
   async findByDriverLicenseNumber(driverLicenseNumber: string): Promise<Customer | null> {
     return this.repository.findOne({
       where: { driverLicenseNumber, isDeleted: false },
-      relations: ['createdBy', 'updatedBy']
+      relations: ['createdBy', 'updatedBy'],
     });
   }
 
@@ -34,7 +34,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
   async findByIdOfPerson(idOfPerson: string): Promise<Customer | null> {
     return this.repository.findOne({
       where: { idOfPerson, isDeleted: false },
-      relations: ['createdBy', 'updatedBy']
+      relations: ['createdBy', 'updatedBy'],
     });
   }
 
@@ -45,10 +45,10 @@ export class CustomerRepository extends BaseRepository<Customer> {
     return this.repository.find({
       where: {
         name: Like(`%${name}%`),
-        isDeleted: false
+        isDeleted: false,
       },
       relations: ['createdBy', 'updatedBy'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -59,10 +59,10 @@ export class CustomerRepository extends BaseRepository<Customer> {
     return this.repository.find({
       where: {
         email: Like(`%${email}%`),
-        isDeleted: false
+        isDeleted: false,
       },
       relations: ['createdBy', 'updatedBy'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -73,10 +73,10 @@ export class CustomerRepository extends BaseRepository<Customer> {
     return this.repository.find({
       where: {
         phoneNumber: Like(`%${phoneNumber}%`),
-        isDeleted: false
+        isDeleted: false,
       },
       relations: ['createdBy', 'updatedBy'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -87,10 +87,10 @@ export class CustomerRepository extends BaseRepository<Customer> {
     return this.repository.find({
       where: {
         countryOfOrigin: country,
-        isDeleted: false
+        isDeleted: false,
       },
       relations: ['createdBy', 'updatedBy'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -101,10 +101,10 @@ export class CustomerRepository extends BaseRepository<Customer> {
     return this.repository.find({
       where: {
         cityOfResidence: Like(`%${city}%`),
-        isDeleted: false
+        isDeleted: false,
       },
       relations: ['createdBy', 'updatedBy'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -116,19 +116,22 @@ export class CustomerRepository extends BaseRepository<Customer> {
       where: { isDeleted: false },
       relations: ['createdBy', 'updatedBy'],
       order: { createdAt: 'DESC' },
-      take: limit
+      take: limit,
     });
   }
 
   /**
    * Check if customer exists by passport or driver license
    */
-  async existsByPassportOrLicense(passportNumber: string, driverLicenseNumber: string): Promise<boolean> {
+  async existsByPassportOrLicense(
+    passportNumber: string,
+    driverLicenseNumber: string
+  ): Promise<boolean> {
     const count = await this.repository.count({
       where: [
         { passportNumber, isDeleted: false },
-        { driverLicenseNumber, isDeleted: false }
-      ]
+        { driverLicenseNumber, isDeleted: false },
+      ],
     });
     return count > 0;
   }
@@ -140,7 +143,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
     return this.repository.find({
       where: { isDeleted: false },
       relations: ['createdBy', 'updatedBy'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -150,7 +153,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
   async findById(id: string): Promise<Customer | null> {
     return this.repository.findOne({
       where: { id, isDeleted: false },
-      relations: ['createdBy', 'updatedBy', 'deletedBy']
+      relations: ['createdBy', 'updatedBy', 'deletedBy'],
     });
   }
 }

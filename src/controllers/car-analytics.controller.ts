@@ -135,12 +135,7 @@ export const getCarMaintenanceAlerts = asyncHandler(async (req: Request, res: Re
 
   const summary = maintenanceAlertService.generateSummary(alerts);
 
-  res.json(
-    createSuccessResponse(
-      { alerts, summary },
-      'Maintenance alerts retrieved successfully'
-    )
-  );
+  res.json(createSuccessResponse({ alerts, summary }, 'Maintenance alerts retrieved successfully'));
 });
 
 /**

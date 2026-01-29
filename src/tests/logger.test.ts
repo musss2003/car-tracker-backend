@@ -8,7 +8,7 @@ describe('Winston Logger Tests', () => {
   const errorLogPath = path.join(logDir, 'error.log');
 
   // Helper to wait for logs to flush
-  const waitForLogs = () => new Promise(resolve => setTimeout(resolve, 200));
+  const waitForLogs = () => new Promise((resolve) => setTimeout(resolve, 200));
 
   beforeAll(async () => {
     // Ensure logs directory exists
@@ -39,9 +39,9 @@ describe('Winston Logger Tests', () => {
     it('should log INFO messages', async () => {
       const testMessage = `Test INFO ${Date.now()}`;
       logger.info(testMessage, { test: true });
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       expect(logs).toContain(testMessage);
       expect(logs).toContain('"level":"info"');
@@ -49,13 +49,13 @@ describe('Winston Logger Tests', () => {
 
     it('should log ERROR messages', async () => {
       const testMessage = `Test ERROR ${Date.now()}`;
-      logger.error(testMessage, { 
+      logger.error(testMessage, {
         error: 'Test error',
-        stack: 'Test stack trace'
+        stack: 'Test stack trace',
       });
-      
+
       await waitForLogs();
-      
+
       const errorLogs = fs.readFileSync(errorLogPath, 'utf-8');
       expect(errorLogs).toContain(testMessage);
       expect(errorLogs).toContain('"level":"error"');
@@ -64,9 +64,9 @@ describe('Winston Logger Tests', () => {
     it('should log WARNING messages', async () => {
       const testMessage = `Test WARNING ${Date.now()}`;
       logger.warn(testMessage, { threshold: 100 });
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       expect(logs).toContain(testMessage);
       expect(logs).toContain('"level":"warn"');
@@ -75,9 +75,9 @@ describe('Winston Logger Tests', () => {
     it('should log DEBUG messages in test environment', async () => {
       const testMessage = `Test DEBUG ${Date.now()}`;
       logger.debug(testMessage, { detail: 'debug info' });
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       // Debug logs should appear in test environment
       expect(logs).toContain(testMessage);
@@ -90,11 +90,11 @@ describe('Winston Logger Tests', () => {
       logger.info(testMessage, {
         userId: 'user-123',
         action: 'test',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       expect(logs).toContain('"userId":"user-123"');
       expect(logs).toContain('"action":"test"');
@@ -103,9 +103,9 @@ describe('Winston Logger Tests', () => {
     it('should include service name in logs', async () => {
       const testMessage = `Test service metadata ${Date.now()}`;
       logger.info(testMessage);
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       expect(logs).toContain('"service":"car-rental-api"');
     });
@@ -113,9 +113,9 @@ describe('Winston Logger Tests', () => {
     it('should include environment in logs', async () => {
       const testMessage = `Test environment ${Date.now()}`;
       logger.info(testMessage);
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       expect(logs).toContain('"environment"');
     });
@@ -125,16 +125,16 @@ describe('Winston Logger Tests', () => {
     it('should write JSON format to files', async () => {
       const testMessage = `Test JSON format ${Date.now()}`;
       logger.info(testMessage);
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       const lines = logs.trim().split('\n');
       const lastLine = lines[lines.length - 1];
-      
+
       // Should be valid JSON
       expect(() => JSON.parse(lastLine)).not.toThrow();
-      
+
       const logEntry = JSON.parse(lastLine);
       expect(logEntry).toHaveProperty('timestamp');
       expect(logEntry).toHaveProperty('level');
@@ -145,14 +145,14 @@ describe('Winston Logger Tests', () => {
     it('should include timestamp in correct format', async () => {
       const testMessage = `Test timestamp ${Date.now()}`;
       logger.info(testMessage);
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       const lines = logs.trim().split('\n');
       const lastLine = lines[lines.length - 1];
       const logEntry = JSON.parse(lastLine);
-      
+
       // Timestamp should match format: YYYY-MM-DD HH:mm:ss
       expect(logEntry.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     });
@@ -163,29 +163,27 @@ describe('Winston Logger Tests', () => {
       const testError = new Error('Test error object');
       logger.error('Error occurred', {
         error: testError.message,
-        stack: testError.stack
+        stack: testError.stack,
       });
-      
+
       await waitForLogs();
-      
+
       const errorLogs = fs.readFileSync(errorLogPath, 'utf-8');
       expect(errorLogs).toContain('Test error object');
       expect(errorLogs).toContain('"stack"');
     });
 
     it('should log errors only to error.log', async () => {
-      const errorLogSizeBefore = fs.existsSync(errorLogPath) 
-        ? fs.statSync(errorLogPath).size 
-        : 0;
-      
+      const errorLogSizeBefore = fs.existsSync(errorLogPath) ? fs.statSync(errorLogPath).size : 0;
+
       const testMessage = `Test error separation ${Date.now()}`;
       logger.error(testMessage, { code: 'TEST_ERROR' });
-      
+
       await waitForLogs();
-      
+
       const errorLogSizeAfter = fs.statSync(errorLogPath).size;
       expect(errorLogSizeAfter).toBeGreaterThan(errorLogSizeBefore);
-      
+
       const errorLogs = fs.readFileSync(errorLogPath, 'utf-8');
       expect(errorLogs).toContain(testMessage);
     });
@@ -205,14 +203,17 @@ describe('Winston Logger Tests', () => {
     it('should create valid JSON for all log entries', async () => {
       const testMessage = `Test all entries valid ${Date.now()}`;
       logger.info(testMessage);
-      
+
       await waitForLogs();
-      
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
-      const lines = logs.trim().split('\n').filter(line => line);
-      
+      const lines = logs
+        .trim()
+        .split('\n')
+        .filter((line) => line);
+
       // All lines should be valid JSON
-      lines.forEach(line => {
+      lines.forEach((line) => {
         expect(() => JSON.parse(line)).not.toThrow();
       });
     });

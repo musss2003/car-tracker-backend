@@ -16,20 +16,28 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
    */
   async create(data: CreateCustomerDto, context: AuditContext): Promise<Customer> {
     // Check if customer already exists by passport or driver license
-    const existingByPassport = await this.customerRepository.findByPassportNumber(data.passportNumber);
+    const existingByPassport = await this.customerRepository.findByPassportNumber(
+      data.passportNumber
+    );
     if (existingByPassport) {
-      throw new ConflictError(`Customer with passport number ${data.passportNumber} already exists`);
+      throw new ConflictError(
+        `Customer with passport number ${data.passportNumber} already exists`
+      );
     }
 
-    const existingByLicense = await this.customerRepository.findByDriverLicenseNumber(data.driverLicenseNumber);
+    const existingByLicense = await this.customerRepository.findByDriverLicenseNumber(
+      data.driverLicenseNumber
+    );
     if (existingByLicense) {
-      throw new ConflictError(`Customer with driver license number ${data.driverLicenseNumber} already exists`);
+      throw new ConflictError(
+        `Customer with driver license number ${data.driverLicenseNumber} already exists`
+      );
     }
 
     // Add createdBy
     const customerData = {
       ...data,
-      createdById: context.userId
+      createdById: context.userId,
     };
 
     return super.create(customerData as any, context);
@@ -43,21 +51,27 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
     if (data.passportNumber) {
       const existing = await this.customerRepository.findByPassportNumber(data.passportNumber);
       if (existing && existing.id !== id) {
-        throw new ConflictError(`Customer with passport number ${data.passportNumber} already exists`);
+        throw new ConflictError(
+          `Customer with passport number ${data.passportNumber} already exists`
+        );
       }
     }
 
     // If driver license is being updated, check for conflicts
     if (data.driverLicenseNumber) {
-      const existing = await this.customerRepository.findByDriverLicenseNumber(data.driverLicenseNumber);
+      const existing = await this.customerRepository.findByDriverLicenseNumber(
+        data.driverLicenseNumber
+      );
       if (existing && existing.id !== id) {
-        throw new ConflictError(`Customer with driver license number ${data.driverLicenseNumber} already exists`);
+        throw new ConflictError(
+          `Customer with driver license number ${data.driverLicenseNumber} already exists`
+        );
       }
     }
 
     const updateData = {
       ...data,
-      updatedById: context.userId
+      updatedById: context.userId,
     };
 
     return super.update(id, updateData, context);
@@ -90,7 +104,9 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
   async getByDriverLicenseNumber(driverLicenseNumber: string): Promise<Customer> {
     const customer = await this.customerRepository.findByDriverLicenseNumber(driverLicenseNumber);
     if (!customer) {
-      throw new NotFoundError(`Customer with driver license number ${driverLicenseNumber} not found`);
+      throw new NotFoundError(
+        `Customer with driver license number ${driverLicenseNumber} not found`
+      );
     }
     return customer;
   }
@@ -168,7 +184,7 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
    */
   protected getUpdateDescription(before: Customer, after: Customer): string {
     const changes: string[] = [];
-    
+
     if (before.name !== after.name) {
       changes.push(`name: ${before.name} → ${after.name}`);
     }
@@ -184,7 +200,7 @@ export class CustomerService extends BaseService<Customer, CreateCustomerDto, Up
     if (before.driverLicenseNumber !== after.driverLicenseNumber) {
       changes.push(`license: ${before.driverLicenseNumber} → ${after.driverLicenseNumber}`);
     }
-    
+
     return `Updated customer: ${after.name} (Passport: ${after.passportNumber})${changes.length ? ` (${changes.join(', ')})` : ''}`;
   }
 

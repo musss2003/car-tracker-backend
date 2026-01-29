@@ -1,6 +1,6 @@
-import winston from "winston";
-import path from "path";
-import fs from "fs";
+import winston from 'winston';
+import path from 'path';
+import fs from 'fs';
 
 /**
  * Production-Ready Winston Logger
@@ -35,11 +35,11 @@ const levels = {
 
 // Define colors for each level
 const colors = {
-  error: "red",
-  warn: "yellow",
-  info: "green",
-  http: "magenta",
-  debug: "white",
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
 };
 
 winston.addColors(colors);
@@ -47,41 +47,39 @@ winston.addColors(colors);
 // Determine log level based on environment
 // After:
 const level = (): string => {
-  const env = process.env.NODE_ENV || "development";
+  const env = process.env.NODE_ENV || 'development';
 
   // Test environment uses debug for comprehensive testing
-  if (env === "test") {
-    return process.env.LOG_LEVEL || "debug";
+  if (env === 'test') {
+    return process.env.LOG_LEVEL || 'debug';
   }
 
-  const isDevelopment = env === "development";
-  return isDevelopment ? "debug" : process.env.LOG_LEVEL || "info";
+  const isDevelopment = env === 'development';
+  return isDevelopment ? 'debug' : process.env.LOG_LEVEL || 'info';
 };
 // ✅ Test environment now gets 'debug' level
 
 // Custom format for console (development) - human-readable
 const consoleFormat = winston.format.combine(
-  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
   winston.format.printf((info) => {
     const { timestamp, level, message, ...meta } = info;
-    const metaStr = Object.keys(meta).length
-      ? `\n${JSON.stringify(meta, null, 2)}`
-      : "";
+    const metaStr = Object.keys(meta).length ? `\n${JSON.stringify(meta, null, 2)}` : '';
     return `${timestamp} ${level}: ${message}${metaStr}`;
-  }),
+  })
 );
 
 // JSON format for files (production) - machine-readable
 const fileFormat = winston.format.combine(
-  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
-  winston.format.json(),
+  winston.format.json()
 );
 
 // Create logs directory if it doesn't exist
-const logDir = path.join(process.cwd(), "logs");
+const logDir = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
@@ -93,8 +91,8 @@ const transports: winston.transport[] = [];
 transports.push(
   // Error log file - errors only
   new winston.transports.File({
-    filename: path.join(logDir, "error.log"),
-    level: "error",
+    filename: path.join(logDir, 'error.log'),
+    level: 'error',
     format: fileFormat,
     maxsize: 5242880, // 5MB
     maxFiles: 5,
@@ -102,27 +100,27 @@ transports.push(
 
   // Combined log file - all logs
   new winston.transports.File({
-    filename: path.join(logDir, "combined.log"),
+    filename: path.join(logDir, 'combined.log'),
     format: fileFormat,
     maxsize: 5242880, // 5MB
     maxFiles: 5,
-  }),
+  })
 );
 
 // Add console transport based on environment
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== 'production') {
   // Development: Colorized, pretty-printed
   transports.push(
     new winston.transports.Console({
       format: consoleFormat,
-    }),
+    })
   );
 } else {
   // Production: JSON format for log aggregation services
   transports.push(
     new winston.transports.Console({
       format: fileFormat,
-    }),
+    })
   );
 }
 
@@ -132,8 +130,8 @@ const logger = winston.createLogger({
   levels,
   format: fileFormat,
   defaultMeta: {
-    service: "car-rental-api",
-    environment: process.env.NODE_ENV || "development",
+    service: 'car-rental-api',
+    environment: process.env.NODE_ENV || 'development',
   },
   transports,
   exitOnError: false, // Don't exit on handled exceptions
@@ -142,18 +140,18 @@ const logger = winston.createLogger({
 // Handle uncaught exceptions and unhandled rejections
 logger.exceptions.handle(
   new winston.transports.File({
-    filename: path.join(logDir, "exceptions.log"),
+    filename: path.join(logDir, 'exceptions.log'),
     maxsize: 5242880,
     maxFiles: 5,
-  }),
+  })
 );
 
 logger.rejections.handle(
   new winston.transports.File({
-    filename: path.join(logDir, "rejections.log"),
+    filename: path.join(logDir, 'rejections.log'),
     maxsize: 5242880,
     maxFiles: 5,
-  }),
+  })
 );
 
 export default logger;

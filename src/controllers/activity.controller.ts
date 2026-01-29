@@ -3,31 +3,28 @@ import { AppDataSource } from '../config/db';
 import { User } from '../models/user.model';
 
 // Get all users with their online status
-export const getUsersWithStatus = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getUsersWithStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const userRepository = AppDataSource.getRepository(User);
-    
+
     const users = await userRepository.find({
       select: [
-        'id', 
-        'name', 
-        'username', 
-        'email', 
-        'role', 
+        'id',
+        'name',
+        'username',
+        'email',
+        'role',
         'profilePhotoUrl',
         'lastActiveAt',
-        'lastLogin'
-      ]
+        'lastLogin',
+      ],
     });
 
     // Get online users from the request (passed from Socket.IO middleware)
     // This will be populated by the real-time Socket.IO connection
     const onlineUserIds = (req as any).onlineUsers || new Set<string>();
 
-    const usersWithStatus = users.map(user => {
+    const usersWithStatus = users.map((user) => {
       // Check if user is in the real-time online users set
       const isOnline = onlineUserIds.has(user.id);
 
@@ -40,41 +37,38 @@ export const getUsersWithStatus = async (
         profilePhotoUrl: user.profilePhotoUrl,
         lastActiveAt: user.lastActiveAt,
         lastLogin: user.lastLogin,
-        isOnline
+        isOnline,
       };
     });
 
-    res.json({ 
+    res.json({
       success: true,
-      users: usersWithStatus
+      users: usersWithStatus,
     });
   } catch (error) {
     console.error('Error fetching users with status:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching users" 
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching users',
     });
   }
 };
 
 // Get list of currently online user IDs (for real-time status)
-export const getOnlineUsers = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getOnlineUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     // This will be populated by Socket.IO middleware
     const onlineUserIds = (req as any).onlineUsers || new Set<string>();
-    
-    res.json({ 
+
+    res.json({
       success: true,
-      onlineUsers: Array.from(onlineUserIds)
+      onlineUsers: Array.from(onlineUserIds),
     });
   } catch (error) {
     console.error('Error fetching online users:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching online users" 
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching online users',
     });
   }
 };

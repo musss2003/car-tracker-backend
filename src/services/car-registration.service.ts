@@ -2,7 +2,9 @@ import CarRegistration from '../models/car-registration.model';
 import Car from '../models/car.model';
 import { BaseService } from '../common/services/base.service';
 import { AuditResource } from '../models/audit-log.model';
-import carRegistrationRepository, { CarRegistrationRepository } from '../repositories/car-registration.repository';
+import carRegistrationRepository, {
+  CarRegistrationRepository,
+} from '../repositories/car-registration.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarRegistrationDto, UpdateCarRegistrationDto } from '../dto/car-registration.dto';
 import { NotFoundError, ValidationError } from '../common/errors';
@@ -72,7 +74,7 @@ export class CarRegistrationService extends BaseService<
    */
   protected getUpdateDescription(before: CarRegistration, after: CarRegistration): string {
     const changes: string[] = [];
-    
+
     if (before.registrationExpiry !== after.registrationExpiry) {
       changes.push(`expiry updated`);
     }
@@ -98,7 +100,7 @@ export class CarRegistrationService extends BaseService<
    */
   async getDaysRemaining(carId: string, context?: AuditContext): Promise<number> {
     const activeRegistration = await this.getActiveByCarId(carId);
-    
+
     if (!activeRegistration || !activeRegistration.registrationExpiry) {
       return 0;
     }
@@ -107,7 +109,7 @@ export class CarRegistrationService extends BaseService<
     const today = new Date();
     const diffTime = expiryDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 }

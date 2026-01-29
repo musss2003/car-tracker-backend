@@ -83,26 +83,26 @@
 1. CLIENT
    POST /api/car-insurance/car-123
    Body: { provider: "UNIQA", insuranceExpiry: "2026-12-31", price: 500 }
-   
+
    ↓
 
 2. MIDDLEWARE
    ✓ CORS check
    ✓ JWT authentication
    ✓ Extract user info
-   
+
    ↓
 
 3. CONTROLLER (carInsurance.refactored.ts)
    export const createInsuranceRecord = asyncHandler(async (req, res) => {
      const data = { ...req.body, carId: req.params.carId };
      const context = extractAuditContext(req);  // ← Extract once
-     
+
      const record = await carInsuranceService.create(data, context);
-     
+
      res.status(201).json(createSuccessResponse(record));
    });
-   
+
    ↓
 
 4. SERVICE (carInsurance.service.ts)
@@ -110,14 +110,14 @@
      // Validate data
      const errors = validateCarInsuranceData(data);
      if (errors.length) throw new ValidationError(errors);
-     
+
      // Check car exists
      const car = await carRepository.findOne({ where: { id: data.carId } });
      if (!car) throw new NotFoundError('Car', data.carId);
-     
+
      // Create record
      const entity = await repository.create(data);
-     
+
      // ✨ AUTOMATIC AUDIT LOGGING (from BaseService)
      await logAudit({
        resource: AuditResource.CAR_INSURANCE,
@@ -127,10 +127,10 @@
        changes: { after: entity },
        context
      });
-     
+
      return entity;
    }
-   
+
    ↓
 
 5. REPOSITORY (car-insurance.repository.ts)
@@ -138,20 +138,20 @@
      const entity = this.repository.create(data);
      return this.repository.save(entity);
    }
-   
+
    ↓
 
 6. DATABASE
    INSERT INTO car_insurance (car_id, provider, insurance_expiry, price)
    VALUES ('car-123', 'UNIQA', '2026-12-31', 500);
-   
+
    RETURNING *;
-   
+
    ↓
-   
+
    INSERT INTO audit_log (user_id, action, resource, resource_id, description, changes)
    VALUES ('user-1', 'CREATE', 'CAR_INSURANCE', 'ins-456', '...', '...');
-   
+
    ↓
 
 7. RESPONSE TO CLIENT

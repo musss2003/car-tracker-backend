@@ -1,5 +1,5 @@
-import express from "express";
-import authenticate from "../middlewares/verify-jwt.middleware";
+import express from 'express';
+import authenticate from '../middlewares/verify-jwt.middleware';
 import {
   createInsuranceRecord,
   getCarInsuranceHistory,
@@ -8,9 +8,8 @@ import {
   deleteInsuranceRecord,
   getActiveInsurance,
   getExpiringInsurance,
-  getInsuranceAuditLogs
-} from "../controllers/car-insurance.controller";
-
+  getInsuranceAuditLogs,
+} from '../controllers/car-insurance.controller';
 
 const router = express.Router();
 
@@ -42,7 +41,7 @@ router.use(authenticate);
  *       201:
  *         description: Insurance record created successfully
  */
-router.post("/:carId", createInsuranceRecord);
+router.post('/:carId', createInsuranceRecord);
 
 /**
  * @swagger
@@ -56,7 +55,7 @@ router.post("/:carId", createInsuranceRecord);
  *       200:
  *         description: List of expiring insurance records
  */
-router.get("/expiring", getExpiringInsurance);
+router.get('/expiring', getExpiringInsurance);
 
 /**
  * @swagger
@@ -76,7 +75,7 @@ router.get("/expiring", getExpiringInsurance);
  *       200:
  *         description: Audit logs for insurance record
  */
-router.get("/record/:id/audit-logs", getInsuranceAuditLogs);
+router.get('/record/:id/audit-logs', getInsuranceAuditLogs);
 
 /**
  * @swagger
@@ -96,7 +95,7 @@ router.get("/record/:id/audit-logs", getInsuranceAuditLogs);
  *       200:
  *         description: Insurance record details
  */
-router.get("/record/:id", getInsuranceRecord);
+router.get('/record/:id', getInsuranceRecord);
 
 /**
  * @swagger
@@ -121,7 +120,7 @@ router.get("/record/:id", getInsuranceRecord);
  *       200:
  *         description: Insurance record updated successfully
  */
-router.put("/record/:id", updateInsuranceRecord);
+router.put('/record/:id', updateInsuranceRecord);
 
 /**
  * @swagger
@@ -141,7 +140,7 @@ router.put("/record/:id", updateInsuranceRecord);
  *       200:
  *         description: Insurance record deleted successfully
  */
-router.delete("/record/:id", deleteInsuranceRecord);
+router.delete('/record/:id', deleteInsuranceRecord);
 
 /**
  * @swagger
@@ -161,7 +160,7 @@ router.delete("/record/:id", deleteInsuranceRecord);
  *       200:
  *         description: Car insurance history
  */
-router.get("/:carId", getCarInsuranceHistory);
+router.get('/:carId', getCarInsuranceHistory);
 
 /**
  * @swagger
@@ -181,6 +180,6 @@ router.get("/:carId", getCarInsuranceHistory);
  *       200:
  *         description: Active insurance details
  */
-router.get("/:carId/active", getActiveInsurance);
+router.get('/:carId/active', getActiveInsurance);
 
 export default router;

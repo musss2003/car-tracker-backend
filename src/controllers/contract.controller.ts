@@ -26,16 +26,16 @@ export const getContracts = asyncHandler(async (req: Request, res: Response) => 
  */
 export const getContract = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(id)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid contract ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   const contract = await contractService.getById(id);
   res.json(createSuccessResponse(contract, 'Contract retrieved successfully'));
 });
@@ -56,16 +56,16 @@ export const createContract = asyncHandler(async (req: Request, res: Response) =
  */
 export const updateContract = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(id)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid contract ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   const context = extractAuditContext(req);
   const contract = await contractService.update(id, req.body, context);
   res.json(createSuccessResponse(contract, 'Contract updated successfully'));
@@ -77,16 +77,16 @@ export const updateContract = asyncHandler(async (req: Request, res: Response) =
  */
 export const deleteContract = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(id)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid contract ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   const context = extractAuditContext(req);
   await contractService.delete(id, context);
   res.json(createSuccessResponse(null, 'Contract deleted successfully'));
@@ -98,16 +98,16 @@ export const deleteContract = asyncHandler(async (req: Request, res: Response) =
  */
 export const getContractsByCustomer = asyncHandler(async (req: Request, res: Response) => {
   const { customerId } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(customerId)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid customer ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   const contracts = await contractService.getByCustomerId(customerId);
   res.json(createSuccessResponse(contracts, 'Contracts retrieved successfully'));
 });
@@ -118,16 +118,16 @@ export const getContractsByCustomer = asyncHandler(async (req: Request, res: Res
  */
 export const getContractsByCar = asyncHandler(async (req: Request, res: Response) => {
   const { carId } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(carId)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid car ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   const contracts = await contractService.getByCarId(carId);
   res.json(createSuccessResponse(contracts, 'Contracts retrieved successfully'));
 });
@@ -181,7 +181,12 @@ export const checkCarAvailability = asyncHandler(async (req: Request, res: Respo
     new Date(startDate),
     new Date(endDate)
   );
-  res.json(createSuccessResponse({ available: isAvailable }, isAvailable ? 'Car is available' : 'Car is not available'));
+  res.json(
+    createSuccessResponse(
+      { available: isAvailable },
+      isAvailable ? 'Car is available' : 'Car is not available'
+    )
+  );
 });
 
 /**
@@ -190,7 +195,9 @@ export const checkCarAvailability = asyncHandler(async (req: Request, res: Respo
  */
 export const getTotalRevenue = asyncHandler(async (req: Request, res: Response) => {
   const revenue = await contractService.getTotalRevenue();
-  res.json(createSuccessResponse({ totalRevenue: revenue }, 'Total revenue calculated successfully'));
+  res.json(
+    createSuccessResponse({ totalRevenue: revenue }, 'Total revenue calculated successfully')
+  );
 });
 
 /**
@@ -199,7 +206,10 @@ export const getTotalRevenue = asyncHandler(async (req: Request, res: Response) 
  */
 export const getRevenueByDateRange = asyncHandler(async (req: Request, res: Response) => {
   const { startDate, endDate } = req.body;
-  const revenue = await contractService.getRevenueByDateRange(new Date(startDate), new Date(endDate));
+  const revenue = await contractService.getRevenueByDateRange(
+    new Date(startDate),
+    new Date(endDate)
+  );
   res.json(createSuccessResponse({ revenue }, 'Revenue calculated successfully'));
 });
 
@@ -209,7 +219,9 @@ export const getRevenueByDateRange = asyncHandler(async (req: Request, res: Resp
  */
 export const getPendingNotification = asyncHandler(async (req: Request, res: Response) => {
   const contracts = await contractService.getPendingNotification();
-  res.json(createSuccessResponse(contracts, 'Pending notification contracts retrieved successfully'));
+  res.json(
+    createSuccessResponse(contracts, 'Pending notification contracts retrieved successfully')
+  );
 });
 
 /**
@@ -218,16 +230,16 @@ export const getPendingNotification = asyncHandler(async (req: Request, res: Res
  */
 export const markNotificationSent = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(id)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid contract ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   await contractService.markNotificationSent(id);
   res.json(createSuccessResponse(null, 'Notification marked as sent'));
 });
@@ -238,25 +250,25 @@ export const markNotificationSent = asyncHandler(async (req: Request, res: Respo
  */
 export const downloadContractDocx = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   // Validate UUID format
   if (!isUUID(id)) {
     return res.status(400).json({
       success: false,
       message: 'Invalid contract ID format',
-      data: null
+      data: null,
     });
   }
-  
+
   const contract = await contractService.getById(id);
-  
+
   // Assuming photoUrl contains the path to the generated contract file
   const filePath = path.resolve(contract.photoUrl);
-  
+
   if (!fs.existsSync(filePath)) {
     return res.status(404).json(createSuccessResponse(null, 'Contract file not found'));
   }
-  
+
   res.download(filePath, `contract-${id}.docx`, (err) => {
     if (err) {
       console.error('Error downloading file:', err);

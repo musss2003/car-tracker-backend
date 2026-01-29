@@ -14,7 +14,7 @@ export interface CacheOptions {
 
 /**
  * Cache decorator for method results
- * 
+ *
  * @example
  * @Cache({ ttl: 600 }) // Cache for 10 minutes
  * async getCarById(id: string): Promise<Car> {
@@ -22,11 +22,7 @@ export interface CacheOptions {
  * }
  */
 export function Cache(options: CacheOptions = {}) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const ttl = options.ttl || 300; // Default 5 minutes
 
@@ -73,7 +69,7 @@ export function Cache(options: CacheOptions = {}) {
 
 /**
  * Invalidate cache helper
- * 
+ *
  * @example
  * await invalidateCache('CarService', 'getCarById', carId);
  */
@@ -94,7 +90,7 @@ export async function invalidateCache(
 
 /**
  * Invalidate all cache entries for a specific pattern
- * 
+ *
  * @example
  * await invalidateCachePattern('cache:CarService:*');
  */

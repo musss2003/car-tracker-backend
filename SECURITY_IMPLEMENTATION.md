@@ -7,26 +7,31 @@
 Your server was targeted by **automated vulnerability scanners**. These are not targeted attacks, but automated bots scanning the internet for vulnerable systems.
 
 #### 1. SonicWall SSL VPN Exploit Attempts
+
 ```
 GET /sonicos/is-sslvpn-enabled
 ```
+
 - **Source**: 141.98.11.xxx (3 attempts)
 - **Target**: SonicWall firewall vulnerability
 - **Risk**: Low (you don't run SonicWall)
 - **Action Taken**: Blocked entire IP range 141.98.11.0/24
 
 #### 2. PHPUnit Remote Code Execution Attempts
+
 ```
 GET /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php
 ```
+
 - **Source**: 154.26.155.xxx
 - **Target**: PHPUnit testing framework vulnerability
 - **Risk**: Critical if vulnerable version exists
-- **Action Taken**: 
+- **Action Taken**:
   - Blocked IP range 154.26.155.0/24
   - Added path blocking for `/phpunit`, `/vendor`, `/eval-stdin`
 
 #### 3. Other Common Attack Vectors Observed
+
 - WordPress admin panel access attempts
 - Environment file exposure attempts (`.env`)
 - Various SQL injection patterns
@@ -51,6 +56,7 @@ limit_req_zone $binary_remote_addr zone=socketio_limit:10m rate=50r/s;
 ```
 
 **Protection Against**:
+
 - Brute force login attempts
 - API abuse
 - DDoS attacks
@@ -69,6 +75,7 @@ geo $block_ip {
 ```
 
 **How to Add More IPs**:
+
 ```nginx
 # Add new blocked IPs/ranges here:
 X.X.X.X/24 1;  # Description of why blocked
@@ -86,6 +93,7 @@ location ~* (phpunit|eval-stdin|sonicos|\.env|wp-admin|wp-login|xmlrpc) {
 ```
 
 **Blocked Patterns**:
+
 - PHPUnit exploit paths
 - WordPress admin panels
 - Environment file access
@@ -127,6 +135,7 @@ server_tokens off;  # Hides nginx version
 ### 6. HTTP/2 Protocol
 
 Enabled for better performance and security:
+
 ```nginx
 listen 443 ssl http2;
 ```
@@ -138,9 +147,11 @@ listen 443 ssl http2;
 ### IMMEDIATE (HIGH PRIORITY)
 
 #### 1. Fix Nginx Configuration Error
+
 **Issue**: Duplicate `ssl_session_timeout` directive causing nginx reload to fail.
 
 **Solution**: Edit `/etc/nginx/sites-available/default` and remove lines 30-32:
+
 ```nginx
 # Remove these lines (duplicate of what's in options-ssl-nginx.conf):
 # Additional SSL Security
@@ -149,6 +160,7 @@ ssl_session_timeout 10m;
 ```
 
 **Commands**:
+
 ```bash
 sudo nano /etc/nginx/sites-available/default
 # Remove the duplicate lines
@@ -159,7 +171,9 @@ sudo systemctl reload nginx
 ### MEDIUM PRIORITY
 
 #### 2. Update Main Nginx Config
+
 Edit `/etc/nginx/nginx.conf` line 18:
+
 ```bash
 sudo nano /etc/nginx/nginx.conf
 # Change: # server_tokens off;
@@ -174,6 +188,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ### A. Application-Level Security
 
 #### 1. Implement CAPTCHA on Login
+
 **Why**: Prevent automated brute force attacks  
 **Where**: Login and registration forms  
 **Recommendation**: Google reCAPTCHA v3 (invisible) or hCaptcha
@@ -184,6 +199,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ```
 
 #### 2. Account Lockout Policy
+
 **Why**: Limit brute force attack attempts  
 **Implementation**: After 5 failed login attempts, lock account for 15 minutes
 
@@ -199,20 +215,25 @@ interface LoginAttempt {
 ```
 
 #### 3. Two-Factor Authentication (2FA)
+
 **Why**: Additional layer of security for user accounts  
 **Options**:
+
 - TOTP (Time-based One-Time Password) - Google Authenticator, Authy
 - SMS-based (less secure but more user-friendly)
 - Email-based codes
 
 **Libraries**:
+
 - `speakeasy` for TOTP generation
 - `qrcode` for QR code generation
 
 #### 4. Input Validation & Sanitization
+
 **Current Risk**: SQL injection, XSS attacks
 
 **Recommendations**:
+
 ```typescript
 // Install validation library
 npm install joi express-validator
@@ -235,8 +256,10 @@ router.post('/api/users/update',
 ```
 
 #### 5. Secure Session Management
+
 **Current**: JWT tokens  
 **Enhancements**:
+
 - Implement token rotation
 - Add refresh token expiration
 - Store refresh tokens with device fingerprinting
@@ -255,6 +278,7 @@ expiresAt: Date;
 ### B. Infrastructure Security
 
 #### 6. Firewall Configuration (UFW)
+
 ```bash
 # Install UFW if not already installed
 sudo apt install ufw
@@ -281,6 +305,7 @@ sudo ufw status verbose
 ```
 
 #### 7. Fail2Ban - Automatic IP Blocking
+
 **Why**: Automatically ban IPs after repeated failed attempts
 
 ```bash
@@ -293,6 +318,7 @@ sudo nano /etc/fail2ban/jail.local
 ```
 
 Add configuration:
+
 ```ini
 [DEFAULT]
 bantime = 3600
@@ -328,15 +354,18 @@ sudo fail2ban-client status
 ```
 
 #### 8. SSL/TLS Hardening
+
 Your Let's Encrypt setup is good, but can be improved:
 
 **Test current SSL rating**:
+
 ```bash
 # Visit: https://www.ssllabs.com/ssltest/
 # Enter: cartrackerbooo.mooo.com
 ```
 
 **Improvements**:
+
 ```nginx
 # Add to /etc/nginx/sites-available/default
 # After the include /etc/letsencrypt/options-ssl-nginx.conf; line
@@ -361,16 +390,19 @@ resolver_timeout 5s;
 **Current Risk**: If PostgreSQL is exposed to internet
 
 **Check**:
+
 ```bash
 sudo netstat -tlnp | grep 5432
 ```
 
 **Should show**:
+
 ```
 tcp  0  0  127.0.0.1:5432  0.0.0.0:*  LISTEN  (only localhost)
 ```
 
 **If exposed to 0.0.0.0:5432**, secure it:
+
 ```bash
 sudo nano /etc/postgresql/*/main/postgresql.conf
 # Change: listen_addresses = '*'
@@ -380,6 +412,7 @@ sudo systemctl restart postgresql
 ```
 
 **PostgreSQL authentication**:
+
 ```bash
 sudo nano /etc/postgresql/*/main/pg_hba.conf
 # Ensure:
@@ -390,12 +423,14 @@ host    all             all             ::1/128                 scram-sha-256
 ```
 
 #### 10. Regular Security Updates
+
 ```bash
 # Create update script
 sudo nano /usr/local/bin/security-updates.sh
 ```
 
 Add:
+
 ```bash
 #!/bin/bash
 apt update
@@ -417,6 +452,7 @@ sudo crontab -e
 ### C. Monitoring & Logging
 
 #### 11. Set Up Log Monitoring
+
 ```bash
 # Install logwatch
 sudo apt install logwatch
@@ -426,18 +462,21 @@ sudo nano /etc/cron.daily/00logwatch
 ```
 
 Add:
+
 ```bash
 #!/bin/bash
 /usr/sbin/logwatch --output mail --mailto your-email@example.com --detail high
 ```
 
 #### 12. Monitor Nginx Access Patterns
+
 ```bash
 # Create monitoring script
 nano ~/monitor-attacks.sh
 ```
 
 Add:
+
 ```bash
 #!/bin/bash
 echo "=== Failed Login Attempts ==="
@@ -459,9 +498,11 @@ chmod +x ~/monitor-attacks.sh
 ```
 
 #### 13. Application Error Tracking
+
 **Recommendation**: Integrate error tracking service
 
 **Options**:
+
 - Sentry (free tier available)
 - Rollbar
 - LogRocket
@@ -490,6 +531,7 @@ Sentry.init({
 ### D. Code Security
 
 #### 14. Dependency Scanning
+
 ```bash
 # Frontend
 cd car-tracker-frontend
@@ -503,6 +545,7 @@ npm audit fix
 ```
 
 **Automate**:
+
 ```bash
 # Add to package.json scripts:
 "scripts": {
@@ -511,9 +554,11 @@ npm audit fix
 ```
 
 #### 15. Environment Variables Security
+
 **Current Risk**: Sensitive data in environment variables
 
 **Recommendations**:
+
 ```bash
 # Use secrets management
 # Option 1: HashiCorp Vault
@@ -530,6 +575,7 @@ chmod 600 .env
 ```
 
 #### 16. Code Security Scanner
+
 ```bash
 # Install OWASP Dependency Check
 npm install -g snyk
@@ -551,12 +597,14 @@ snyk monitor
 ### E. Backup & Recovery
 
 #### 17. Automated Database Backups
+
 ```bash
 # Create backup script
 sudo nano /usr/local/bin/backup-database.sh
 ```
 
 Add:
+
 ```bash
 #!/bin/bash
 BACKUP_DIR="/var/backups/postgresql"
@@ -582,9 +630,11 @@ sudo crontab -e
 ```
 
 #### 18. Application Code Backups
+
 **Current**: Using Git (good!)
 
 **Additional**:
+
 - Set up automated GitHub backups to separate location
 - Consider AWS S3 or similar for critical file backups
 
@@ -595,6 +645,7 @@ sudo crontab -e
 ### Security Features Testing
 
 #### Rate Limiting Test
+
 ```bash
 # Test API rate limiting (should get 429 after 10 requests/second)
 for i in {1..20}; do
@@ -604,6 +655,7 @@ done
 ```
 
 #### IP Blocking Test
+
 ```bash
 # Verify blocked IPs can't access (need access to blocked IP to test)
 # Alternative: Check nginx logs after attacks
@@ -611,6 +663,7 @@ grep "403" /var/log/nginx/access.log
 ```
 
 #### Path Blocking Test
+
 ```bash
 # Should return 404
 curl -I https://cartrackerbooo.mooo.com/phpunit
@@ -620,6 +673,7 @@ curl -I https://cartrackerbooo.mooo.com/sonicos
 ```
 
 #### Security Headers Test
+
 ```bash
 # Check headers are present
 curl -I https://cartrackerbooo.mooo.com
@@ -632,6 +686,7 @@ curl -I https://cartrackerbooo.mooo.com
 ```
 
 #### SSL Test
+
 ```bash
 # Test SSL configuration
 openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
@@ -676,6 +731,7 @@ openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
 ## 🎯 Priority Action Plan
 
 ### This Week
+
 1. ✅ Fix nginx SSL duplicate error
 2. ✅ Run database migration
 3. ✅ Test user profile data persistence
@@ -685,6 +741,7 @@ openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
 7. ⬜ Install and configure Fail2Ban
 
 ### Next Week
+
 1. ⬜ Implement CAPTCHA on login
 2. ⬜ Add account lockout policy
 3. ⬜ Set up database backups
@@ -692,6 +749,7 @@ openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
 5. ⬜ Run SSL test and optimize
 
 ### This Month
+
 1. ⬜ Implement 2FA
 2. ⬜ Set up error tracking (Sentry)
 3. ⬜ Implement input validation throughout app
@@ -703,16 +761,19 @@ openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
 ## 📚 Resources
 
 ### Security Best Practices
+
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Nginx Security Best Practices](https://www.nginx.com/blog/mitigating-ddos-attacks-with-nginx-and-nginx-plus/)
 - [Node.js Security Checklist](https://github.com/goldbergyoni/nodebestpractices#6-security-best-practices)
 
 ### Tools
+
 - [SSL Labs Test](https://www.ssllabs.com/ssltest/)
 - [Security Headers Check](https://securityheaders.com/)
 - [Observatory by Mozilla](https://observatory.mozilla.org/)
 
 ### Documentation
+
 - [Let's Encrypt Docs](https://letsencrypt.org/docs/)
 - [Nginx Rate Limiting](https://www.nginx.com/blog/rate-limiting-nginx/)
 - [Fail2Ban Documentation](https://www.fail2ban.org/wiki/index.php/Main_Page)
@@ -724,6 +785,7 @@ openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
 ### If You Detect an Attack
 
 1. **Immediate Actions**:
+
    ```bash
    # Block attacking IP
    sudo nano /etc/nginx/sites-available/default
@@ -732,11 +794,12 @@ openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
    ```
 
 2. **Investigate**:
+
    ```bash
    # Check logs
    tail -f /var/log/nginx/access.log
    tail -f /var/log/nginx/error.log
-   
+
    # Find attack pattern
    grep "<attacking-ip>" /var/log/nginx/access.log
    ```
@@ -756,6 +819,7 @@ openssl s_client -connect cartrackerbooo.mooo.com:443 -tls1_2
 ## 📝 Git Commits Summary
 
 ### Backend Changes
+
 ```
 Commit: 178f21b
 Message: "Add phone and address fields to User model and controller"
@@ -766,6 +830,7 @@ Files:
 ```
 
 ### Frontend Changes
+
 ```
 Commit: 6a314a6
 Message: "Fix dark theme implementation in SettingsTab"

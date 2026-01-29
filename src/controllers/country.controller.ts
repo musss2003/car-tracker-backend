@@ -6,26 +6,26 @@ import { Country } from '../models/country.model';
 export const getCountries = async (req: Request, res: Response) => {
   try {
     const countryRepository = AppDataSource.getRepository(Country);
-    
+
     const countries = await countryRepository.find({
       select: ['id', 'name', 'code', 'flag', 'dialCode'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
 
     // Transform to match frontend interface
-    const transformedCountries = countries.map(country => ({
+    const transformedCountries = countries.map((country) => ({
       name: country.name,
       code: country.code,
       flag: country.flag || `https://flagcdn.com/w20/${country.code.toLowerCase()}.png`,
-      dialCode: country.dialCode || '+0'
+      dialCode: country.dialCode || '+0',
     }));
 
     res.json(transformedCountries);
   } catch (error) {
     console.error('Error fetching countries:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error : 'Something went wrong'
+      error: process.env.NODE_ENV === 'development' ? error : 'Something went wrong',
     });
   }
 };

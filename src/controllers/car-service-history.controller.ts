@@ -5,7 +5,10 @@ import { AuditResource } from '../models/audit-log.model';
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { extractAuditContext, extractPaginationParams } from '../common/utils';
-import { CreateCarServiceHistoryDto, UpdateCarServiceHistoryDto } from '../dto/car-service-history.dto';
+import {
+  CreateCarServiceHistoryDto,
+  UpdateCarServiceHistoryDto,
+} from '../dto/car-service-history.dto';
 
 /**
  * REFACTORED CarServiceHistory Controller
@@ -25,9 +28,7 @@ export const createServiceRecord = asyncHandler(async (req: Request, res: Respon
 
   const record = await carServiceHistoryService.create(data, context);
 
-  res.status(201).json(
-    createSuccessResponse(record, 'Service record created successfully')
-  );
+  res.status(201).json(createSuccessResponse(record, 'Service record created successfully'));
 });
 
 /**
@@ -67,9 +68,7 @@ export const updateServiceRecord = asyncHandler(async (req: Request, res: Respon
 
   const updated = await carServiceHistoryService.update(id, data, context);
 
-  res.json(
-    createSuccessResponse(updated, 'Service record updated successfully')
-  );
+  res.json(createSuccessResponse(updated, 'Service record updated successfully'));
 });
 
 /**

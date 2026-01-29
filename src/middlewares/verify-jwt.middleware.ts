@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { AppDataSource } from "../config/db"; // your PostgreSQL pool
-import User from "../models/user.model";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { AppDataSource } from '../config/db'; // your PostgreSQL pool
+import User from '../models/user.model';
 
 // Extend Express Request interface to include 'user'
 declare global {
@@ -12,24 +12,17 @@ declare global {
   }
 }
 
-const authenticate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader?.split(" ")[1]; // Bearer <token>
+    const token = authHeader?.split(' ')[1]; // Bearer <token>
 
     if (!token) {
-      res.status(401).json({ message: "Authentication token not found" });
+      res.status(401).json({ message: 'Authentication token not found' });
       return;
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.ACCESS_TOKEN_SECRET || ""
-    ) as { id: string };
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || '') as { id: string };
 
     // Query user from PostgreSQL
 
@@ -38,7 +31,7 @@ const authenticate = async (
     const user = await userRepository.findOneBy({ id: decoded.id });
 
     if (!user) {
-      res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: 'User not found' });
       return;
     }
 
@@ -47,12 +40,12 @@ const authenticate = async (
     next();
   } catch (error: any) {
     if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({ message: "Invalid token" });
+      res.status(401).json({ message: 'Invalid token' });
     } else if (error instanceof jwt.TokenExpiredError) {
-      res.status(401).json({ message: "Token has expired" });
+      res.status(401).json({ message: 'Token has expired' });
     } else {
-      console.error("Auth middleware error:", error);
-      res.status(500).json({ message: "Failed to authenticate" });
+      console.error('Auth middleware error:', error);
+      res.status(500).json({ message: 'Failed to authenticate' });
     }
   }
 };

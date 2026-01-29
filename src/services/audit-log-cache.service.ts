@@ -1,6 +1,6 @@
-import { AppDataSource } from "../config/db";
-import { AuditLog, AuditAction, AuditResource, AuditStatus } from "../models/audit-log.model";
-import { Between, FindOptionsWhere } from "typeorm";
+import { AppDataSource } from '../config/db';
+import { AuditLog, AuditAction, AuditResource, AuditStatus } from '../models/audit-log.model';
+import { Between, FindOptionsWhere } from 'typeorm';
 
 interface AuditLogFilters {
   userId?: string;
@@ -21,26 +21,26 @@ export class AuditLogCacheService {
    * Get audit logs with filtering and pagination
    */
   async getLogs(filters: AuditLogFilters) {
-    const { 
-      userId, 
-      action, 
-      resource, 
-      resourceId, 
-      status, 
-      startDate, 
+    const {
+      userId,
+      action,
+      resource,
+      resourceId,
+      status,
+      startDate,
       endDate,
       page = 1,
-      limit = 50 
+      limit = 50,
     } = filters;
 
     const where: FindOptionsWhere<AuditLog> = {};
-    
+
     if (userId) where.userId = userId;
     if (action) where.action = action;
     if (resource) where.resource = resource;
     if (resourceId) where.resourceId = resourceId;
     if (status) where.status = status;
-    
+
     if (startDate && endDate) {
       where.createdAt = Between(startDate, endDate);
     } else if (startDate) {
@@ -88,24 +88,20 @@ export class AuditLogCacheService {
    */
   async getAuditStatistics(startDate?: Date, endDate?: Date) {
     const where: FindOptionsWhere<AuditLog> = {};
-    
+
     if (startDate && endDate) {
       where.createdAt = Between(startDate, endDate);
     }
 
-    const [
-      totalLogs,
-      successCount,
-      failureCount,
-      actionCounts,
-      resourceCounts
-    ] = await Promise.all([
-      this.auditLogRepository.count({ where }),
-      this.auditLogRepository.count({ where: { ...where, status: AuditStatus.SUCCESS } }),
-      this.auditLogRepository.count({ where: { ...where, status: AuditStatus.FAILURE } }),
-      this.getActionCounts(startDate, endDate),
-      this.getResourceCounts(startDate, endDate),
-    ]);
+    const [totalLogs, successCount, failureCount, actionCounts, resourceCounts] = await Promise.all(
+      [
+        this.auditLogRepository.count({ where }),
+        this.auditLogRepository.count({ where: { ...where, status: AuditStatus.SUCCESS } }),
+        this.auditLogRepository.count({ where: { ...where, status: AuditStatus.FAILURE } }),
+        this.getActionCounts(startDate, endDate),
+        this.getResourceCounts(startDate, endDate),
+      ]
+    );
 
     return {
       total: totalLogs,

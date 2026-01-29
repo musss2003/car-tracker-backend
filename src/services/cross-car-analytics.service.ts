@@ -50,7 +50,7 @@ export class CrossCarAnalyticsService {
     const issueRepo = AppDataSource.getRepository(CarIssueReport);
 
     // Get all cars for the user (if userId provided)
-    const cars = userId 
+    const cars = userId
       ? await carRepo.find({ where: { createdById: userId } })
       : await carRepo.find();
 

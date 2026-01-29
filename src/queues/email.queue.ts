@@ -66,9 +66,11 @@ const emailWorker = new Worker<EmailJobData>(
     const startTime = Date.now();
     const jobType = job.data.type;
     const recipient = job.data.to;
-    
+
     // ✅ Sanitize logging (don't log sensitive data)
-    console.log(`📧 Processing email job ${job.id} of type ${jobType} to ${recipient.replace(/(.{3}).*(@.*)/, '$1***$2')}`);
+    console.log(
+      `📧 Processing email job ${job.id} of type ${jobType} to ${recipient.replace(/(.{3}).*(@.*)/, '$1***$2')}`
+    );
 
     try {
       // ✅ Validate job data before processing
@@ -101,27 +103,29 @@ const emailWorker = new Worker<EmailJobData>(
 
       const duration = Date.now() - startTime;
       console.log(`✅ Email job ${job.id} completed in ${duration}ms`);
-      
+
       // ✅ Update job progress
       await job.updateProgress(100);
-      
+
       return { success: true, duration };
     } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
+
       // ✅ Security: Don't log sensitive data in production
       if (isProd) {
         console.error(`❌ Email job ${job.id} failed after ${duration}ms: ${errorMessage}`);
       } else {
         console.error(`❌ Email job ${job.id} failed:`, error);
       }
-      
+
       // ✅ Track failed attempts
       if (job.attemptsMade >= 2) {
-        console.warn(`⚠️  Email job ${job.id} failing repeatedly (attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
+        console.warn(
+          `⚠️  Email job ${job.id} failing repeatedly (attempt ${job.attemptsMade + 1}/${job.opts.attempts})`
+        );
       }
-      
+
       throw error; // Rethrow to trigger retry
     }
   },
@@ -142,7 +146,7 @@ const emailWorker = new Worker<EmailJobData>(
 // ✅ Worker error handlers
 emailWorker.on('error', (error) => {
   const errorMessage = error.message || String(error);
-  
+
   // ✅ Suppress Redis timeout spam in production
   if (errorMessage.includes('Command timed out')) {
     if (process.env.NODE_ENV !== 'production') {
@@ -151,13 +155,16 @@ emailWorker.on('error', (error) => {
     // Don't log in production - these are handled by BullMQ retry logic
     return;
   }
-  
+
   console.error('❌ Email worker error:', errorMessage);
 });
 
 emailWorker.on('failed', (job, error) => {
   if (job) {
-    console.error(`❌ Email job ${job.id} failed permanently after ${job.attemptsMade} attempts:`, error.message);
+    console.error(
+      `❌ Email job ${job.id} failed permanently after ${job.attemptsMade} attempts:`,
+      error.message
+    );
   }
 });
 
@@ -203,7 +210,7 @@ export async function queueCredentialsEmail(
   if (!to || !to.includes('@')) {
     throw new Error('Invalid email address');
   }
-  
+
   if (!username || !password) {
     throw new Error('Username and password are required');
   }
@@ -245,7 +252,7 @@ export async function queuePasswordResetEmail(
   if (!to || !to.includes('@')) {
     throw new Error('Invalid email address');
   }
-  
+
   if (!username || !newPassword) {
     throw new Error('Username and new password are required');
   }
@@ -345,22 +352,22 @@ export async function cleanEmailQueue(): Promise<void> {
  */
 export async function closeEmailQueue(): Promise<void> {
   console.log('⏳ Closing email queue...');
-  
+
   try {
     // Close worker first (stop processing new jobs)
     await Promise.race([
       emailWorker.close(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Worker close timeout')), 5000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Worker close timeout')), 5000)),
     ]);
     console.log('✅ Email worker closed');
-    
+
     // Close queue
     await Promise.race([
       emailQueue.close(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Queue close timeout')), 5000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Queue close timeout')), 5000)),
     ]);
     console.log('✅ Email queue closed');
-    
+
     // Close events
     await queueEvents.close();
     console.log('✅ Email queue events closed');

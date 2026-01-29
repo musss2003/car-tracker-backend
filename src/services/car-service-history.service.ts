@@ -2,9 +2,14 @@ import CarServiceHistory from '../models/car-service-history.model';
 import Car from '../models/car.model';
 import { BaseService } from '../common/services/base.service';
 import { AuditResource } from '../models/audit-log.model';
-import carServiceHistoryRepository, { CarServiceHistoryRepository } from '../repositories/car-service-history.repository';
+import carServiceHistoryRepository, {
+  CarServiceHistoryRepository,
+} from '../repositories/car-service-history.repository';
 import { AppDataSource } from '../config/db';
-import { CreateCarServiceHistoryDto, UpdateCarServiceHistoryDto } from '../dto/car-service-history.dto';
+import {
+  CreateCarServiceHistoryDto,
+  UpdateCarServiceHistoryDto,
+} from '../dto/car-service-history.dto';
 import { NotFoundError, ValidationError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
@@ -25,7 +30,10 @@ export class CarServiceHistoryService extends BaseService<
   /**
    * Create a new service history record with validation
    */
-  async create(data: CreateCarServiceHistoryDto, context?: AuditContext): Promise<CarServiceHistory> {
+  async create(
+    data: CreateCarServiceHistoryDto,
+    context?: AuditContext
+  ): Promise<CarServiceHistory> {
     // Verify car exists
     const car = await this.carRepository.findOne({ where: { id: data.carId } });
     if (!car) {
@@ -88,7 +96,7 @@ export class CarServiceHistoryService extends BaseService<
    */
   protected getUpdateDescription(before: CarServiceHistory, after: CarServiceHistory): string {
     const changes: string[] = [];
-    
+
     if (before.serviceType !== after.serviceType) {
       changes.push(`type: ${before.serviceType} → ${after.serviceType}`);
     }
@@ -132,7 +140,7 @@ export class CarServiceHistoryService extends BaseService<
 
     // Filter services that have nextServiceKm set and are in the future (nextServiceKm > current mileage)
     const upcomingServices = allServices
-      .filter(service => service.nextServiceKm && service.nextServiceKm > currentMileage)
+      .filter((service) => service.nextServiceKm && service.nextServiceKm > currentMileage)
       .sort((a, b) => a.nextServiceKm! - b.nextServiceKm!); // Sort ascending by nextServiceKm
 
     // If no upcoming services, return 0

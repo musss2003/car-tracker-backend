@@ -14,7 +14,7 @@ import {
   getCustomersByCountry,
   getCustomersByCity,
   getRecentCustomers,
-  getCustomerContracts
+  getCustomerContracts,
 } from '../controllers/customer.controller';
 import authenticate from '../middlewares/verify-jwt.middleware';
 

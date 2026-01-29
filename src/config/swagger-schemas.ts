@@ -1,9 +1,9 @@
 /**
  * OpenAPI/Swagger Schema Definitions
- * 
+ *
  * Centralized location for all API request/response schemas.
  * These schemas are automatically referenced in Swagger documentation.
- * 
+ *
  * Usage in route files:
  * $ref: '#/components/schemas/CreateCustomerDto'
  */
@@ -17,7 +17,7 @@ export const swaggerSchemas = {
       message: { type: 'string', description: 'Detailed error description' },
     },
   },
-  
+
   SuccessResponse: {
     type: 'object',
     properties: {
@@ -46,7 +46,7 @@ export const swaggerSchemas = {
       passportPhotoUrl: { type: 'string' },
     },
   },
-  
+
   UpdateCustomerDto: {
     type: 'object',
     properties: {
@@ -68,7 +68,15 @@ export const swaggerSchemas = {
   // ==================== CONTRACT SCHEMAS ====================
   CreateContractDto: {
     type: 'object',
-    required: ['customerId', 'carId', 'startDate', 'endDate', 'dailyRate', 'totalAmount', 'photoUrl'],
+    required: [
+      'customerId',
+      'carId',
+      'startDate',
+      'endDate',
+      'dailyRate',
+      'totalAmount',
+      'photoUrl',
+    ],
     properties: {
       customerId: { type: 'string', format: 'uuid' },
       carId: { type: 'string', format: 'uuid' },
@@ -80,7 +88,7 @@ export const swaggerSchemas = {
       photoUrl: { type: 'string' },
     },
   },
-  
+
   UpdateContractDto: {
     type: 'object',
     properties: {
@@ -112,7 +120,7 @@ export const swaggerSchemas = {
       role: { type: 'string', enum: ['admin', 'employee', 'viewer'] },
     },
   },
-  
+
   UpdateUserDto: {
     type: 'object',
     properties: {
@@ -125,7 +133,7 @@ export const swaggerSchemas = {
       address: { type: 'string' },
     },
   },
-  
+
   ChangePasswordDto: {
     type: 'object',
     required: ['currentPassword', 'newPassword'],
@@ -138,7 +146,15 @@ export const swaggerSchemas = {
   // ==================== CAR SCHEMAS ====================
   CreateCarDto: {
     type: 'object',
-    required: ['manufacturer', 'model', 'year', 'licensePlate', 'fuelType', 'transmission', 'pricePerDay'],
+    required: [
+      'manufacturer',
+      'model',
+      'year',
+      'licensePlate',
+      'fuelType',
+      'transmission',
+      'pricePerDay',
+    ],
     properties: {
       manufacturer: { type: 'string' },
       model: { type: 'string' },
@@ -153,13 +169,16 @@ export const swaggerSchemas = {
       doors: { type: 'number' },
       mileage: { type: 'number' },
       enginePower: { type: 'number' },
-      category: { type: 'string', enum: ['economy', 'standard', 'premium', 'luxury', 'suv', 'van'] },
+      category: {
+        type: 'string',
+        enum: ['economy', 'standard', 'premium', 'luxury', 'suv', 'van'],
+      },
       status: { type: 'string', enum: ['available', 'rented', 'maintenance', 'unavailable'] },
       currentLocation: { type: 'string' },
       photoUrl: { type: 'string' },
     },
   },
-  
+
   UpdateCarDto: {
     type: 'object',
     properties: {
@@ -175,13 +194,16 @@ export const swaggerSchemas = {
       mileage: { type: 'number' },
       enginePower: { type: 'number' },
       pricePerDay: { type: 'number' },
-      category: { type: 'string', enum: ['economy', 'standard', 'premium', 'luxury', 'suv', 'van'] },
+      category: {
+        type: 'string',
+        enum: ['economy', 'standard', 'premium', 'luxury', 'suv', 'van'],
+      },
       status: { type: 'string', enum: ['available', 'rented', 'maintenance', 'unavailable'] },
       currentLocation: { type: 'string' },
       photoUrl: { type: 'string' },
     },
   },
-  
+
   CarAvailabilityDto: {
     type: 'object',
     required: ['startDate', 'endDate'],
@@ -203,7 +225,7 @@ export const swaggerSchemas = {
       price: { type: 'number' },
     },
   },
-  
+
   UpdateCarInsuranceDto: {
     type: 'object',
     properties: {
@@ -225,7 +247,7 @@ export const swaggerSchemas = {
       notes: { type: 'string' },
     },
   },
-  
+
   UpdateCarRegistrationDto: {
     type: 'object',
     properties: {
@@ -250,7 +272,7 @@ export const swaggerSchemas = {
       cost: { type: 'number' },
     },
   },
-  
+
   UpdateCarServiceHistoryDto: {
     type: 'object',
     properties: {
@@ -277,7 +299,7 @@ export const swaggerSchemas = {
       status: { type: 'string', enum: ['open', 'in_progress', 'resolved'] },
     },
   },
-  
+
   UpdateCarIssueReportDto: {
     type: 'object',
     properties: {
@@ -302,7 +324,7 @@ export const swaggerSchemas = {
       message: { type: 'string', maxLength: 500 },
     },
   },
-  
+
   UpdateNotificationDto: {
     type: 'object',
     properties: {

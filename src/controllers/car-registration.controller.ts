@@ -21,9 +21,7 @@ export const createCarRegistration = asyncHandler(async (req: Request, res: Resp
 
   const record = await carRegistrationService.create(data, context);
 
-  res.status(201).json(
-    createSuccessResponse(record, 'Registration record created successfully')
-  );
+  res.status(201).json(createSuccessResponse(record, 'Registration record created successfully'));
 });
 
 /**
@@ -63,9 +61,7 @@ export const updateCarRegistration = asyncHandler(async (req: Request, res: Resp
 
   const updated = await carRegistrationService.update(id, data, context);
 
-  res.json(
-    createSuccessResponse(updated, 'Registration record updated successfully')
-  );
+  res.json(createSuccessResponse(updated, 'Registration record updated successfully'));
 });
 
 /**

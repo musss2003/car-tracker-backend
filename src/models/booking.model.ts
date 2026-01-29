@@ -7,18 +7,18 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
-} from "typeorm";
-import { Customer } from "./customer.model";
-import { Car } from "./car.model";
-import { User } from "./user.model";
-import { Contract } from "./contract.model";
+} from 'typeorm';
+import { Customer } from './customer.model';
+import { Car } from './car.model';
+import { User } from './user.model';
+import { Contract } from './contract.model';
 
 export enum BookingStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
   CANCELLED = 'cancelled',
   CONVERTED = 'converted',
-  EXPIRED = 'expired'
+  EXPIRED = 'expired',
 }
 
 export enum BookingExtraType {
@@ -27,7 +27,7 @@ export enum BookingExtraType {
   ADDITIONAL_DRIVER = 'additional_driver',
   INSURANCE_UPGRADE = 'insurance_upgrade',
   WIFI = 'wifi',
-  ROOF_RACK = 'roof_rack'
+  ROOF_RACK = 'roof_rack',
 }
 
 export interface IBookingExtra {
@@ -41,11 +41,11 @@ export interface IBookingExtra {
  */
 const decimalTransformer = {
   to: (value: number | null | undefined): number | null | undefined => value,
-  from: (value: string | null | undefined): number | null | undefined => 
-    value != null ? parseFloat(value) : value
+  from: (value: string | null | undefined): number | null | undefined =>
+    value != null ? parseFloat(value) : value,
 };
 
-@Entity("bookings")
+@Entity('bookings')
 @Index(['customerId']) // Index for customer's bookings
 @Index(['carId']) // Index for car's bookings
 @Index(['status']) // Index for status queries
@@ -57,128 +57,128 @@ const decimalTransformer = {
 @Index(['carId', 'startDate', 'endDate']) // Composite index for car availability
 @Index(['status', 'expiresAt']) // Composite index for expiration queries
 export class Booking {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   // Booking Reference (auto-generated unique identifier)
-  @Column({ name: "booking_reference", unique: true, length: 50 })
+  @Column({ name: 'booking_reference', unique: true, length: 50 })
   bookingReference: string;
 
   // Relationship with Customer (cannot be deleted)
-  @Column({ name: "customer_id" })
+  @Column({ name: 'customer_id' })
   customerId: string;
 
-  @ManyToOne(() => Customer, { eager: true, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "customer_id" })
+  @ManyToOne(() => Customer, { eager: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
   // Relationship with Car (cannot be deleted)
-  @Column({ name: "car_id" })
+  @Column({ name: 'car_id' })
   carId: string;
 
-  @ManyToOne(() => Car, { eager: true, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "car_id" })
+  @ManyToOne(() => Car, { eager: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'car_id' })
   car: Car;
 
   // Rental Period
-  @Column({ name: "start_date", type: "date" })
+  @Column({ name: 'start_date', type: 'date' })
   startDate: Date;
 
-  @Column({ name: "end_date", type: "date" })
+  @Column({ name: 'end_date', type: 'date' })
   endDate: Date;
 
   // Status
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: BookingStatus,
-    default: BookingStatus.PENDING
+    default: BookingStatus.PENDING,
   })
   status: BookingStatus;
 
   // Pricing with decimal transformers
   @Column({
-    name: "total_estimated_cost",
-    type: "decimal",
+    name: 'total_estimated_cost',
+    type: 'decimal',
     precision: 10,
     scale: 2,
-    transformer: decimalTransformer
+    transformer: decimalTransformer,
   })
   totalEstimatedCost: number;
 
   @Column({
-    name: "deposit_amount",
-    type: "decimal",
+    name: 'deposit_amount',
+    type: 'decimal',
     precision: 10,
     scale: 2,
     default: 0,
-    transformer: decimalTransformer
+    transformer: decimalTransformer,
   })
   depositAmount: number;
 
-  @Column({ name: "deposit_paid", type: "boolean", default: false })
+  @Column({ name: 'deposit_paid', type: 'boolean', default: false })
   depositPaid: boolean;
 
   // Locations
-  @Column({ name: "pickup_location", type: "varchar", length: 255, nullable: true })
+  @Column({ name: 'pickup_location', type: 'varchar', length: 255, nullable: true })
   pickupLocation?: string;
 
-  @Column({ name: "dropoff_location", type: "varchar", length: 255, nullable: true })
+  @Column({ name: 'dropoff_location', type: 'varchar', length: 255, nullable: true })
   dropoffLocation?: string;
 
   // Additional drivers (stored as JSON array)
-  @Column({ name: "additional_drivers", type: "json", nullable: true })
+  @Column({ name: 'additional_drivers', type: 'json', nullable: true })
   additionalDrivers?: string[];
 
   // Extras (stored as JSON)
-  @Column({ name: "extras", type: "json", nullable: true })
+  @Column({ name: 'extras', type: 'json', nullable: true })
   extras?: IBookingExtra[];
 
   // Notes
-  @Column({ name: "notes", type: "text", nullable: true })
+  @Column({ name: 'notes', type: 'text', nullable: true })
   notes?: string;
 
   // Expiration
-  @Column({ name: "expires_at", type: "timestamp" })
+  @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt: Date;
 
   // Cancellation
-  @Column({ name: "cancelled_at", type: "timestamp", nullable: true })
+  @Column({ name: 'cancelled_at', type: 'timestamp', nullable: true })
   cancelledAt?: Date;
 
-  @Column({ name: "cancellation_reason", type: "text", nullable: true })
+  @Column({ name: 'cancellation_reason', type: 'text', nullable: true })
   cancellationReason?: string;
 
   // Conversion to Contract
-  @Column({ name: "converted_to_contract_id", nullable: true })
+  @Column({ name: 'converted_to_contract_id', nullable: true })
   convertedToContractId?: string;
 
   @ManyToOne(() => Contract, { eager: false, nullable: true })
-  @JoinColumn({ name: "converted_to_contract_id" })
+  @JoinColumn({ name: 'converted_to_contract_id' })
   convertedToContract?: Contract;
 
-  @Column({ name: "converted_at", type: "timestamp", nullable: true })
+  @Column({ name: 'converted_at', type: 'timestamp', nullable: true })
   convertedAt?: Date;
 
   // User who created the booking
-  @Column({ name: "created_by" })
+  @Column({ name: 'created_by' })
   createdById: string;
 
   @ManyToOne(() => User, { eager: true })
-  @JoinColumn({ name: "created_by" })
+  @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   // User who last updated the booking
-  @Column({ name: "updated_by", nullable: true })
+  @Column({ name: 'updated_by', nullable: true })
   updatedById?: string;
 
   @ManyToOne(() => User, { eager: true, nullable: true })
-  @JoinColumn({ name: "updated_by" })
+  @JoinColumn({ name: 'updated_by' })
   updatedBy?: User;
 
-  @UpdateDateColumn({ name: "updated_at", nullable: true })
+  @UpdateDateColumn({ name: 'updated_at', nullable: true })
   updatedAt?: Date;
 }
 

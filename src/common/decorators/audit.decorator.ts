@@ -25,11 +25,7 @@ export interface AuditOptions {
  * })
  */
 export function Audit(options: AuditOptions) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
@@ -83,9 +79,7 @@ export function Audit(options: AuditOptions) {
           resource: options.resource,
           resourceId,
           description,
-          changes: options.includeChanges
-            ? { before: beforeData, after: afterData }
-            : undefined,
+          changes: options.includeChanges ? { before: beforeData, after: afterData } : undefined,
         });
 
         return result;
