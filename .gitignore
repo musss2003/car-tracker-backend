@@ -32,3 +32,4 @@ yarn-error.log*
 rescue-key
 rescue-key.pub
 car-tracker.pem
+logs/

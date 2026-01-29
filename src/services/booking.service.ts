@@ -14,7 +14,9 @@ import {
   NotFoundError,
   ConflictError,
   BadRequestError,
+  BusinessRuleError,
 } from "../common/errors/app-error";
+import logger from "../config/logger";
 
 // Import types - actual instances injected via constructor or imported at use
 import type { Car } from "../models/car.model";
@@ -38,27 +40,37 @@ export class BookingService extends BaseService<
   CreateBookingDto,
   UpdateBookingDto
 > {
-  private carRepository: any;
-  private customerRepository: any;
-  private contractService: any;
+  private carRepository: {
+    findById: (id: string) => Promise<Car | null>;
+  } | null = null;
+
+  private customerRepository: {
+    findById: (id: string) => Promise<Customer | null>;
+  } | null = null;
+
+  private contractService: {
+    create: (data: any, context: AuditContext) => Promise<Contract>;
+  } | null = null;
 
   constructor(
     private bookingRepo: BookingRepository,
-    carRepo?: any,
-    customerRepo?: any,
-    contractSvc?: any,
+    carRepo?: { findById: (id: string) => Promise<Car | null> },
+    customerRepo?: { findById: (id: string) => Promise<Customer | null> },
+    contractSvc?: {
+      create: (data: any, context: AuditContext) => Promise<Contract>;
+    },
   ) {
     super(bookingRepo, AuditResource.BOOKING);
     // Allow dependency injection or use dynamic imports
-    this.carRepository = carRepo;
-    this.customerRepository = customerRepo;
-    this.contractService = contractSvc;
+    this.carRepository = carRepo || null;
+    this.customerRepository = customerRepo || null;
+    this.contractService = contractSvc || null;
   }
 
   /**
    * Lazy load dependencies
    */
-  private async loadDependencies() {
+  private async loadDependencies(): Promise<void> {
     if (!this.carRepository) {
       const { default: carRepo } =
         await import("../repositories/car.repository");
@@ -94,13 +106,13 @@ export class BookingService extends BaseService<
     await this.loadDependencies();
 
     // 1. Validate customer exists
-    const customer = await this.customerRepository.findById(data.customerId);
+    const customer = await this.customerRepository!.findById(data.customerId);
     if (!customer) {
       throw new NotFoundError("Customer not found");
     }
 
     // 2. Validate car exists and is active
-    const car = await this.carRepository.findById(data.carId);
+    const car = await this.carRepository!.findById(data.carId);
     if (!car) {
       throw new NotFoundError("Car not found");
     }
@@ -108,9 +120,17 @@ export class BookingService extends BaseService<
       throw new BadRequestError(`Car is not available (status: ${car.status})`);
     }
 
-    // 3. Validate dates
+    // 3. Parse and validate dates
     const startDate = new Date(data.startDate);
     const endDate = new Date(data.endDate);
+
+    // Check for Invalid Date
+    if (isNaN(startDate.getTime())) {
+      throw new ValidationError("Invalid start date format");
+    }
+    if (isNaN(endDate.getTime())) {
+      throw new ValidationError("Invalid end date format");
+    }
 
     this.validateDates(startDate, endDate);
 
@@ -222,12 +242,27 @@ export class BookingService extends BaseService<
 
     // If dates are being updated, recheck availability and recalculate cost
     if (data.startDate || data.endDate) {
-      const startDate = data.startDate
-        ? new Date(data.startDate)
-        : existingBooking.startDate;
-      const endDate = data.endDate
-        ? new Date(data.endDate)
-        : existingBooking.endDate;
+      // Parse and validate new dates
+      let startDate: Date;
+      let endDate: Date;
+
+      if (data.startDate) {
+        startDate = new Date(data.startDate);
+        if (isNaN(startDate.getTime())) {
+          throw new ValidationError("Invalid start date format");
+        }
+      } else {
+        startDate = existingBooking.startDate;
+      }
+
+      if (data.endDate) {
+        endDate = new Date(data.endDate);
+        if (isNaN(endDate.getTime())) {
+          throw new ValidationError("Invalid end date format");
+        }
+      } else {
+        endDate = existingBooking.endDate;
+      }
 
       this.validateDates(startDate, endDate);
 
@@ -244,14 +279,14 @@ export class BookingService extends BaseService<
 
       // Convert string dates to Date objects
       if (data.startDate) {
-        updateData.startDate = new Date(data.startDate);
+        updateData.startDate = startDate;
       }
       if (data.endDate) {
-        updateData.endDate = new Date(data.endDate);
+        updateData.endDate = endDate;
       }
 
       // Recalculate cost if dates changed
-      const car = await this.carRepository.findById(existingBooking.carId);
+      const car = await this.carRepository!.findById(existingBooking.carId);
       if (car) {
         const newBaseCost = this.calculateEstimatedCost(
           car.pricePerDay,
@@ -306,40 +341,27 @@ export class BookingService extends BaseService<
    * - Optionally require deposit payment
    * - Changes status to CONFIRMED
    */
-  async confirmBooking(
-    id: string,
-    context: AuditContext,
-    requireDeposit: boolean = false,
-  ): Promise<Booking> {
+  async confirmBooking(id: string, context: AuditContext): Promise<Booking> {
     const booking = await this.getById(id);
 
-    // Validate status
     if (booking.status !== BookingStatus.PENDING) {
-      throw new BadRequestError(
+      // ✅ Log business rule violation
+      logger.warn("Attempted to confirm non-pending booking", {
+        bookingId: id,
+        currentStatus: booking.status,
+        userId: context.userId,
+      });
+      throw new BusinessRuleError(
         `Cannot confirm booking with status: ${booking.status}`,
       );
     }
 
-    // Check if deposit is required
-    if (requireDeposit && !booking.depositPaid) {
-      throw new BadRequestError("Deposit must be paid before confirmation");
-    }
+    logger.info("Confirming booking", {
+      bookingId: id,
+      userId: context.userId,
+    });
 
-    // Check if booking hasn't expired
-    if (new Date() > booking.expiresAt) {
-      throw new BadRequestError("Booking has expired and cannot be confirmed");
-    }
-
-    // Update status
-    const updated = await this.update(
-      id,
-      {
-        status: BookingStatus.CONFIRMED,
-      },
-      context,
-    );
-
-    return updated;
+    return await this.update(id, { status: BookingStatus.CONFIRMED }, context);
   }
 
   /**
@@ -366,10 +388,10 @@ export class BookingService extends BaseService<
 
     // Validate status
     if (booking.status === BookingStatus.CANCELLED) {
-      throw new BadRequestError("Booking is already cancelled");
+      throw new BusinessRuleError("Booking is already cancelled");
     }
     if (booking.status === BookingStatus.CONVERTED) {
-      throw new BadRequestError(
+      throw new BusinessRuleError(
         "Cannot cancel a booking that has been converted to a contract",
       );
     }
@@ -405,21 +427,28 @@ export class BookingService extends BaseService<
 
     // Validate status
     if (booking.status !== BookingStatus.CONFIRMED) {
-      throw new BadRequestError(
+      throw new BusinessRuleError(
         `Cannot convert booking with status: ${booking.status}`,
       );
     }
 
     // Validate deposit is paid
     if (!booking.depositPaid) {
-      throw new BadRequestError(
+      throw new BusinessRuleError(
         "Deposit must be paid before converting to contract",
       );
     }
 
     // Validate booking hasn't expired
     if (new Date() > booking.expiresAt) {
-      throw new BadRequestError("Booking has expired and cannot be converted");
+      throw new BusinessRuleError(
+        "Booking has expired and cannot be converted",
+      );
+    }
+
+    // Ensure contractService is loaded
+    if (!this.contractService) {
+      throw new Error("Contract service is not available");
     }
 
     // Create contract from booking
@@ -460,28 +489,66 @@ export class BookingService extends BaseService<
    * - Only affects PENDING or CONFIRMED bookings
    * - Changes status to EXPIRED
    * - Frees up car availability
+   *
+   * Uses bulk update for better performance
    */
-  async expireBookings(): Promise<{ expired: number; bookings: Booking[] }> {
+  async expireBookings(): Promise<{
+    expired: number;
+    bookings: Booking[];
+    failed: number;
+  }> {
     const expiredBookings = await this.bookingRepo.findExpiredBookings();
 
-    const results = [];
-    for (const booking of expiredBookings) {
-      try {
-        const updated = await this.bookingRepo.update(booking.id, {
-          status: BookingStatus.EXPIRED,
-          updatedById: "system",
-        });
-
-        results.push(updated);
-      } catch (error) {
-        console.error(`Failed to expire booking ${booking.id}:`, error);
-      }
+    if (expiredBookings.length === 0) {
+      logger.debug("No expired bookings found");
+      return { expired: 0, bookings: [], failed: 0 };
     }
 
-    return {
-      expired: results.length,
-      bookings: results,
-    };
+    const bookingIds = expiredBookings.map((b) => b.id);
+
+    logger.info("Starting bulk expiration of bookings", {
+      count: bookingIds.length,
+      bookingIds: bookingIds.slice(0, 10),
+    });
+
+    try {
+      const affectedCount = await this.bookingRepo.bulkUpdateStatus(
+        bookingIds,
+        BookingStatus.EXPIRED,
+        "system",
+      );
+
+      const updatedBookings = await Promise.all(
+        bookingIds.map((id) => this.bookingRepo.findById(id)),
+      );
+
+      const results = updatedBookings.filter((b): b is Booking => b !== null);
+
+      // ✅ Log success
+      logger.info("Successfully expired bookings", {
+        expired: affectedCount,
+        requested: bookingIds.length,
+      });
+
+      return {
+        expired: affectedCount,
+        bookings: results,
+        failed: 0,
+      };
+    } catch (error) {
+      // ✅ Log error with context
+      logger.error("Failed to expire bookings in bulk", {
+        count: bookingIds.length,
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      return {
+        expired: 0,
+        bookings: [],
+        failed: bookingIds.length,
+      };
+    }
   }
 
   /**
@@ -494,7 +561,7 @@ export class BookingService extends BaseService<
       booking.status !== BookingStatus.PENDING &&
       booking.status !== BookingStatus.CONFIRMED
     ) {
-      throw new BadRequestError(
+      throw new BusinessRuleError(
         `Cannot expire booking with status: ${booking.status}`,
       );
     }
@@ -534,10 +601,24 @@ export class BookingService extends BaseService<
   /**
    * Generate unique booking reference
    * Format: BKG-YYYY-NNNNN (e.g., BKG-2026-00001)
+   *
+   * Counts bookings created in current year to prevent race conditions
+   * and ensure unique, sequential references per year
    */
   private async generateBookingReference(): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await this.bookingRepo.count();
+
+    // Count only bookings created this year to prevent race conditions
+    const yearStartDate = new Date(year, 0, 1);
+    const yearEndDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    const count = await this.bookingRepo.count({
+      createdAt: {
+        $gte: yearStartDate,
+        $lte: yearEndDate,
+      },
+    } as any);
+
     const sequence = String(count + 1).padStart(5, "0");
     return `BKG-${year}-${sequence}`;
   }
@@ -610,7 +691,7 @@ export class BookingService extends BaseService<
     };
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
-      throw new BadRequestError(
+      throw new BusinessRuleError(
         `Invalid status transition from ${currentStatus} to ${newStatus}`,
       );
     }
