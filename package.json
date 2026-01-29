@@ -11,7 +11,10 @@
     "swagger": "ts-node swagger-only.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .ts --max-warnings 0",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "Mustafa Sinanovic",
@@ -35,7 +38,10 @@
     "@types/nodemailer": "^7.0.3",
     "@types/pg": "^8.15.5",
     "@types/winston": "^2.4.4",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
     "dotenv": "^16.4.7",
+    "eslint": "^9.39.2",
     "express-list-endpoints": "^7.1.0",
     "jest": "^30.2.0",
     "mongoose": "^8.10.0",
