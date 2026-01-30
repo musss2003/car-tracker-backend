@@ -312,7 +312,7 @@ export const getAPIDocs = (app: Application) => (req: Request, res: Response) =>
   };
 
   // Response format mappings with basic data types
-  const responseFormats: Record<string, any> = {
+  const _responseFormats: Record<string, any> = {
     // Standard API Response
     standard: {
       success: 'boolean',

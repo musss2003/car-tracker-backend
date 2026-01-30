@@ -191,13 +191,16 @@ describe('Winston Logger Tests', () => {
 
   describe('Production Readiness', () => {
     it('should have log files with reasonable size', () => {
-      if (fs.existsSync(combinedLogPath)) {
-        const stats = fs.statSync(combinedLogPath);
-        // Should have written some logs
-        expect(stats.size).toBeGreaterThan(0);
-        // Should not be too large (< 5MB configured max)
-        expect(stats.size).toBeLessThan(5242880);
-      }
+      // Ensure file exists
+      expect(fs.existsSync(combinedLogPath)).toBe(true);
+
+      const stats = fs.statSync(combinedLogPath);
+
+      // Should have written some logs
+      expect(stats.size).toBeGreaterThan(0);
+
+      // Should not be too large (< 5MB configured max)
+      expect(stats.size).toBeLessThan(5242880);
     });
 
     it('should create valid JSON for all log entries', async () => {
@@ -206,11 +209,17 @@ describe('Winston Logger Tests', () => {
 
       await waitForLogs();
 
+      // Ensure file exists and has content
+      expect(fs.existsSync(combinedLogPath)).toBe(true);
+
       const logs = fs.readFileSync(combinedLogPath, 'utf-8');
       const lines = logs
         .trim()
         .split('\n')
         .filter((line) => line);
+
+      // Ensure we have log lines
+      expect(lines.length).toBeGreaterThan(0);
 
       // All lines should be valid JSON
       lines.forEach((line) => {

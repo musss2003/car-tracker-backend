@@ -1,8 +1,8 @@
 import { BaseService } from '../common/services/base.service';
 import { Car } from '../models/car.model';
-import { CreateCarDto, UpdateCarDto, CarAvailabilityDto } from '../dto/car.dto';
+import { CreateCarDto, UpdateCarDto } from '../dto/car.dto';
 import { CarRepository } from '../repositories/car.repository';
-import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
+import { AuditContext } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
 import { Contract } from '../models/contract.model';
 import { AuditResource } from '../models/audit-log.model';

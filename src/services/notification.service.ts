@@ -114,7 +114,7 @@ export class NotificationService extends BaseService<Notification> {
   async markAsRead(
     notificationId: string,
     userId: string,
-    context: AuditContext
+    _context: AuditContext
   ): Promise<Notification> {
     const notification = await this.notificationRepository.findById(notificationId);
 
@@ -142,7 +142,7 @@ export class NotificationService extends BaseService<Notification> {
   /**
    * Mark all notifications as read for a user
    */
-  async markAllAsRead(userId: string, context: AuditContext): Promise<number> {
+  async markAllAsRead(userId: string, _context: AuditContext): Promise<number> {
     const affectedCount = await this.notificationRepository.markAllAsRead(userId);
 
     // Emit update via Socket.IO
@@ -199,7 +199,7 @@ export class NotificationService extends BaseService<Notification> {
   /**
    * Cleanup old read notifications (admin only)
    */
-  async cleanupOldNotifications(days: number, context: AuditContext): Promise<number> {
+  async cleanupOldNotifications(days: number, _context: AuditContext): Promise<number> {
     return this.notificationRepository.deleteOlderThan(days);
   }
 }

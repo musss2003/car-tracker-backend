@@ -1,6 +1,5 @@
-import express, { Request, Response } from 'express';
-import { register, login, logout, sessionCheck } from '../controllers/auth.controller';
-import authenticate from '../middlewares/verify-jwt.middleware';
+import express from 'express';
+import { register, login, sessionCheck } from '../controllers/auth.controller';
 // Import verifyRole if needed
 // import { verifyRole } from '../middlewares/verifyRole';
 

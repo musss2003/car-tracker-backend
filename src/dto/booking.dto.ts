@@ -95,7 +95,7 @@ export class BookingExtraDto {
  */
 @ValidatorConstraint({ name: 'isFutureDate', async: false })
 export class IsFutureDateConstraint implements ValidatorConstraintInterface {
-  validate(dateString: string, args: ValidationArguments) {
+  validate(dateString: string, _args: ValidationArguments) {
     if (!dateString) return false;
     const date = new Date(dateString);
     const now = new Date();
@@ -105,7 +105,7 @@ export class IsFutureDateConstraint implements ValidatorConstraintInterface {
     return date >= now;
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Start date must be today or in the future';
   }
 }
@@ -130,7 +130,7 @@ export class IsAfterStartDateConstraint implements ValidatorConstraintInterface 
     return endDate > startDate;
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'End date must be after start date';
   }
 }
@@ -166,13 +166,13 @@ export class MaxDateRangeConstraint implements ValidatorConstraintInterface {
  */
 @ValidatorConstraint({ name: 'isValidDate', async: false })
 export class IsValidDateConstraint implements ValidatorConstraintInterface {
-  validate(dateString: string, args: ValidationArguments) {
+  validate(dateString: string, _args: ValidationArguments) {
     if (!dateString) return false;
     const date = new Date(dateString);
     return !isNaN(date.getTime());
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Invalid date format';
   }
 }

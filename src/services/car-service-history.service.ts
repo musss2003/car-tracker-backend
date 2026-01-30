@@ -10,7 +10,7 @@ import {
   CreateCarServiceHistoryDto,
   UpdateCarServiceHistoryDto,
 } from '../dto/car-service-history.dto';
-import { NotFoundError, ValidationError } from '../common/errors';
+import { NotFoundError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
 /**
@@ -47,7 +47,7 @@ export class CarServiceHistoryService extends BaseService<
   /**
    * Get all service records for a specific car
    */
-  async getByCarId(carId: string, context?: AuditContext): Promise<CarServiceHistory[]> {
+  async getByCarId(carId: string, _context?: AuditContext): Promise<CarServiceHistory[]> {
     const repo = this.repository as CarServiceHistoryRepository;
     return repo.findByCarId(carId);
   }
@@ -123,7 +123,7 @@ export class CarServiceHistoryService extends BaseService<
   /**
    * Get km remaining until next service for a car
    */
-  async getKmRemaining(carId: string, context?: AuditContext): Promise<number> {
+  async getKmRemaining(carId: string, _context?: AuditContext): Promise<number> {
     // Get current car mileage
     const car = await this.carRepository.findOne({ where: { id: carId } });
     if (!car || !car.mileage) {

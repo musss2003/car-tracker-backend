@@ -2,7 +2,7 @@ import { BaseService } from '../common/services/base.service';
 import { Contract } from '../models/contract.model';
 import { CreateContractDto, UpdateContractDto } from '../dto/contract.dto';
 import { ContractRepository } from '../repositories/contract.repository';
-import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
+import { AuditContext } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
 import { AppDataSource } from '../config/db';
 import { Customer } from '../models/customer.model';

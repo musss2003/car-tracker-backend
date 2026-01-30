@@ -46,8 +46,6 @@ export class CrossCarAnalyticsService {
     const carRepo = AppDataSource.getRepository(Car);
     const serviceRepo = AppDataSource.getRepository(CarServiceHistory);
     const insuranceRepo = AppDataSource.getRepository(CarInsurance);
-    const registrationRepo = AppDataSource.getRepository(CarRegistration);
-    const issueRepo = AppDataSource.getRepository(CarIssueReport);
 
     // Get all cars for the user (if userId provided)
     const cars = userId
@@ -63,11 +61,9 @@ export class CrossCarAnalyticsService {
 
     for (const car of cars) {
       // Fetch all cost data in parallel
-      const [serviceHistory, insuranceHistory, registrations, issueReports] = await Promise.all([
+      const [serviceHistory, insuranceHistory] = await Promise.all([
         serviceRepo.find({ where: { carId: car.id } }),
         insuranceRepo.find({ where: { carId: car.id } }),
-        registrationRepo.find({ where: { carId: car.id } }),
-        issueRepo.find({ where: { carId: car.id } }),
       ]);
 
       // Calculate service costs
@@ -127,8 +123,8 @@ export class CrossCarAnalyticsService {
     const SERVICE_INTERVAL = 10000; // km
     const CRITICAL_KM_THRESHOLD = 500;
     const WARNING_KM_THRESHOLD = 2000;
-    const CRITICAL_DAYS_THRESHOLD = 7;
-    const WARNING_DAYS_THRESHOLD = 30;
+    const _CRITICAL_DAYS_THRESHOLD = 7;
+    const _WARNING_DAYS_THRESHOLD = 30;
 
     // Get all cars for the user (if userId provided)
     const cars = userId

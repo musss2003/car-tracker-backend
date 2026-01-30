@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { CarService } from '../services/car.service';
 import { CarRepository } from '../repositories/car.repository';
 import { asyncHandler } from '../common/errors/error-handler';
-import { extractAuditContext, extractPaginationParams } from '../common/utils/request.utils';
+import { extractAuditContext } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { notifyAdmins } from '../services/notification.service';
 import { io } from '../app';

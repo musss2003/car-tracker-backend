@@ -4,7 +4,7 @@ import { CustomerRepository } from '../repositories/customer.repository';
 import { ContractService } from '../services/contract.service';
 import { ContractRepository } from '../repositories/contract.repository';
 import { asyncHandler } from '../common/errors/error-handler';
-import { extractAuditContext, extractPaginationParams } from '../common/utils/request.utils';
+import { extractAuditContext } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { notifyAdmins } from '../services/notification.service';
 import { validate as isUUID } from 'uuid';

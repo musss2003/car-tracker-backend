@@ -45,7 +45,7 @@ export class CreateUserDto {
 
   @IsString()
   @MaxLength(20)
-  @Matches(/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/, {
+  @Matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/, {
     message: 'Invalid phone number format',
   })
   @IsOptional()
@@ -90,9 +90,11 @@ export class UpdateUserDto {
 
   @IsString()
   @MaxLength(20)
-  @Matches(/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/, {
+  // Line 93 in user.dto.ts
+  @Matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/, {
     message: 'Invalid phone number format',
   })
+  phoneNumber?: string;
   @IsOptional()
   phone?: string;
 

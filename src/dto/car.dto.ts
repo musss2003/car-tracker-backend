@@ -6,7 +6,6 @@ import {
   IsEnum,
   Min,
   Max,
-  MinLength,
   MaxLength,
   IsDateString,
 } from 'class-validator';

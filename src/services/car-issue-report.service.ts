@@ -7,7 +7,7 @@ import carIssueReportRepository, {
 } from '../repositories/car-issue-report.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarIssueReportDto, UpdateCarIssueReportDto } from '../dto/car-issue-report.dto';
-import { NotFoundError, ValidationError } from '../common/errors';
+import { NotFoundError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
 /**
@@ -41,7 +41,7 @@ export class CarIssueReportService extends BaseService<
   /**
    * Get all issue reports for a specific car
    */
-  async getByCarId(carId: string, context?: AuditContext): Promise<CarIssueReport[]> {
+  async getByCarId(carId: string, _context?: AuditContext): Promise<CarIssueReport[]> {
     const repo = this.repository as CarIssueReportRepository;
     return repo.findByCarId(carId);
   }
@@ -123,7 +123,7 @@ export class CarIssueReportService extends BaseService<
    * Get count of active (open) issue reports for a car
    * Optimized to use repository count method
    */
-  async getActiveCount(carId: string, context?: AuditContext): Promise<number> {
+  async getActiveCount(carId: string, _context?: AuditContext): Promise<number> {
     const repo = this.repository as CarIssueReportRepository;
     // Use repository's count method instead of filtering - more efficient
     return repo.countByCarIdAndStatus(carId, IssueStatus.OPEN);
