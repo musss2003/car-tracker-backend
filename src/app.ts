@@ -1,10 +1,4 @@
-import express, {
-  Application,
-  Request,
-  Response,
-  NextFunction,
-  ErrorRequestHandler,
-} from 'express';
+import express, { Application, Request, Response, ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import { initializeTypeORM, AppDataSource } from './config/db';

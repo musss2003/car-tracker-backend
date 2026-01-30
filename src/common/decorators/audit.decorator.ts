@@ -8,11 +8,11 @@ import { AuditContext } from '../interfaces/base-service.interface';
 export interface AuditOptions {
   resource: AuditResource;
   action: AuditAction;
-  description?: string | ((args: any[], result: any) => string);
+  description?: string | ((args: unknown[], result: unknown) => string);
   includeChanges?: boolean;
-  beforeDataExtractor?: (args: any[]) => any;
-  afterDataExtractor?: (result: any) => any;
-  resourceIdExtractor?: (args: any[], result?: any) => string;
+  beforeDataExtractor?: (args: unknown[]) => unknown;
+  afterDataExtractor?: (result: unknown) => unknown;
+  resourceIdExtractor?: (args: unknown[], result?: unknown) => string;
 }
 
 /**
@@ -25,68 +25,84 @@ export interface AuditOptions {
  * })
  */
 export function Audit(options: AuditOptions) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
-      const startTime = Date.now();
-      let result: any;
-      let error: any;
+    descriptor.value = async function (...args: unknown[]) {
+      let result: unknown;
       let context: AuditContext | undefined;
 
-      try {
-        // Extract audit context from arguments (usually last parameter)
-        const lastArg = args[args.length - 1];
-        if (lastArg && typeof lastArg === 'object' && 'userId' in lastArg) {
-          context = lastArg as AuditContext;
-        }
+      // Extract audit context from arguments (usually last parameter)
+      const lastArg = args[args.length - 1];
+      if (lastArg && typeof lastArg === 'object' && lastArg !== null && 'userId' in lastArg) {
+        context = lastArg as AuditContext;
+      }
 
-        // Extract before data if needed
-        const beforeData = options.beforeDataExtractor
-          ? await options.beforeDataExtractor(args)
-          : undefined;
+      // Extract before data if needed
+      const beforeData = options.beforeDataExtractor
+        ? await options.beforeDataExtractor(args)
+        : undefined;
 
-        // Execute the original method
-        result = await originalMethod.apply(this, args);
+      // Execute the original method
+      result = await originalMethod.apply(this, args);
 
-        // Extract after data if needed
-        const afterData = options.afterDataExtractor
-          ? options.afterDataExtractor(result)
-          : undefined;
+      // Extract after data if needed
+      const afterData = options.afterDataExtractor ? options.afterDataExtractor(result) : undefined;
 
-        // Extract resource ID
-        const resourceId = options.resourceIdExtractor
-          ? options.resourceIdExtractor(args, result)
-          : result?.id || args[0];
+      // Extract resource ID
+      const resourceId = options.resourceIdExtractor
+        ? options.resourceIdExtractor(args, result)
+        : (result as { id?: string })?.id || (args[0] as string);
 
-        // Generate description
-        let description: string;
-        if (typeof options.description === 'function') {
-          description = options.description(args, result);
-        } else {
-          description = options.description || `${options.action} ${options.resource}`;
-        }
+      // Generate description
+      let description: string;
+      if (typeof options.description === 'function') {
+        description = options.description(args, result);
+      } else {
+        description = options.description || `${options.action} ${options.resource}`;
+      }
 
-        // Log the audit entry
-        const duration = Date.now() - startTime;
+      // Use appropriate logging method based on action type
+      const isCRUDAction = [
+        AuditAction.CREATE,
+        AuditAction.READ,
+        AuditAction.UPDATE,
+        AuditAction.DELETE,
+      ].includes(options.action);
+
+      if (isCRUDAction) {
         await auditLogService.logCRUD({
           userId: context?.userId,
           username: context?.username,
           userRole: context?.userRole,
           ipAddress: context?.ipAddress,
           userAgent: context?.userAgent,
-          action: options.action as any,
+          action: options.action as
+            | AuditAction.CREATE
+            | AuditAction.READ
+            | AuditAction.UPDATE
+            | AuditAction.DELETE,
           resource: options.resource,
           resourceId,
           description,
           changes: options.includeChanges ? { before: beforeData, after: afterData } : undefined,
         });
-
-        return result;
-      } catch (err) {
-        error = err;
-        throw err;
+      } else {
+        await auditLogService.createLog({
+          userId: context?.userId,
+          username: context?.username,
+          userRole: context?.userRole,
+          ipAddress: context?.ipAddress,
+          userAgent: context?.userAgent,
+          action: options.action,
+          resource: options.resource,
+          resourceId,
+          description,
+          changes: options.includeChanges ? { before: beforeData, after: afterData } : undefined,
+        });
       }
+
+      return result;
     };
 
     return descriptor;
@@ -101,8 +117,8 @@ export async function logAudit(
   options: AuditOptions & {
     context?: AuditContext;
     resourceId?: string;
-    beforeData?: any;
-    afterData?: any;
+    beforeData?: unknown;
+    afterData?: unknown;
   }
 ) {
   const description =
@@ -110,18 +126,47 @@ export async function logAudit(
       ? options.description([], {})
       : options.description || `${options.action} ${options.resource}`;
 
-  return auditLogService.logCRUD({
-    userId: options.context?.userId,
-    username: options.context?.username,
-    userRole: options.context?.userRole,
-    ipAddress: options.context?.ipAddress,
-    userAgent: options.context?.userAgent,
-    action: options.action as any,
-    resource: options.resource,
-    resourceId: options.resourceId,
-    description,
-    changes: options.includeChanges
-      ? { before: options.beforeData, after: options.afterData }
-      : undefined,
-  });
+  // Use appropriate logging method based on action type
+  const isCRUDAction = [
+    AuditAction.CREATE,
+    AuditAction.READ,
+    AuditAction.UPDATE,
+    AuditAction.DELETE,
+  ].includes(options.action);
+
+  if (isCRUDAction) {
+    return auditLogService.logCRUD({
+      userId: options.context?.userId,
+      username: options.context?.username,
+      userRole: options.context?.userRole,
+      ipAddress: options.context?.ipAddress,
+      userAgent: options.context?.userAgent,
+      action: options.action as
+        | AuditAction.CREATE
+        | AuditAction.READ
+        | AuditAction.UPDATE
+        | AuditAction.DELETE,
+      resource: options.resource,
+      resourceId: options.resourceId,
+      description,
+      changes: options.includeChanges
+        ? { before: options.beforeData, after: options.afterData }
+        : undefined,
+    });
+  } else {
+    return auditLogService.createLog({
+      userId: options.context?.userId,
+      username: options.context?.username,
+      userRole: options.context?.userRole,
+      ipAddress: options.context?.ipAddress,
+      userAgent: options.context?.userAgent,
+      action: options.action,
+      resource: options.resource,
+      resourceId: options.resourceId,
+      description,
+      changes: options.includeChanges
+        ? { before: options.beforeData, after: options.afterData }
+        : undefined,
+    });
+  }
 }

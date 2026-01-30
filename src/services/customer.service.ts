@@ -2,7 +2,7 @@ import { BaseService } from '../common/services/base.service';
 import { Customer } from '../models/customer.model';
 import { CreateCustomerDto, UpdateCustomerDto } from '../dto/customer.dto';
 import { CustomerRepository } from '../repositories/customer.repository';
-import { AuditContext, AuditAction } from '../common/interfaces/base-service.interface';
+import { AuditContext } from '../common/interfaces/base-service.interface';
 import { ValidationError, NotFoundError, ConflictError } from '../common/errors/app-error';
 import { AuditResource } from '../models/audit-log.model';
 

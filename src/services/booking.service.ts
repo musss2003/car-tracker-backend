@@ -799,7 +799,7 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
   /**
    * Find all bookings with secure filtering
    */
-  async findAll(queryDto: BookingQueryDto, context: AuditContext): Promise<any> {
+  async findAll(queryDto: BookingQueryDto, _context: AuditContext): Promise<any> {
     return await this.bookingRepo.findWithFilters(queryDto);
   }
 

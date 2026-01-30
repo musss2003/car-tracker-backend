@@ -100,7 +100,7 @@ redis.on('ready', async () => {
             `Run: redis-cli CONFIG SET maxmemory-policy noeviction`
         );
       }
-    } catch (error) {
+    } catch (_error) {
       // Silently ignore if we can't check config
     }
   }

@@ -6,7 +6,7 @@ import { User, UserRole } from '../models/user.model';
 import { RefreshToken } from '../models/refresh-token.model';
 import dotenv from 'dotenv';
 import { logAudit } from '../middlewares/audit-log.middleware';
-import { captureException, setUserContext, clearUserContext } from '../config/monitoring';
+import { captureException, setUserContext } from '../config/monitoring';
 
 dotenv.config();
 
@@ -191,7 +191,7 @@ export const updateUserRole = async (req: Request, res: Response): Promise<Respo
 export const sessionCheck = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): Promise<void> => {
   const authHeader = req.headers.authorization;
 

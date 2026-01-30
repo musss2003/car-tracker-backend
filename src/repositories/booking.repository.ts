@@ -1,8 +1,8 @@
 import { AppDataSource } from '../config/db';
 import { Booking, BookingStatus } from '../models/booking.model';
-import { BookingQueryDto, buildSafeQueryParams, getSafeColumnName } from '../dto/booking.dto';
+import { BookingQueryDto, buildSafeQueryParams } from '../dto/booking.dto';
 import { BaseRepository } from '../common/repositories/base.repository';
-import { Between, LessThan, MoreThan, In, FindOptionsWhere } from 'typeorm';
+import { Between, LessThan, MoreThan, FindOptionsWhere } from 'typeorm';
 
 /**
  * Repository for Booking entity

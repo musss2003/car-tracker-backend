@@ -1,16 +1,15 @@
 import { CrossCarAnalyticsService } from '../cross-car-analytics.service';
 
 describe('CrossCarAnalyticsService', () => {
-  let service: CrossCarAnalyticsService;
-
+  let _service: CrossCarAnalyticsService;
   beforeEach(() => {
-    service = new CrossCarAnalyticsService();
+    _service = new CrossCarAnalyticsService();
   });
 
   describe('getTopExpenses', () => {
     it('should return empty array when no cars exist', async () => {
       // Mock empty car repository
-      const mockCarRepo = {
+      const _mockCarRepo = {
         find: jest.fn().mockResolvedValue([]),
       };
 
@@ -135,7 +134,7 @@ describe('CrossCarAnalyticsService', () => {
 
     it('should count critical service alerts correctly', () => {
       const SERVICE_INTERVAL = 10000;
-      const CRITICAL_KM_THRESHOLD = 500;
+      const _CRITICAL_KM_THRESHOLD = 500;
 
       const car = { mileage: 100500 };
       const latestService = { mileage: 90000 };

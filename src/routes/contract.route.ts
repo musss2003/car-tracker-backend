@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import authenticate from '../middlewares/verify-jwt.middleware';
 import {
   getContracts,

@@ -7,7 +7,7 @@ import carRegistrationRepository, {
 } from '../repositories/car-registration.repository';
 import { AppDataSource } from '../config/db';
 import { CreateCarRegistrationDto, UpdateCarRegistrationDto } from '../dto/car-registration.dto';
-import { NotFoundError, ValidationError } from '../common/errors';
+import { NotFoundError } from '../common/errors';
 import { AuditContext } from '../common/interfaces';
 
 /**
@@ -41,7 +41,7 @@ export class CarRegistrationService extends BaseService<
   /**
    * Get all registration records for a specific car
    */
-  async getByCarId(carId: string, context?: AuditContext): Promise<CarRegistration[]> {
+  async getByCarId(carId: string, _context?: AuditContext): Promise<CarRegistration[]> {
     const repo = this.repository as CarRegistrationRepository;
     return repo.findByCarId(carId);
   }
@@ -98,7 +98,7 @@ export class CarRegistrationService extends BaseService<
   /**
    * Get days remaining until registration expires for a car
    */
-  async getDaysRemaining(carId: string, context?: AuditContext): Promise<number> {
+  async getDaysRemaining(carId: string, _context?: AuditContext): Promise<number> {
     const activeRegistration = await this.getActiveByCarId(carId);
 
     if (!activeRegistration || !activeRegistration.registrationExpiry) {

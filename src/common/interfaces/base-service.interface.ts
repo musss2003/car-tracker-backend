@@ -1,4 +1,4 @@
-import { DeepPartial, FindManyOptions } from 'typeorm';
+import { FindManyOptions } from 'typeorm';
 
 /**
  * Generic service interface following Service Pattern

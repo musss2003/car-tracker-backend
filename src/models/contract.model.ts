@@ -6,7 +6,6 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
   Index,
 } from 'typeorm';
 import { Customer } from './customer.model';

@@ -1,5 +1,5 @@
 // routes/carRoutes.js
-import express, { Request, Response } from 'express';
+import express from 'express';
 import {
   getCars,
   getCar,

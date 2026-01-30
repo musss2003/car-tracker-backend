@@ -42,7 +42,7 @@ export class CarInsuranceService extends BaseService<
   /**
    * Get all insurance records for a specific car
    */
-  async getByCarId(carId: string, context?: AuditContext): Promise<CarInsurance[]> {
+  async getByCarId(carId: string, _context?: AuditContext): Promise<CarInsurance[]> {
     const repo = this.repository as CarInsuranceRepository;
     return repo.findByCarId(carId);
   }
