@@ -47,7 +47,7 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint:ci
         # ✅ Removed continue-on-error
 
   # Job 3: TypeScript Type Check

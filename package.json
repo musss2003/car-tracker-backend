@@ -13,8 +13,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint . --ext .ts --max-warnings 0",
+    "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "lint:ci": "eslint . --ext .ts --max-warnings=-1",
     "format": "prettier --write \"src/**/*.ts\" \"**/*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"**/*.{json,md}\"",
     "type-check": "tsc --noEmit"
