@@ -333,4 +333,107 @@ export const swaggerSchemas = {
       status: { type: 'string', enum: ['unread', 'read'] },
     },
   },
+
+  // ==================== BOOKING SCHEMAS ====================
+  CreateBookingDto: {
+    type: 'object',
+    required: ['customerId', 'carId', 'startDate', 'endDate'],
+    properties: {
+      customerId: { type: 'string', format: 'uuid', description: 'Customer ID' },
+      carId: { type: 'string', format: 'uuid', description: 'Car ID' },
+      startDate: { type: 'string', format: 'date-time', description: 'Booking start date' },
+      endDate: { type: 'string', format: 'date-time', description: 'Booking end date' },
+      pickupLocation: { type: 'string', description: 'Pickup location' },
+      dropoffLocation: { type: 'string', description: 'Dropoff location' },
+      extras: {
+        type: 'array',
+        items: {
+          type: 'string',
+          enum: ['GPS', 'CHILD_SEAT', 'ADDITIONAL_DRIVER', 'INSURANCE_UPGRADE', 'WIFI', 'ROOF_RACK'],
+        },
+        description: 'Additional extras for the booking',
+      },
+      notes: { type: 'string', description: 'Additional notes for the booking' },
+    },
+  },
+
+  UpdateBookingDto: {
+    type: 'object',
+    properties: {
+      startDate: { type: 'string', format: 'date-time' },
+      endDate: { type: 'string', format: 'date-time' },
+      pickupLocation: { type: 'string' },
+      dropoffLocation: { type: 'string' },
+      extras: {
+        type: 'array',
+        items: {
+          type: 'string',
+          enum: ['GPS', 'CHILD_SEAT', 'ADDITIONAL_DRIVER', 'INSURANCE_UPGRADE', 'WIFI', 'ROOF_RACK'],
+        },
+      },
+      notes: { type: 'string' },
+    },
+  },
+
+  BookingResponse: {
+    type: 'object',
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      bookingReference: { type: 'string', description: 'Unique booking reference' },
+      customerId: { type: 'string', format: 'uuid' },
+      carId: { type: 'string', format: 'uuid' },
+      startDate: { type: 'string', format: 'date-time' },
+      endDate: { type: 'string', format: 'date-time' },
+      status: {
+        type: 'string',
+        enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'CONVERTED', 'EXPIRED'],
+      },
+      totalEstimatedCost: { type: 'number', description: 'Total estimated cost' },
+      depositAmount: { type: 'number', description: 'Required deposit amount' },
+      pickupLocation: { type: 'string' },
+      dropoffLocation: { type: 'string' },
+      extras: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+      notes: { type: 'string' },
+      expiresAt: { type: 'string', format: 'date-time', description: 'Booking expiration time' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+    },
+  },
+
+  BookingFilterDto: {
+    type: 'object',
+    properties: {
+      status: {
+        type: 'string',
+        enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'CONVERTED', 'EXPIRED'],
+      },
+      customerId: { type: 'string', format: 'uuid' },
+      carId: { type: 'string', format: 'uuid' },
+      startDate: { type: 'string', format: 'date-time' },
+      endDate: { type: 'string', format: 'date-time' },
+    },
+  },
+
+  CheckAvailabilityDto: {
+    type: 'object',
+    required: ['carId', 'startDate', 'endDate'],
+    properties: {
+      carId: { type: 'string', format: 'uuid' },
+      startDate: { type: 'string', format: 'date-time' },
+      endDate: { type: 'string', format: 'date-time' },
+    },
+  },
+
+  AvailabilityResponse: {
+    type: 'object',
+    properties: {
+      available: { type: 'boolean', description: 'Whether the car is available' },
+      carId: { type: 'string', format: 'uuid' },
+      startDate: { type: 'string', format: 'date-time' },
+      endDate: { type: 'string', format: 'date-time' },
+    },
+  },
 };
