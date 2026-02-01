@@ -349,7 +349,14 @@ export const swaggerSchemas = {
         type: 'array',
         items: {
           type: 'string',
-          enum: ['GPS', 'CHILD_SEAT', 'ADDITIONAL_DRIVER', 'INSURANCE_UPGRADE', 'WIFI', 'ROOF_RACK'],
+          enum: [
+            'GPS',
+            'CHILD_SEAT',
+            'ADDITIONAL_DRIVER',
+            'INSURANCE_UPGRADE',
+            'WIFI',
+            'ROOF_RACK',
+          ],
         },
         description: 'Additional extras for the booking',
       },
@@ -368,7 +375,14 @@ export const swaggerSchemas = {
         type: 'array',
         items: {
           type: 'string',
-          enum: ['GPS', 'CHILD_SEAT', 'ADDITIONAL_DRIVER', 'INSURANCE_UPGRADE', 'WIFI', 'ROOF_RACK'],
+          enum: [
+            'GPS',
+            'CHILD_SEAT',
+            'ADDITIONAL_DRIVER',
+            'INSURANCE_UPGRADE',
+            'WIFI',
+            'ROOF_RACK',
+          ],
         },
       },
       notes: { type: 'string' },

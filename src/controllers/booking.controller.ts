@@ -40,7 +40,7 @@ export const createBooking = async (req: Request, res: Response) => {
     }
 
     const context = extractUserContext(req);
-    
+
     // Authorization: Users can only create bookings for themselves unless they're admin/manager
     if (dto.customerId !== context.userId && !['ADMIN', 'EMPLOYEE'].includes(context.role)) {
       throw new AppError('You can only create bookings for yourself', 403, true);
@@ -52,7 +52,7 @@ export const createBooking = async (req: Request, res: Response) => {
       success: true,
       data: booking,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -106,7 +106,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
   try {
     const { page, limit } = extractPaginationParams(req);
     const context = extractUserContext(req);
-    
+
     const filters = plainToClass(BookingFilterDto, req.query);
 
     // Authorization: Users can only see their own bookings
@@ -130,7 +130,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
         pages: result.pages,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch bookings',
@@ -179,7 +179,7 @@ export const getBookingById = async (req: Request, res: Response) => {
       success: true,
       data: booking,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -237,7 +237,10 @@ export const updateBooking = async (req: Request, res: Response) => {
     }
 
     // Authorization: Users can only update their own bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role) && existingBooking.customerId !== context.userId) {
+    if (
+      !['ADMIN', 'EMPLOYEE'].includes(context.role) &&
+      existingBooking.customerId !== context.userId
+    ) {
       throw new AppError('You do not have permission to update this booking', 403, true);
     }
 
@@ -247,7 +250,7 @@ export const updateBooking = async (req: Request, res: Response) => {
       success: true,
       data: updatedBooking,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -298,7 +301,7 @@ export const deleteBooking = async (req: Request, res: Response) => {
       success: true,
       message: 'Booking deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -349,7 +352,7 @@ export const confirmBooking = async (req: Request, res: Response) => {
       data: booking,
       message: 'Booking confirmed successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -400,7 +403,7 @@ export const cancelBooking = async (req: Request, res: Response) => {
       data: booking,
       message: 'Booking cancelled successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -451,7 +454,7 @@ export const convertToContract = async (req: Request, res: Response) => {
       data: contract,
       message: 'Booking converted to contract successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -501,7 +504,7 @@ export const getBookingsByCustomer = async (req: Request, res: Response) => {
       success: true,
       data: bookings,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -544,7 +547,7 @@ export const getBookingsByCar = async (req: Request, res: Response) => {
       success: true,
       data: bookings,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch car bookings',
@@ -603,7 +606,7 @@ export const checkAvailability = async (req: Request, res: Response) => {
         endDate,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
@@ -653,7 +656,7 @@ export const getUpcomingBookings = async (req: Request, res: Response) => {
       success: true,
       data: filteredBookings,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch upcoming bookings',
@@ -696,7 +699,7 @@ export const getExpiringBookings = async (req: Request, res: Response) => {
       success: true,
       data: bookings,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AppError) {
       res.status(error.statusCode).json({
         success: false,
