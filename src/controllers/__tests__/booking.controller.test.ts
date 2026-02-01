@@ -83,7 +83,7 @@ jest.mock('class-transformer', () => ({
 }));
 
 // Create a mock service instance that will be used by the controller
-const mockBookingServiceInstance = {
+const _mockBookingServiceInstance = {
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),

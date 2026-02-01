@@ -21,29 +21,7 @@ import {
   IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-/**
- * Booking Status Enum
- */
-export enum BookingStatus {
-  PENDING = 'pending',
-  CONFIRMED = 'confirmed',
-  CANCELLED = 'cancelled',
-  CONVERTED = 'converted',
-  EXPIRED = 'expired',
-}
-
-/**
- * Booking Extra Types
- */
-export enum BookingExtraType {
-  GPS = 'gps',
-  CHILD_SEAT = 'child_seat',
-  ADDITIONAL_DRIVER = 'additional_driver',
-  INSURANCE_UPGRADE = 'insurance_upgrade',
-  WIFI = 'wifi',
-  ROOF_RACK = 'roof_rack',
-}
+import { BookingExtraType, BookingStatus } from '../models/booking.model';
 
 /**
  * Allowed sort fields - WHITELIST ONLY (Security: Prevents SQL injection)
