@@ -1,12 +1,21 @@
 import { Request, Response } from 'express';
 import { BookingService } from '../services/booking.service';
-import { CreateBookingDto, UpdateBookingDto, BookingFilterDto } from '../dto/booking.dto';
+import { CreateBookingDto, UpdateBookingDto, BookingQueryDto } from '../dto/booking.dto';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { AppError } from '../common/errors/app-error';
-import { extractPaginationParams, extractUserContext } from '../common/utils/request.utils';
+import { extractPaginationParams, extractAuditContext } from '../common/utils/request.utils';
+import bookingRepository from '../repositories/booking.repository';
 
-const bookingService = new BookingService();
+const bookingService = new BookingService(bookingRepository);
+
+/**
+ * Helper function to get error message from unknown error
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
 /**
  * @swagger
@@ -36,17 +45,25 @@ export const createBooking = async (req: Request, res: Response) => {
     const errors = await validate(dto);
 
     if (errors.length > 0) {
-      throw new AppError('Validation failed', 400, true, errors);
+      throw new AppError(
+        'Validation failed',
+        400,
+        true,
+        errors.map((e) => Object.values(e.constraints || {}).join(', '))
+      );
     }
 
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
     // Authorization: Users can only create bookings for themselves unless they're admin/manager
-    if (dto.customerId !== context.userId && !['ADMIN', 'EMPLOYEE'].includes(context.role)) {
+    if (
+      dto.customerId !== context.userId &&
+      !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')
+    ) {
       throw new AppError('You can only create bookings for yourself', 403, true);
     }
 
-    const booking = await bookingService.createBooking(dto, context);
+    const booking = await bookingService.create(dto, context);
 
     res.status(201).json({
       success: true,
@@ -63,7 +80,7 @@ export const createBooking = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to create booking',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -105,20 +122,16 @@ export const createBooking = async (req: Request, res: Response) => {
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
     const { page, limit } = extractPaginationParams(req);
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
-    const filters = plainToClass(BookingFilterDto, req.query);
+    const filters = plainToClass(BookingQueryDto, req.query);
 
     // Authorization: Users can only see their own bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role)) {
+    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
       filters.customerId = context.userId;
     }
 
-    const result = await bookingService.getAllBookings({
-      page,
-      limit,
-      ...filters,
-    });
+    const result = await bookingService.getPaginated(page, limit, {}, context);
 
     res.json({
       success: true,
@@ -126,15 +139,15 @@ export const getAllBookings = async (req: Request, res: Response) => {
       pagination: {
         total: result.total,
         page: result.page,
-        limit: result.limit,
-        pages: result.pages,
+        limit: limit,
+        pages: result.totalPages,
       },
     });
   } catch (error: unknown) {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch bookings',
-      error: error.message,
+      error: getErrorMessage(error),
     });
   }
 };
@@ -162,16 +175,19 @@ export const getAllBookings = async (req: Request, res: Response) => {
 export const getBookingById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
-    const booking = await bookingService.getBookingById(id);
+    const booking = await bookingService.getById(id, context);
 
     if (!booking) {
       throw new AppError('Booking not found', 404, true);
     }
 
     // Authorization: Users can only view their own bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role) && booking.customerId !== context.userId) {
+    if (
+      !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') &&
+      booking.customerId !== context.userId
+    ) {
       throw new AppError('You do not have permission to view this booking', 403, true);
     }
 
@@ -189,7 +205,7 @@ export const getBookingById = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch booking',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -226,11 +242,16 @@ export const updateBooking = async (req: Request, res: Response) => {
     const errors = await validate(dto);
 
     if (errors.length > 0) {
-      throw new AppError('Validation failed', 400, true, errors);
+      throw new AppError(
+        'Validation failed',
+        400,
+        true,
+        errors.map((e) => Object.values(e.constraints || {}).join(', '))
+      );
     }
 
-    const context = extractUserContext(req);
-    const existingBooking = await bookingService.getBookingById(id);
+    const context = extractAuditContext(req);
+    const existingBooking = await bookingService.getById(id, context);
 
     if (!existingBooking) {
       throw new AppError('Booking not found', 404, true);
@@ -238,13 +259,13 @@ export const updateBooking = async (req: Request, res: Response) => {
 
     // Authorization: Users can only update their own bookings
     if (
-      !['ADMIN', 'EMPLOYEE'].includes(context.role) &&
+      !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') &&
       existingBooking.customerId !== context.userId
     ) {
       throw new AppError('You do not have permission to update this booking', 403, true);
     }
 
-    const updatedBooking = await bookingService.updateBooking(id, dto, context);
+    const updatedBooking = await bookingService.update(id, dto, context);
 
     res.json({
       success: true,
@@ -261,7 +282,7 @@ export const updateBooking = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to update booking',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -288,14 +309,14 @@ export const updateBooking = async (req: Request, res: Response) => {
 export const deleteBooking = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
     // Only admin/manager can delete bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role)) {
+    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
       throw new AppError('Only administrators can delete bookings', 403, true);
     }
 
-    await bookingService.deleteBooking(id, context);
+    await bookingService.delete(id, context);
 
     res.json({
       success: true,
@@ -311,7 +332,7 @@ export const deleteBooking = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to delete booking',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -338,10 +359,10 @@ export const deleteBooking = async (req: Request, res: Response) => {
 export const confirmBooking = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
     // Only admin/manager can confirm bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role)) {
+    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
       throw new AppError('Only administrators can confirm bookings', 403, true);
     }
 
@@ -362,7 +383,7 @@ export const confirmBooking = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to confirm booking',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -389,14 +410,15 @@ export const confirmBooking = async (req: Request, res: Response) => {
 export const cancelBooking = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
+    const { reason } = req.body;
 
     // Only admin/manager can cancel bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role)) {
+    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
       throw new AppError('Only administrators can cancel bookings', 403, true);
     }
 
-    const booking = await bookingService.cancelBooking(id, context);
+    const booking = await bookingService.cancelBooking(id, reason || 'Cancelled by admin', context);
 
     res.json({
       success: true,
@@ -413,7 +435,7 @@ export const cancelBooking = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to cancel booking',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -440,10 +462,10 @@ export const cancelBooking = async (req: Request, res: Response) => {
 export const convertToContract = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
     // Only admin/manager can convert bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role)) {
+    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
       throw new AppError('Only administrators can convert bookings to contracts', 403, true);
     }
 
@@ -464,7 +486,7 @@ export const convertToContract = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to convert booking',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -491,14 +513,14 @@ export const convertToContract = async (req: Request, res: Response) => {
 export const getBookingsByCustomer = async (req: Request, res: Response) => {
   try {
     const { customerId } = req.params;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
     // Authorization: Users can only view their own bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role) && customerId !== context.userId) {
+    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') && customerId !== context.userId) {
       throw new AppError('You do not have permission to view these bookings', 403, true);
     }
 
-    const bookings = await bookingService.getBookingsByCustomer(customerId);
+    const bookings = await bookingRepository.findByCustomer(customerId);
 
     res.json({
       success: true,
@@ -514,7 +536,7 @@ export const getBookingsByCustomer = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch customer bookings',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -541,7 +563,7 @@ export const getBookingsByCustomer = async (req: Request, res: Response) => {
 export const getBookingsByCar = async (req: Request, res: Response) => {
   try {
     const { carId } = req.params;
-    const bookings = await bookingService.getBookingsByCar(carId);
+    const bookings = await bookingRepository.findByCar(carId);
 
     res.json({
       success: true,
@@ -551,7 +573,7 @@ export const getBookingsByCar = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch car bookings',
-      error: error.message,
+      error: getErrorMessage(error),
     });
   }
 };
@@ -591,7 +613,7 @@ export const checkAvailability = async (req: Request, res: Response) => {
       throw new AppError('carId, startDate, and endDate are required', 400, true);
     }
 
-    const isAvailable = await bookingService.checkCarAvailability(
+    const isAvailable = await bookingService.checkAvailability(
       carId,
       new Date(startDate),
       new Date(endDate)
@@ -616,7 +638,7 @@ export const checkAvailability = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to check availability',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
@@ -643,12 +665,12 @@ export const checkAvailability = async (req: Request, res: Response) => {
 export const getUpcomingBookings = async (req: Request, res: Response) => {
   try {
     const days = parseInt(req.query.days as string) || 7;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
     const bookings = await bookingService.getUpcomingBookings(days);
 
     // Filter for non-admin users
-    const filteredBookings = ['ADMIN', 'EMPLOYEE'].includes(context.role)
+    const filteredBookings = ['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')
       ? bookings
       : bookings.filter((b) => b.customerId === context.userId);
 
@@ -660,7 +682,7 @@ export const getUpcomingBookings = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch upcoming bookings',
-      error: error.message,
+      error: getErrorMessage(error),
     });
   }
 };
@@ -686,14 +708,15 @@ export const getUpcomingBookings = async (req: Request, res: Response) => {
 export const getExpiringBookings = async (req: Request, res: Response) => {
   try {
     const hours = parseInt(req.query.hours as string) || 24;
-    const context = extractUserContext(req);
+    const context = extractAuditContext(req);
 
     // Only admin/manager can view expiring bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.role)) {
+    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
       throw new AppError('Only administrators can view expiring bookings', 403, true);
     }
 
-    const bookings = await bookingService.getExpiringBookings(hours);
+    const days = Math.ceil(hours / 24);
+    const bookings = await bookingService.getExpiringBookings(days);
 
     res.json({
       success: true,
@@ -709,7 +732,7 @@ export const getExpiringBookings = async (req: Request, res: Response) => {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch expiring bookings',
-        error: error.message,
+        error: getErrorMessage(error),
       });
     }
   }
