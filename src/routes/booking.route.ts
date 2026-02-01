@@ -14,8 +14,8 @@ import {
   getUpcomingBookings,
   getExpiringBookings,
 } from '../controllers/booking.controller';
-import { verifyJWT } from '../middlewares/verify-jwt.middleware';
-import { verifyRole } from '../middlewares/verify-role.middleware';
+import verifyJWT from '../middlewares/verify-jwt.middleware';
+import verifyRole from '../middlewares/verify-role.middleware';
 
 const router = Router();
 
