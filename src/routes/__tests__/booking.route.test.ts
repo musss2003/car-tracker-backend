@@ -1,19 +1,74 @@
 import request from 'supertest';
 import express, { Express } from 'express';
-import bookingRouter from '../booking.route';
-import { BookingService } from '../../services/booking.service';
 import { BookingStatus } from '../../models/booking.model';
 import { UserRole } from '../../models/user.model';
 
+// Mock service methods
+const mockCreate = jest.fn();
+const mockUpdate = jest.fn();
+const mockDelete = jest.fn();
+const mockGetById = jest.fn();
+const mockGetPaginated = jest.fn();
+const mockConfirmBooking = jest.fn();
+const mockCancelBooking = jest.fn();
+const mockConvertToContract = jest.fn();
+const mockCheckAvailability = jest.fn();
+const mockGetUpcomingBookings = jest.fn();
+const mockGetExpiringBookings = jest.fn();
+
 // Mock dependencies
-jest.mock('../../services/booking.service');
 jest.mock('../../repositories/booking.repository');
 jest.mock('../../middlewares/verify-jwt.middleware');
 jest.mock('../../middlewares/verify-role.middleware');
+jest.mock('../../services/booking.service', () => ({
+  BookingService: jest.fn().mockImplementation(() => ({
+    create: mockCreate,
+    update: mockUpdate,
+    delete: mockDelete,
+    getById: mockGetById,
+    getPaginated: mockGetPaginated,
+    confirmBooking: mockConfirmBooking,
+    cancelBooking: mockCancelBooking,
+    convertToContract: mockConvertToContract,
+    checkAvailability: mockCheckAvailability,
+    getUpcomingBookings: mockGetUpcomingBookings,
+    getExpiringBookings: mockGetExpiringBookings,
+  })),
+}));
+jest.mock('class-validator', () => ({
+  validate: jest.fn(),
+  IsString: () => jest.fn(),
+  IsNotEmpty: () => jest.fn(),
+  IsDateString: () => jest.fn(),
+  IsNumber: () => jest.fn(),
+  IsOptional: () => jest.fn(),
+  IsArray: () => jest.fn(),
+  IsEnum: () => jest.fn(),
+  IsBoolean: () => jest.fn(),
+  IsUUID: () => jest.fn(),
+  Min: () => jest.fn(),
+  Max: () => jest.fn(),
+  ValidateNested: () => jest.fn(),
+  Validate: () => jest.fn(),
+  Matches: () => jest.fn(),
+  MinLength: () => jest.fn(),
+  MaxLength: () => jest.fn(),
+  IsIn: () => jest.fn(),
+  ValidatorConstraint: () => jest.fn(),
+  ValidatorConstraintInterface: jest.fn(),
+  ValidationArguments: jest.fn(),
+  registerDecorator: jest.fn(),
+}));
+jest.mock('class-transformer', () => ({
+  plainToClass: jest.fn((cls, plain) => plain),
+  Type: () => jest.fn(),
+}));
+
+// Import router after mocks
+import bookingRouter from '../booking.route';
 
 describe('Booking Routes Integration Tests', () => {
   let app: Express;
-  let mockBookingService: jest.Mocked<BookingService>;
 
   beforeAll(() => {
     // Setup Express app
@@ -41,30 +96,14 @@ describe('Booking Routes Integration Tests', () => {
 
     // Mount booking routes
     app.use('/api/bookings', bookingRouter);
-
-    // Setup mock booking service
-    mockBookingService = {
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      getById: jest.fn(),
-      getPaginated: jest.fn(),
-      confirmBooking: jest.fn(),
-      cancelBooking: jest.fn(),
-      convertToContract: jest.fn(),
-      checkAvailability: jest.fn(),
-      getUpcomingBookings: jest.fn(),
-      getExpiringBookings: jest.fn(),
-    } as any;
-
-    // Mock BookingService constructor
-    (BookingService as jest.MockedClass<typeof BookingService>).mockImplementation(
-      () => mockBookingService
-    );
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock validate to return no errors by default
+    const { validate } = require('class-validator');
+    validate.mockResolvedValue([]);
   });
 
   describe('POST /api/bookings', () => {
@@ -85,7 +124,7 @@ describe('Booking Routes Integration Tests', () => {
         bookingReference: 'BKG-2026-00001',
       };
 
-      mockBookingService.create.mockResolvedValue(mockBooking as any);
+      mockCreate.mockResolvedValue(mockBooking as any);
 
       const response = await request(app).post('/api/bookings').send(validBookingData);
 
@@ -120,7 +159,7 @@ describe('Booking Routes Integration Tests', () => {
         totalPages: 1,
       };
 
-      mockBookingService.getPaginated.mockResolvedValue(mockResult as any);
+      mockGetPaginated.mockResolvedValue(mockResult as any);
 
       const response = await request(app).get('/api/bookings').query({ page: 1, limit: 10 });
 
@@ -139,7 +178,7 @@ describe('Booking Routes Integration Tests', () => {
         totalPages: 1,
       };
 
-      mockBookingService.getPaginated.mockResolvedValue(mockResult as any);
+      mockGetPaginated.mockResolvedValue(mockResult as any);
 
       const response = await request(app)
         .get('/api/bookings')
@@ -159,7 +198,7 @@ describe('Booking Routes Integration Tests', () => {
         status: BookingStatus.PENDING,
       };
 
-      mockBookingService.getById.mockResolvedValue(mockBooking as any);
+      mockGetById.mockResolvedValue(mockBooking as any);
 
       const response = await request(app).get('/api/bookings/booking-123');
 
@@ -169,7 +208,7 @@ describe('Booking Routes Integration Tests', () => {
     });
 
     it('should return 404 for non-existent booking', async () => {
-      mockBookingService.getById.mockResolvedValue(null as any);
+      mockGetById.mockResolvedValue(null as any);
 
       const response = await request(app).get('/api/bookings/non-existent-id');
 
@@ -191,8 +230,8 @@ describe('Booking Routes Integration Tests', () => {
         status: BookingStatus.CONFIRMED,
       };
 
-      mockBookingService.getById.mockResolvedValue(existingBooking as any);
-      mockBookingService.update.mockResolvedValue(updatedBooking as any);
+      mockGetById.mockResolvedValue(existingBooking as any);
+      mockUpdate.mockResolvedValue(updatedBooking as any);
 
       const response = await request(app)
         .put('/api/bookings/booking-123')
@@ -204,7 +243,7 @@ describe('Booking Routes Integration Tests', () => {
     });
 
     it('should return 404 when updating non-existent booking', async () => {
-      mockBookingService.getById.mockResolvedValue(null as any);
+      mockGetById.mockResolvedValue(null as any);
 
       const response = await request(app)
         .put('/api/bookings/non-existent-id')
@@ -216,7 +255,7 @@ describe('Booking Routes Integration Tests', () => {
 
   describe('DELETE /api/bookings/:id', () => {
     it('should delete a booking', async () => {
-      mockBookingService.delete.mockResolvedValue(true);
+      mockDelete.mockResolvedValue(true);
 
       const response = await request(app).delete('/api/bookings/booking-123');
 
@@ -239,7 +278,7 @@ describe('Booking Routes Integration Tests', () => {
         status: BookingStatus.CONFIRMED,
       };
 
-      mockBookingService.confirmBooking.mockResolvedValue(confirmedBooking as any);
+      mockConfirmBooking.mockResolvedValue(confirmedBooking as any);
 
       const response = await request(app).post('/api/bookings/booking-123/confirm');
 
@@ -262,7 +301,7 @@ describe('Booking Routes Integration Tests', () => {
         status: BookingStatus.CANCELLED,
       };
 
-      mockBookingService.cancelBooking.mockResolvedValue(cancelledBooking as any);
+      mockCancelBooking.mockResolvedValue(cancelledBooking as any);
 
       const response = await request(app)
         .post('/api/bookings/booking-123/cancel')
@@ -282,7 +321,7 @@ describe('Booking Routes Integration Tests', () => {
         status: 'active',
       };
 
-      mockBookingService.convertToContract.mockResolvedValue(mockContract as any);
+      mockConvertToContract.mockResolvedValue(mockContract as any);
 
       const response = await request(app).post('/api/bookings/booking-123/convert');
 
@@ -331,7 +370,7 @@ describe('Booking Routes Integration Tests', () => {
 
   describe('POST /api/bookings/check-availability', () => {
     it('should check car availability', async () => {
-      mockBookingService.checkAvailability.mockResolvedValue(true);
+      mockCheckAvailability.mockResolvedValue(true);
 
       const response = await request(app).post('/api/bookings/check-availability').send({
         carId: 'car-123',
@@ -356,7 +395,7 @@ describe('Booking Routes Integration Tests', () => {
     });
 
     it('should return false when car is not available', async () => {
-      mockBookingService.checkAvailability.mockResolvedValue(false);
+      mockCheckAvailability.mockResolvedValue(false);
 
       const response = await request(app).post('/api/bookings/check-availability').send({
         carId: 'car-123',
@@ -384,7 +423,7 @@ describe('Booking Routes Integration Tests', () => {
         },
       ];
 
-      mockBookingService.getUpcomingBookings.mockResolvedValue(mockBookings as any);
+      mockGetUpcomingBookings.mockResolvedValue(mockBookings as any);
 
       const response = await request(app).get('/api/bookings/upcoming').query({ days: 7 });
 
@@ -394,12 +433,12 @@ describe('Booking Routes Integration Tests', () => {
     });
 
     it('should use default days parameter', async () => {
-      mockBookingService.getUpcomingBookings.mockResolvedValue([]);
+      mockGetUpcomingBookings.mockResolvedValue([]);
 
       const response = await request(app).get('/api/bookings/upcoming');
 
       expect(response.status).toBe(200);
-      expect(mockBookingService.getUpcomingBookings).toHaveBeenCalledWith(7);
+      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7);
     });
   });
 
@@ -413,7 +452,7 @@ describe('Booking Routes Integration Tests', () => {
         },
       ];
 
-      mockBookingService.getExpiringBookings.mockResolvedValue(mockBookings as any);
+      mockGetExpiringBookings.mockResolvedValue(mockBookings as any);
 
       const response = await request(app).get('/api/bookings/expiring').query({ hours: 24 });
 
@@ -431,7 +470,7 @@ describe('Booking Routes Integration Tests', () => {
   describe('Route ordering', () => {
     it('should prioritize specific routes over parameterized routes', async () => {
       // This test ensures /check-availability comes before /:id
-      mockBookingService.checkAvailability.mockResolvedValue(true);
+      mockCheckAvailability.mockResolvedValue(true);
 
       const response = await request(app).post('/api/bookings/check-availability').send({
         carId: 'car-123',
@@ -447,7 +486,7 @@ describe('Booking Routes Integration Tests', () => {
 
   describe('Error handling', () => {
     it('should handle service errors gracefully', async () => {
-      mockBookingService.getById.mockRejectedValue(new Error('Database connection failed'));
+      mockGetById.mockRejectedValue(new Error('Database connection failed'));
 
       const response = await request(app).get('/api/bookings/booking-123');
 
@@ -489,7 +528,7 @@ describe('Booking Routes Integration Tests', () => {
         totalPages: 5,
       };
 
-      mockBookingService.getPaginated.mockResolvedValue(mockResult as any);
+      mockGetPaginated.mockResolvedValue(mockResult as any);
 
       const response = await request(app).get('/api/bookings').query({ page: 2, limit: 20 });
 
@@ -505,7 +544,7 @@ describe('Booking Routes Integration Tests', () => {
         totalPages: 1,
       };
 
-      mockBookingService.getPaginated.mockResolvedValue(mockResult as any);
+      mockGetPaginated.mockResolvedValue(mockResult as any);
 
       const response = await request(app)
         .get('/api/bookings')

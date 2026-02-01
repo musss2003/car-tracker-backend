@@ -1,4 +1,43 @@
 import { Request, Response } from 'express';
+import { AppError } from '../../common/errors/app-error';
+import { BookingStatus } from '../../models/booking.model';
+import { UserRole } from '../../models/user.model';
+import * as requestUtils from '../../common/utils/request.utils';
+import bookingRepository from '../../repositories/booking.repository';
+
+// Mock service methods
+const mockCreate = jest.fn();
+const mockUpdate = jest.fn();
+const mockDelete = jest.fn();
+const mockGetById = jest.fn();
+const mockGetPaginated = jest.fn();
+const mockConfirmBooking = jest.fn();
+const mockCancelBooking = jest.fn();
+const mockConvertToContract = jest.fn();
+const mockCheckAvailability = jest.fn();
+const mockGetUpcomingBookings = jest.fn();
+const mockGetExpiringBookings = jest.fn();
+
+// Mock dependencies
+jest.mock('../../repositories/booking.repository');
+jest.mock('../../common/utils/request.utils');
+jest.mock('../../services/booking.service', () => ({
+  BookingService: jest.fn().mockImplementation(() => ({
+    create: mockCreate,
+    update: mockUpdate,
+    delete: mockDelete,
+    getById: mockGetById,
+    getPaginated: mockGetPaginated,
+    confirmBooking: mockConfirmBooking,
+    cancelBooking: mockCancelBooking,
+    convertToContract: mockConvertToContract,
+    checkAvailability: mockCheckAvailability,
+    getUpcomingBookings: mockGetUpcomingBookings,
+    getExpiringBookings: mockGetExpiringBookings,
+  })),
+}));
+
+// Import controller after mocks
 import {
   createBooking,
   getAllBookings,
@@ -14,23 +53,53 @@ import {
   getUpcomingBookings,
   getExpiringBookings,
 } from '../booking.controller';
-import { BookingService } from '../../services/booking.service';
-import bookingRepository from '../../repositories/booking.repository';
-import { AppError } from '../../common/errors/app-error';
-import { BookingStatus } from '../../models/booking.model';
-import { UserRole } from '../../models/user.model';
-import * as requestUtils from '../../common/utils/request.utils';
+jest.mock('class-validator', () => ({
+  validate: jest.fn(),
+  IsString: () => jest.fn(),
+  IsNotEmpty: () => jest.fn(),
+  IsDateString: () => jest.fn(),
+  IsNumber: () => jest.fn(),
+  IsOptional: () => jest.fn(),
+  IsArray: () => jest.fn(),
+  IsEnum: () => jest.fn(),
+  IsBoolean: () => jest.fn(),
+  IsUUID: () => jest.fn(),
+  Min: () => jest.fn(),
+  Max: () => jest.fn(),
+  ValidateNested: () => jest.fn(),
+  Validate: () => jest.fn(),
+  Matches: () => jest.fn(),
+  MinLength: () => jest.fn(),
+  MaxLength: () => jest.fn(),
+  IsIn: () => jest.fn(),
+  ValidatorConstraint: () => jest.fn(),
+  ValidatorConstraintInterface: jest.fn(),
+  ValidationArguments: jest.fn(),
+  registerDecorator: jest.fn(),
+}));
+jest.mock('class-transformer', () => ({
+  plainToClass: jest.fn((cls, plain) => plain),
+  Type: () => jest.fn(),
+}));
 
-// Mock dependencies
-jest.mock('../../services/booking.service');
-jest.mock('../../repositories/booking.repository');
-jest.mock('../../common/utils/request.utils');
-jest.mock('class-validator');
+// Create a mock service instance that will be used by the controller
+const mockBookingServiceInstance = {
+  create: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+  getById: jest.fn(),
+  getPaginated: jest.fn(),
+  confirmBooking: jest.fn(),
+  cancelBooking: jest.fn(),
+  convertToContract: jest.fn(),
+  checkAvailability: jest.fn(),
+  getUpcomingBookings: jest.fn(),
+  getExpiringBookings: jest.fn(),
+};
 
 describe('Booking Controller', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
-  let mockBookingService: jest.Mocked<BookingService>;
   let jsonMock: jest.Mock;
   let statusMock: jest.Mock;
 
@@ -62,26 +131,6 @@ describe('Booking Controller', () => {
         updatedAt: new Date(),
       } as any,
     };
-
-    // Mock bookingService instance
-    mockBookingService = {
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      getById: jest.fn(),
-      getPaginated: jest.fn(),
-      confirmBooking: jest.fn(),
-      cancelBooking: jest.fn(),
-      convertToContract: jest.fn(),
-      checkAvailability: jest.fn(),
-      getUpcomingBookings: jest.fn(),
-      getExpiringBookings: jest.fn(),
-    } as any;
-
-    // Mock BookingService constructor
-    (BookingService as jest.MockedClass<typeof BookingService>).mockImplementation(
-      () => mockBookingService
-    );
 
     // Mock utility functions
     (requestUtils.extractAuditContext as jest.Mock).mockReturnValue({
@@ -122,7 +171,7 @@ describe('Booking Controller', () => {
         bookingReference: 'BKG-2026-00001',
       };
 
-      mockBookingService.create.mockResolvedValue(mockBooking as any);
+      mockCreate.mockResolvedValue(mockBooking as any);
 
       await createBooking(mockRequest as Request, mockResponse as Response);
 
@@ -183,7 +232,7 @@ describe('Booking Controller', () => {
       const { validate } = require('class-validator');
       validate.mockResolvedValue([]);
 
-      mockBookingService.create.mockRejectedValue(new Error('Database error'));
+      mockCreate.mockRejectedValue(new Error('Database error'));
 
       await createBooking(mockRequest as Request, mockResponse as Response);
 
@@ -209,7 +258,7 @@ describe('Booking Controller', () => {
         totalPages: 1,
       };
 
-      mockBookingService.getPaginated.mockResolvedValue(mockResult as any);
+      mockGetPaginated.mockResolvedValue(mockResult as any);
 
       await getAllBookings(mockRequest as Request, mockResponse as Response);
 
@@ -238,11 +287,11 @@ describe('Booking Controller', () => {
         totalPages: 1,
       };
 
-      mockBookingService.getPaginated.mockResolvedValue(mockResult as any);
+      mockGetPaginated.mockResolvedValue(mockResult as any);
 
       await getAllBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockBookingService.getPaginated).toHaveBeenCalled();
+      expect(mockGetPaginated).toHaveBeenCalled();
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
@@ -252,7 +301,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle errors', async () => {
-      mockBookingService.getPaginated.mockRejectedValue(new Error('Database error'));
+      mockGetPaginated.mockRejectedValue(new Error('Database error'));
 
       await getAllBookings(mockRequest as Request, mockResponse as Response);
 
@@ -278,7 +327,7 @@ describe('Booking Controller', () => {
         status: BookingStatus.PENDING,
       };
 
-      mockBookingService.getById.mockResolvedValue(mockBooking as any);
+      mockGetById.mockResolvedValue(mockBooking as any);
 
       await getBookingById(mockRequest as Request, mockResponse as Response);
 
@@ -289,7 +338,7 @@ describe('Booking Controller', () => {
     });
 
     it('should return 404 when booking not found', async () => {
-      mockBookingService.getById.mockResolvedValue(null as any);
+      mockGetById.mockResolvedValue(null as any);
 
       await getBookingById(mockRequest as Request, mockResponse as Response);
 
@@ -314,7 +363,7 @@ describe('Booking Controller', () => {
         status: BookingStatus.PENDING,
       };
 
-      mockBookingService.getById.mockResolvedValue(mockBooking as any);
+      mockGetById.mockResolvedValue(mockBooking as any);
 
       await getBookingById(mockRequest as Request, mockResponse as Response);
 
@@ -328,7 +377,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle errors', async () => {
-      mockBookingService.getById.mockRejectedValue(new Error('Database error'));
+      mockGetById.mockRejectedValue(new Error('Database error'));
 
       await getBookingById(mockRequest as Request, mockResponse as Response);
 
@@ -359,8 +408,8 @@ describe('Booking Controller', () => {
         status: BookingStatus.CONFIRMED,
       };
 
-      mockBookingService.getById.mockResolvedValue(existingBooking as any);
-      mockBookingService.update.mockResolvedValue(updatedBooking as any);
+      mockGetById.mockResolvedValue(existingBooking as any);
+      mockUpdate.mockResolvedValue(updatedBooking as any);
 
       await updateBooking(mockRequest as Request, mockResponse as Response);
 
@@ -374,7 +423,7 @@ describe('Booking Controller', () => {
       const { validate } = require('class-validator');
       validate.mockResolvedValue([]);
 
-      mockBookingService.getById.mockResolvedValue(null as any);
+      mockGetById.mockResolvedValue(null as any);
 
       await updateBooking(mockRequest as Request, mockResponse as Response);
 
@@ -402,7 +451,7 @@ describe('Booking Controller', () => {
         status: BookingStatus.PENDING,
       };
 
-      mockBookingService.getById.mockResolvedValue(existingBooking as any);
+      mockGetById.mockResolvedValue(existingBooking as any);
 
       await updateBooking(mockRequest as Request, mockResponse as Response);
 
@@ -437,7 +486,7 @@ describe('Booking Controller', () => {
     });
 
     it('should delete booking successfully for admin', async () => {
-      mockBookingService.delete.mockResolvedValue(true);
+      mockDelete.mockResolvedValue(true);
 
       await deleteBooking(mockRequest as Request, mockResponse as Response);
 
@@ -465,7 +514,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle service errors', async () => {
-      mockBookingService.delete.mockRejectedValue(new Error('Database error'));
+      mockDelete.mockRejectedValue(new Error('Database error'));
 
       await deleteBooking(mockRequest as Request, mockResponse as Response);
 
@@ -484,7 +533,7 @@ describe('Booking Controller', () => {
         status: BookingStatus.CONFIRMED,
       };
 
-      mockBookingService.confirmBooking.mockResolvedValue(confirmedBooking as any);
+      mockConfirmBooking.mockResolvedValue(confirmedBooking as any);
 
       await confirmBooking(mockRequest as Request, mockResponse as Response);
 
@@ -513,7 +562,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle service errors', async () => {
-      mockBookingService.confirmBooking.mockRejectedValue(
+      mockConfirmBooking.mockRejectedValue(
         new AppError('Cannot confirm cancelled booking', 400, true)
       );
 
@@ -535,11 +584,11 @@ describe('Booking Controller', () => {
         status: BookingStatus.CANCELLED,
       };
 
-      mockBookingService.cancelBooking.mockResolvedValue(cancelledBooking as any);
+      mockCancelBooking.mockResolvedValue(cancelledBooking as any);
 
       await cancelBooking(mockRequest as Request, mockResponse as Response);
 
-      expect(mockBookingService.cancelBooking).toHaveBeenCalledWith(
+      expect(mockCancelBooking).toHaveBeenCalledWith(
         'booking-123',
         'Customer request',
         expect.any(Object)
@@ -558,11 +607,11 @@ describe('Booking Controller', () => {
         status: BookingStatus.CANCELLED,
       };
 
-      mockBookingService.cancelBooking.mockResolvedValue(cancelledBooking as any);
+      mockCancelBooking.mockResolvedValue(cancelledBooking as any);
 
       await cancelBooking(mockRequest as Request, mockResponse as Response);
 
-      expect(mockBookingService.cancelBooking).toHaveBeenCalledWith(
+      expect(mockCancelBooking).toHaveBeenCalledWith(
         'booking-123',
         'Cancelled by admin',
         expect.any(Object)
@@ -593,7 +642,7 @@ describe('Booking Controller', () => {
         status: 'active',
       };
 
-      mockBookingService.convertToContract.mockResolvedValue(mockContract as any);
+      mockConvertToContract.mockResolvedValue(mockContract as any);
 
       await convertToContract(mockRequest as Request, mockResponse as Response);
 
@@ -622,7 +671,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle service errors', async () => {
-      mockBookingService.convertToContract.mockRejectedValue(
+      mockConvertToContract.mockRejectedValue(
         new AppError('Booking must be confirmed first', 400, true)
       );
 
@@ -723,7 +772,7 @@ describe('Booking Controller', () => {
     });
 
     it('should return availability status', async () => {
-      mockBookingService.checkAvailability.mockResolvedValue(true);
+      mockCheckAvailability.mockResolvedValue(true);
 
       await checkAvailability(mockRequest as Request, mockResponse as Response);
 
@@ -753,7 +802,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle service errors', async () => {
-      mockBookingService.checkAvailability.mockRejectedValue(new Error('Database error'));
+      mockCheckAvailability.mockRejectedValue(new Error('Database error'));
 
       await checkAvailability(mockRequest as Request, mockResponse as Response);
 
@@ -772,11 +821,11 @@ describe('Booking Controller', () => {
         { id: 'booking-2', customerId: 'customer-2' },
       ];
 
-      mockBookingService.getUpcomingBookings.mockResolvedValue(mockBookings as any);
+      mockGetUpcomingBookings.mockResolvedValue(mockBookings as any);
 
       await getUpcomingBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockBookingService.getUpcomingBookings).toHaveBeenCalledWith(7);
+      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7);
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         data: mockBookings,
@@ -794,7 +843,7 @@ describe('Booking Controller', () => {
         { id: 'booking-2', customerId: 'customer-2' },
       ];
 
-      mockBookingService.getUpcomingBookings.mockResolvedValue(mockBookings as any);
+      mockGetUpcomingBookings.mockResolvedValue(mockBookings as any);
 
       await getUpcomingBookings(mockRequest as Request, mockResponse as Response);
 
@@ -806,15 +855,15 @@ describe('Booking Controller', () => {
 
     it('should use default days when not provided', async () => {
       mockRequest.query = {};
-      mockBookingService.getUpcomingBookings.mockResolvedValue([]);
+      mockGetUpcomingBookings.mockResolvedValue([]);
 
       await getUpcomingBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockBookingService.getUpcomingBookings).toHaveBeenCalledWith(7);
+      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7);
     });
 
     it('should handle errors', async () => {
-      mockBookingService.getUpcomingBookings.mockRejectedValue(new Error('Database error'));
+      mockGetUpcomingBookings.mockRejectedValue(new Error('Database error'));
 
       await getUpcomingBookings(mockRequest as Request, mockResponse as Response);
 
@@ -833,11 +882,11 @@ describe('Booking Controller', () => {
         { id: 'booking-2', expiresAt: new Date() },
       ];
 
-      mockBookingService.getExpiringBookings.mockResolvedValue(mockBookings as any);
+      mockGetExpiringBookings.mockResolvedValue(mockBookings as any);
 
       await getExpiringBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockBookingService.getExpiringBookings).toHaveBeenCalledWith(1); // 24 hours = 1 day
+      expect(mockGetExpiringBookings).toHaveBeenCalledWith(1); // 24 hours = 1 day
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         data: mockBookings,
@@ -863,17 +912,15 @@ describe('Booking Controller', () => {
 
     it('should use default hours when not provided', async () => {
       mockRequest.query = {};
-      mockBookingService.getExpiringBookings.mockResolvedValue([]);
+      mockGetExpiringBookings.mockResolvedValue([]);
 
       await getExpiringBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockBookingService.getExpiringBookings).toHaveBeenCalledWith(1);
+      expect(mockGetExpiringBookings).toHaveBeenCalledWith(1);
     });
 
     it('should handle service errors', async () => {
-      mockBookingService.getExpiringBookings.mockRejectedValue(
-        new AppError('Service error', 500, true)
-      );
+      mockGetExpiringBookings.mockRejectedValue(new AppError('Service error', 500, true));
 
       await getExpiringBookings(mockRequest as Request, mockResponse as Response);
 
