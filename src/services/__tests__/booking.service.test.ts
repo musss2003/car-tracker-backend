@@ -554,7 +554,7 @@ describe('BookingService', () => {
       const result = await bookingService.getUpcomingBookings(7);
 
       expect(result).toEqual(mockBookings);
-      expect(mockBookingRepo.findUpcomingBookings).toHaveBeenCalledWith(7);
+      expect(mockBookingRepo.findUpcomingBookings).toHaveBeenCalledWith(7, undefined);
     });
 
     it('should throw ValidationError if days out of range', async () => {

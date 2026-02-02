@@ -3,7 +3,6 @@ import { BookingService } from '../services/booking.service';
 import { CreateBookingDto, UpdateBookingDto, BookingQueryDto } from '../dto/booking.dto';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import { AppError } from '../common/errors/app-error';
 import { extractPaginationParams, extractAuditContext } from '../common/utils/request.utils';
 import {
   sendSuccess,
@@ -166,7 +165,7 @@ export const createBooking = async (req: Request, res: Response) => {
  */
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
-    const { page, limit } = extractPaginationParams(req);
+    const { page: _page, limit: _limit } = extractPaginationParams(req);
     const context = extractAuditContext(req);
 
     const filters = plainToClass(BookingQueryDto, req.query);
@@ -468,7 +467,7 @@ export const getBookingsByCustomer = async (req: Request, res: Response) => {
       return sendForbidden(res, 'You do not have permission to view these bookings');
     }
 
-    const bookings = await bookingRepository.findByCustomer(customerId);
+    const bookings = await bookingService.getByCustomerId(customerId);
 
     return sendSuccess(res, bookings);
   } catch (error: unknown) {
@@ -640,14 +639,14 @@ export const getUpcomingBookings = async (req: Request, res: Response) => {
     const days = parseInt(req.query.days as string) || 7;
     const context = extractAuditContext(req);
 
-    const bookings = await bookingService.getUpcomingBookings(days);
+    // Pass customerId to service for DB-level filtering
+    const customerId = ['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')
+      ? undefined
+      : context.userId;
 
-    // Filter for non-admin users
-    const filteredBookings = ['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')
-      ? bookings
-      : bookings.filter((b) => b.customerId === context.userId);
+    const bookings = await bookingService.getUpcomingBookings(days, customerId);
 
-    return sendSuccess(res, filteredBookings);
+    return sendSuccess(res, bookings);
   } catch (error: unknown) {
     return sendError(res, error, 'Failed to fetch upcoming bookings');
   }

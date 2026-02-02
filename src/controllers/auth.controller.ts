@@ -285,7 +285,10 @@ export const sessionCheck = async (
       return;
     } catch (refreshTokenError: any) {
       logger.error('Error during refresh token validation', {
-        error: refreshTokenError instanceof Error ? refreshTokenError.message : String(refreshTokenError),
+        error:
+          refreshTokenError instanceof Error
+            ? refreshTokenError.message
+            : String(refreshTokenError),
         stack: refreshTokenError instanceof Error ? refreshTokenError.stack : undefined,
       });
       res.status(500).json({

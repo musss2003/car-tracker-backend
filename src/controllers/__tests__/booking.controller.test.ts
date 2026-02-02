@@ -10,6 +10,7 @@ const mockConvertToContract = jest.fn();
 const mockCheckAvailability = jest.fn();
 const mockGetUpcomingBookings = jest.fn();
 const mockGetExpiringBookings = jest.fn();
+const mockGetByCustomerId = jest.fn();
 
 // Mock repository methods
 const mockFindWithFilters = jest.fn();
@@ -39,6 +40,7 @@ jest.mock('../../services/booking.service', () => ({
     checkAvailability: mockCheckAvailability,
     getUpcomingBookings: mockGetUpcomingBookings,
     getExpiringBookings: mockGetExpiringBookings,
+    getByCustomerId: mockGetByCustomerId,
   })),
 }));
 
@@ -65,6 +67,10 @@ import {
   getUpcomingBookings,
   getExpiringBookings,
 } from '../booking.controller';
+
+// Import validate from class-validator so we can mock it
+import { validate } from 'class-validator';
+
 jest.mock('class-validator', () => ({
   validate: jest.fn(),
   IsString: () => jest.fn(),
@@ -707,10 +713,11 @@ describe('Booking Controller', () => {
         { id: 'booking-2', customerId: 'customer-123' },
       ];
 
-      mockFindByCustomer.mockResolvedValue(mockBookings);
+      mockGetByCustomerId.mockResolvedValue(mockBookings);
 
       await getBookingsByCustomer(mockRequest as Request, mockResponse as Response);
 
+      expect(mockGetByCustomerId).toHaveBeenCalledWith('customer-123');
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         data: mockBookings,
@@ -744,7 +751,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle errors', async () => {
-      mockFindByCustomer.mockRejectedValue(new Error('Database error'));
+      mockGetByCustomerId.mockRejectedValue(new Error('Database error'));
 
       await getBookingsByCustomer(mockRequest as Request, mockResponse as Response);
 
@@ -992,7 +999,7 @@ describe('Booking Controller', () => {
 
       await getUpcomingBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7);
+      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7, undefined);
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         data: mockBookings,
@@ -1007,16 +1014,16 @@ describe('Booking Controller', () => {
 
       const mockBookings = [
         { id: 'booking-1', customerId: 'user-123' },
-        { id: 'booking-2', customerId: 'customer-2' },
       ];
 
       mockGetUpcomingBookings.mockResolvedValue(mockBookings as any);
 
       await getUpcomingBookings(mockRequest as Request, mockResponse as Response);
 
+      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7, 'user-123');
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
-        data: [{ id: 'booking-1', customerId: 'user-123' }],
+        data: mockBookings,
       });
     });
 
@@ -1026,7 +1033,7 @@ describe('Booking Controller', () => {
 
       await getUpcomingBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7);
+      expect(mockGetUpcomingBookings).toHaveBeenCalledWith(7, undefined);
     });
 
     it('should handle errors', async () => {
@@ -1105,7 +1112,9 @@ describe('Booking Controller', () => {
     });
 
     it('should not expose internal error details in generic errors', async () => {
-      const internalError = new Error('Database connection failed: Connection to pg://admin:secret123@localhost:5432/db refused');
+      const internalError = new Error(
+        'Database connection failed: Connection to pg://admin:secret123@localhost:5432/db refused'
+      );
       mockCreate.mockRejectedValue(internalError);
 
       mockRequest.body = {
@@ -1132,7 +1141,8 @@ describe('Booking Controller', () => {
 
     it('should not expose stack traces in error responses', async () => {
       const errorWithStack = new Error('Internal processing error');
-      errorWithStack.stack = 'Error: Internal processing error\n    at Object.<anonymous> (/app/src/services/booking.service.ts:123:45)\n    at Module._compile (internal/modules/cjs/loader.js:1063:30)';
+      errorWithStack.stack =
+        'Error: Internal processing error\n    at Object.<anonymous> (/app/src/services/booking.service.ts:123:45)\n    at Module._compile (internal/modules/cjs/loader.js:1063:30)';
       mockGetById.mockRejectedValue(errorWithStack);
 
       mockRequest.params = { id: 'booking-123' };
@@ -1162,7 +1172,18 @@ describe('Booking Controller', () => {
     });
 
     it('should not expose system paths in error responses', async () => {
-      const systemError = new Error('ENOENT: no such file or directory, open \'/usr/local/app/config/secrets.json\'');
+      // First, mock getById to return a booking so we get to the update
+      const existingBooking = {
+        id: 'booking-123',
+        customerId: 'customer-123',
+        status: BookingStatus.PENDING,
+      };
+      mockGetById.mockResolvedValue(existingBooking as any);
+
+      // Then mock update to throw the system error
+      const systemError = new Error(
+        "ENOENT: no such file or directory, open '/usr/local/app/config/secrets.json'"
+      );
       mockUpdate.mockRejectedValue(systemError);
 
       mockRequest.params = { id: 'booking-123' };
@@ -1178,7 +1199,9 @@ describe('Booking Controller', () => {
     });
 
     it('should handle unknown error types without exposure', async () => {
-      const weirdError = { someProperty: 'Database admin panel URL: https://admin:pass@db.internal.com' };
+      const weirdError = {
+        someProperty: 'Database admin panel URL: https://admin:pass@db.internal.com',
+      };
       mockDelete.mockRejectedValue(weirdError);
 
       mockRequest.params = { id: 'booking-123' };

@@ -761,11 +761,11 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
   /**
    * Get upcoming bookings (confirmed and starting soon)
    */
-  async getUpcomingBookings(days: number = 7): Promise<Booking[]> {
+  async getUpcomingBookings(days: number = 7, customerId?: string): Promise<Booking[]> {
     if (days < 1 || days > 365) {
       throw new ValidationError('Days must be between 1 and 365');
     }
-    return await this.bookingRepo.findUpcomingBookings(days);
+    return await this.bookingRepo.findUpcomingBookings(days, customerId);
   }
 
   /**

@@ -340,12 +340,12 @@ export class BookingRepository extends BaseRepository<Booking> {
   /**
    * Find upcoming bookings (confirmed and starting soon)
    */
-  async findUpcomingBookings(days: number = 7): Promise<Booking[]> {
+  async findUpcomingBookings(days: number = 7, customerId?: string): Promise<Booking[]> {
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(now.getDate() + days);
 
-    return this.repository
+    const queryBuilder = this.repository
       .createQueryBuilder('booking')
       .leftJoinAndSelect('booking.customer', 'customer')
       .leftJoinAndSelect('booking.car', 'car')
@@ -353,9 +353,14 @@ export class BookingRepository extends BaseRepository<Booking> {
       .andWhere('booking.startDate BETWEEN :now AND :futureDate', {
         now,
         futureDate,
-      })
-      .orderBy('booking.startDate', 'ASC')
-      .getMany();
+      });
+
+    // Filter by customerId if provided (for non-admin users)
+    if (customerId) {
+      queryBuilder.andWhere('booking.customerId = :customerId', { customerId });
+    }
+
+    return queryBuilder.orderBy('booking.startDate', 'ASC').getMany();
   }
 
   /**
