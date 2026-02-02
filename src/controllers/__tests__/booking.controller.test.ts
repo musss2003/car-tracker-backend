@@ -1012,9 +1012,7 @@ describe('Booking Controller', () => {
         userRole: 'USER',
       });
 
-      const mockBookings = [
-        { id: 'booking-1', customerId: 'user-123' },
-      ];
+      const mockBookings = [{ id: 'booking-1', customerId: 'user-123' }];
 
       mockGetUpcomingBookings.mockResolvedValue(mockBookings as any);
 
