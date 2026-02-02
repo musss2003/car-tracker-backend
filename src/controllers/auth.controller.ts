@@ -7,6 +7,7 @@ import { RefreshToken } from '../models/refresh-token.model';
 import dotenv from 'dotenv';
 import { logAudit } from '../middlewares/audit-log.middleware';
 import { captureException, setUserContext } from '../config/monitoring';
+import logger from '../config/logger';
 
 dotenv.config();
 
@@ -283,7 +284,13 @@ export const sessionCheck = async (
       });
       return;
     } catch (refreshTokenError: any) {
-      console.error('Error during refresh token validation:', refreshTokenError.message);
+      logger.error('Error during refresh token validation', {
+        error:
+          refreshTokenError instanceof Error
+            ? refreshTokenError.message
+            : String(refreshTokenError),
+        stack: refreshTokenError instanceof Error ? refreshTokenError.stack : undefined,
+      });
       res.status(500).json({
         authenticated: false,
         message: 'Internal server error during refresh',

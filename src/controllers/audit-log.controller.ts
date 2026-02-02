@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import auditLogService from '../services/audit-log.service';
 import { AuditAction, AuditResource, AuditStatus } from '../models/audit-log.model';
+import logger from '../config/logger';
 
 /**
  * Get audit logs with filters and pagination
@@ -36,11 +37,13 @@ export const getAuditLogs = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    logger.error('Error fetching audit logs', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch audit logs',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -73,11 +76,13 @@ export const getAuditLogById = async (req: Request, res: Response) => {
       data: log,
     });
   } catch (error) {
-    console.error('Error fetching audit log:', error);
+    logger.error('Error fetching audit log', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch audit log',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -98,11 +103,13 @@ export const getUserRecentActivity = async (req: Request, res: Response) => {
       data: logs,
     });
   } catch (error) {
-    console.error('Error fetching user activity:', error);
+    logger.error('Error fetching user activity', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch user activity',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -127,11 +134,13 @@ export const getAuditStatistics = async (req: Request, res: Response) => {
       data: stats,
     });
   } catch (error) {
-    console.error('Error fetching audit statistics:', error);
+    logger.error('Error fetching audit statistics', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch audit statistics',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -152,11 +161,13 @@ export const cleanupOldLogs = async (req: Request, res: Response) => {
       data: { deletedCount },
     });
   } catch (error) {
-    console.error('Error cleaning up audit logs:', error);
+    logger.error('Error cleaning up audit logs', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to cleanup audit logs',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };
@@ -196,11 +207,13 @@ export const exportAuditLogs = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('Error exporting audit logs:', error);
+    logger.error('Error exporting audit logs', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to export audit logs',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 };

@@ -20,6 +20,7 @@ import countryRoutes from './routes/country.route';
 import documentsRoutes from './routes/upload.route';
 import auditLogRoutes from './routes/audit-log.route';
 import activityRoutes from './routes/activity.route';
+import bookingRoutes from './routes/booking.route';
 import { getRoutesJSON, getAPIDocs } from './routes/docs.route';
 import { auditLogMiddleware } from './middlewares/audit-log.middleware';
 import { errorHandler, notFoundHandler } from './common/errors/error-handler';
@@ -375,6 +376,7 @@ process.on('uncaughtException', (error) => {
 app.use('/api/auth', authLimiter, authRoutes); // ✅ Strict rate limit for auth
 app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/contracts', apiLimiter, contractRoutes);
+app.use('/api/bookings', apiLimiter, bookingRoutes);
 app.use('/api/cars', apiLimiter, carAnalyticsRoutes); // Analytics routes (must be before general car routes)
 app.use('/api/cars', apiLimiter, carRoutes);
 app.use('/api/car-registration', apiLimiter, carRegistrationRoutes);
