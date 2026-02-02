@@ -506,6 +506,7 @@ describe('Booking Controller', () => {
 
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
+        data: null,
         message: 'Booking deleted successfully',
       });
     });
@@ -836,8 +837,8 @@ describe('Booking Controller', () => {
     beforeEach(() => {
       mockRequest.body = {
         carId: 'car-123',
-        startDate: '2026-03-01',
-        endDate: '2026-03-05',
+        startDate: '2026-03-01T10:00:00Z',
+        endDate: '2026-03-05T10:00:00Z',
       };
     });
 
@@ -851,8 +852,8 @@ describe('Booking Controller', () => {
         data: {
           available: true,
           carId: 'car-123',
-          startDate: '2026-03-01',
-          endDate: '2026-03-05',
+          startDate: '2026-03-01T10:00:00.000Z',
+          endDate: '2026-03-05T10:00:00.000Z',
         },
       });
     });
@@ -866,7 +867,103 @@ describe('Booking Controller', () => {
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: 'carId, startDate, and endDate are required',
+          message: 'Validation failed',
+          errors: ['carId, startDate, and endDate are required'],
+        })
+      );
+    });
+
+    it('should return 400 when startDate is invalid', async () => {
+      mockRequest.body = {
+        carId: 'car-123',
+        startDate: 'invalid-date',
+        endDate: '2026-03-05T10:00:00Z',
+      };
+
+      await checkAvailability(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Validation failed',
+          errors: expect.arrayContaining([expect.stringContaining('startDate must be a valid')]),
+        })
+      );
+    });
+
+    it('should return 400 when endDate is invalid', async () => {
+      mockRequest.body = {
+        carId: 'car-123',
+        startDate: '2026-03-01T10:00:00Z',
+        endDate: 'not-a-date',
+      };
+
+      await checkAvailability(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Validation failed',
+          errors: expect.arrayContaining([expect.stringContaining('endDate must be a valid')]),
+        })
+      );
+    });
+
+    it('should return 400 when endDate is before startDate', async () => {
+      mockRequest.body = {
+        carId: 'car-123',
+        startDate: '2026-03-05T10:00:00Z',
+        endDate: '2026-03-01T10:00:00Z', // Before start date
+      };
+
+      await checkAvailability(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Validation failed',
+          errors: ['endDate must be after startDate'],
+        })
+      );
+    });
+
+    it('should return 400 when startDate is in the past', async () => {
+      mockRequest.body = {
+        carId: 'car-123',
+        startDate: '2020-01-01T10:00:00Z', // Past date
+        endDate: '2026-03-05T10:00:00Z',
+      };
+
+      await checkAvailability(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Validation failed',
+          errors: expect.arrayContaining([expect.stringContaining('cannot be in the past')]),
+        })
+      );
+    });
+
+    it('should return 400 when booking duration exceeds 1 year', async () => {
+      mockRequest.body = {
+        carId: 'car-123',
+        startDate: '2026-03-01T10:00:00Z',
+        endDate: '2028-03-01T10:00:00Z', // 2 years later
+      };
+
+      await checkAvailability(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Validation failed',
+          errors: expect.arrayContaining([expect.stringContaining('cannot exceed 1 year')]),
         })
       );
     });

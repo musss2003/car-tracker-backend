@@ -5,17 +5,17 @@ import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { AppError } from '../common/errors/app-error';
 import { extractPaginationParams, extractAuditContext } from '../common/utils/request.utils';
+import {
+  sendSuccess,
+  sendSuccessWithPagination,
+  sendError,
+  sendValidationError,
+  sendNotFound,
+  sendForbidden,
+} from '../common/utils/response.utils';
 import bookingRepository from '../repositories/booking.repository';
 
 const bookingService = new BookingService(bookingRepository);
-
-/**
- * Helper function to get error message from unknown error
- */
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
-}
 
 /**
  * @swagger
@@ -38,6 +38,8 @@ function getErrorMessage(error: unknown): string {
  *         description: Validation error
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - trying to create booking for another customer
  */
 export const createBooking = async (req: Request, res: Response) => {
   try {
@@ -45,10 +47,8 @@ export const createBooking = async (req: Request, res: Response) => {
     const errors = await validate(dto);
 
     if (errors.length > 0) {
-      throw new AppError(
-        'Validation failed',
-        400,
-        true,
+      return sendValidationError(
+        res,
         errors.map((e) => Object.values(e.constraints || {}).join(', '))
       );
     }
@@ -60,29 +60,14 @@ export const createBooking = async (req: Request, res: Response) => {
       dto.customerId !== context.userId &&
       !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')
     ) {
-      throw new AppError('You can only create bookings for yourself', 403, true);
+      return sendForbidden(res, 'You can only create bookings for yourself');
     }
 
     const booking = await bookingService.create(dto, context);
 
-    res.status(201).json({
-      success: true,
-      data: booking,
-    });
+    return sendSuccess(res, booking, 201);
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-        errors: error.errors,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to create booking',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to create booking');
   }
 };
 
@@ -90,7 +75,32 @@ export const createBooking = async (req: Request, res: Response) => {
  * @swagger
  * /api/bookings:
  *   get:
- *     summary: Get all bookings with pagination and filtering
+ *     summary: Get all bookings with pagination, filtering, and search
+ *     description: |
+ *       Retrieve bookings with comprehensive filtering and search capabilities.
+ *
+ *       **Filtering Options:**
+ *       - status: Filter by booking status (PENDING, CONFIRMED, CANCELLED, COMPLETED, EXPIRED)
+ *       - customerId: Filter by customer UUID
+ *       - carId: Filter by car UUID
+ *       - bookingReference: Exact match on booking reference
+ *       - depositPaid: Filter by deposit payment status (true/false)
+ *       - startDateFrom/startDateTo: Filter by start date range
+ *       - endDateFrom/endDateTo: Filter by end date range
+ *       - minCost/maxCost: Filter by cost range
+ *
+ *       **Search:**
+ *       - search: Full-text search across booking reference, customer name, and car license plate
+ *
+ *       **Sorting:**
+ *       - sortBy: Field to sort by (createdAt, startDate, endDate, totalEstimatedCost, status, etc.)
+ *       - sortOrder: ASC or DESC
+ *
+ *       **Pagination:**
+ *       - page: Page number (default: 1, max: 10000)
+ *       - limit: Items per page (default: 10, max: 100)
+ *
+ *       **Authorization:** Non-admin users can only see their own bookings
  *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
@@ -99,25 +109,60 @@ export const createBooking = async (req: Request, res: Response) => {
  *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
+ *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 10
+ *           maximum: 100
+ *         description: Items per page
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
+ *           enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED, EXPIRED]
+ *         description: Filter by booking status
  *       - in: query
  *         name: customerId
  *         schema:
  *           type: string
+ *           format: uuid
+ *         description: Filter by customer ID
  *       - in: query
  *         name: carId
  *         schema:
  *           type: string
+ *           format: uuid
+ *         description: Filter by car ID
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *           maxLength: 100
+ *         description: Search across booking reference, customer name, and license plate
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, startDate, endDate, totalEstimatedCost, status]
+ *           default: createdAt
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: DESC
+ *         description: Sort order
  *     responses:
  *       200:
- *         description: List of bookings
+ *         description: List of bookings with pagination
+ *       400:
+ *         description: Invalid query parameters
+ *       401:
+ *         description: Unauthorized
  */
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
@@ -134,22 +179,14 @@ export const getAllBookings = async (req: Request, res: Response) => {
     // Use repository's findWithFilters for proper query handling
     const result = await bookingRepository.findWithFilters(filters);
 
-    res.json({
-      success: true,
-      data: result.data,
-      pagination: {
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        pages: result.pages,
-      },
+    return sendSuccessWithPagination(res, result.data, {
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      pages: result.pages,
     });
   } catch (error: unknown) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch bookings',
-      error: getErrorMessage(error),
-    });
+    return sendError(res, error, 'Failed to fetch bookings');
   }
 };
 
@@ -181,7 +218,7 @@ export const getBookingById = async (req: Request, res: Response) => {
     const booking = await bookingService.getById(id, context);
 
     if (!booking) {
-      throw new AppError('Booking not found', 404, true);
+      return sendNotFound(res, 'Booking');
     }
 
     // Authorization: Users can only view their own bookings
@@ -189,26 +226,12 @@ export const getBookingById = async (req: Request, res: Response) => {
       !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') &&
       booking.customerId !== context.userId
     ) {
-      throw new AppError('You do not have permission to view this booking', 403, true);
+      return sendForbidden(res, 'You do not have permission to view this booking');
     }
 
-    res.json({
-      success: true,
-      data: booking,
-    });
+    return sendSuccess(res, booking);
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to fetch booking',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to fetch booking');
   }
 };
 
@@ -243,10 +266,8 @@ export const updateBooking = async (req: Request, res: Response) => {
     const errors = await validate(dto);
 
     if (errors.length > 0) {
-      throw new AppError(
-        'Validation failed',
-        400,
-        true,
+      return sendValidationError(
+        res,
         errors.map((e) => Object.values(e.constraints || {}).join(', '))
       );
     }
@@ -255,7 +276,7 @@ export const updateBooking = async (req: Request, res: Response) => {
     const existingBooking = await bookingService.getById(id, context);
 
     if (!existingBooking) {
-      throw new AppError('Booking not found', 404, true);
+      return sendNotFound(res, 'Booking');
     }
 
     // Authorization: Users can only update their own bookings
@@ -263,29 +284,14 @@ export const updateBooking = async (req: Request, res: Response) => {
       !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') &&
       existingBooking.customerId !== context.userId
     ) {
-      throw new AppError('You do not have permission to update this booking', 403, true);
+      return sendForbidden(res, 'You do not have permission to update this booking');
     }
 
     const updatedBooking = await bookingService.update(id, dto, context);
 
-    res.json({
-      success: true,
-      data: updatedBooking,
-    });
+    return sendSuccess(res, updatedBooking);
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-        errors: error.errors,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to update booking',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to update booking');
   }
 };
 
@@ -314,28 +320,14 @@ export const deleteBooking = async (req: Request, res: Response) => {
 
     // Only admin/manager can delete bookings
     if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
-      throw new AppError('Only administrators can delete bookings', 403, true);
+      return sendForbidden(res, 'Only administrators can delete bookings');
     }
 
     await bookingService.delete(id, context);
 
-    res.json({
-      success: true,
-      message: 'Booking deleted successfully',
-    });
+    return sendSuccess(res, null, 200, 'Booking deleted successfully');
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to delete booking',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to delete booking');
   }
 };
 
@@ -364,29 +356,14 @@ export const confirmBooking = async (req: Request, res: Response) => {
 
     // Only admin/manager can confirm bookings
     if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
-      throw new AppError('Only administrators can confirm bookings', 403, true);
+      return sendForbidden(res, 'Only administrators can confirm bookings');
     }
 
     const booking = await bookingService.confirmBooking(id, context);
 
-    res.json({
-      success: true,
-      data: booking,
-      message: 'Booking confirmed successfully',
-    });
+    return sendSuccess(res, booking, 200, 'Booking confirmed successfully');
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to confirm booking',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to confirm booking');
   }
 };
 
@@ -416,29 +393,14 @@ export const cancelBooking = async (req: Request, res: Response) => {
 
     // Only admin/manager can cancel bookings
     if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
-      throw new AppError('Only administrators can cancel bookings', 403, true);
+      return sendForbidden(res, 'Only administrators can cancel bookings');
     }
 
     const booking = await bookingService.cancelBooking(id, reason || 'Cancelled by admin', context);
 
-    res.json({
-      success: true,
-      data: booking,
-      message: 'Booking cancelled successfully',
-    });
+    return sendSuccess(res, booking, 200, 'Booking cancelled successfully');
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to cancel booking',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to cancel booking');
   }
 };
 
@@ -467,29 +429,14 @@ export const convertToContract = async (req: Request, res: Response) => {
 
     // Only admin/manager can convert bookings
     if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
-      throw new AppError('Only administrators can convert bookings to contracts', 403, true);
+      return sendForbidden(res, 'Only administrators can convert bookings to contracts');
     }
 
     const contract = await bookingService.convertToContract(id, context);
 
-    res.json({
-      success: true,
-      data: contract,
-      message: 'Booking converted to contract successfully',
-    });
+    return sendSuccess(res, contract, 200, 'Booking converted to contract successfully');
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to convert booking',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to convert booking');
   }
 };
 
@@ -518,28 +465,14 @@ export const getBookingsByCustomer = async (req: Request, res: Response) => {
 
     // Authorization: Users can only view their own bookings
     if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') && customerId !== context.userId) {
-      throw new AppError('You do not have permission to view these bookings', 403, true);
+      return sendForbidden(res, 'You do not have permission to view these bookings');
     }
 
     const bookings = await bookingRepository.findByCustomer(customerId);
 
-    res.json({
-      success: true,
-      data: bookings,
-    });
+    return sendSuccess(res, bookings);
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to fetch customer bookings',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to fetch customer bookings');
   }
 };
 
@@ -565,7 +498,7 @@ export const getBookingsByCar = async (req: Request, res: Response) => {
   try {
     const { carId } = req.params;
     const context = extractAuditContext(req);
-    
+
     const result = await bookingRepository.findByCar(carId);
 
     // Authorization: Users can only see their own bookings
@@ -573,22 +506,14 @@ export const getBookingsByCar = async (req: Request, res: Response) => {
       ? result.data
       : result.data.filter((b) => b.customerId === context.userId);
 
-    res.json({
-      success: true,
-      data: filteredData,
-      pagination: {
-        total: filteredData.length,
-        page: result.page,
-        limit: filteredData.length,
-        pages: 1,
-      },
+    return sendSuccessWithPagination(res, filteredData, {
+      total: filteredData.length,
+      page: result.page,
+      limit: filteredData.length,
+      pages: 1,
     });
   } catch (error: unknown) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch car bookings',
-      error: getErrorMessage(error),
-    });
+    return sendError(res, error, 'Failed to fetch car bookings');
   }
 };
 
@@ -606,55 +531,89 @@ export const getBookingsByCar = async (req: Request, res: Response) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - carId
+ *               - startDate
+ *               - endDate
  *             properties:
  *               carId:
  *                 type: string
+ *                 format: uuid
  *               startDate:
  *                 type: string
  *                 format: date-time
+ *                 description: ISO 8601 date string
  *               endDate:
  *                 type: string
  *                 format: date-time
+ *                 description: ISO 8601 date string
  *     responses:
  *       200:
  *         description: Availability status
+ *       400:
+ *         description: Invalid request parameters or date format
  */
 export const checkAvailability = async (req: Request, res: Response) => {
   try {
     const { carId, startDate, endDate } = req.body;
 
+    // Validate required fields
     if (!carId || !startDate || !endDate) {
-      throw new AppError('carId, startDate, and endDate are required', 400, true);
+      return sendValidationError(res, ['carId, startDate, and endDate are required']);
+    }
+
+    // Parse and validate start date
+    const parsedStartDate = new Date(startDate);
+    if (isNaN(parsedStartDate.getTime())) {
+      return sendValidationError(res, [
+        'startDate must be a valid ISO 8601 date string (e.g., 2026-03-15T10:00:00Z)',
+      ]);
+    }
+
+    // Parse and validate end date
+    const parsedEndDate = new Date(endDate);
+    if (isNaN(parsedEndDate.getTime())) {
+      return sendValidationError(res, [
+        'endDate must be a valid ISO 8601 date string (e.g., 2026-03-20T10:00:00Z)',
+      ]);
+    }
+
+    // Validate date range
+    if (parsedEndDate <= parsedStartDate) {
+      return sendValidationError(res, ['endDate must be after startDate']);
+    }
+
+    // Validate dates are not in the past
+    const now = new Date();
+    if (parsedStartDate < now) {
+      return sendValidationError(res, [
+        'startDate cannot be in the past. Please provide a future date.',
+      ]);
+    }
+
+    // Validate reasonable booking duration (e.g., max 1 year)
+    const maxDuration = 365 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
+    const duration = parsedEndDate.getTime() - parsedStartDate.getTime();
+    if (duration > maxDuration) {
+      return sendValidationError(res, [
+        'Booking duration cannot exceed 1 year. Please select a shorter period.',
+      ]);
     }
 
     const isAvailable = await bookingService.checkAvailability(
       carId,
-      new Date(startDate),
-      new Date(endDate)
+      parsedStartDate,
+      parsedEndDate
     );
 
-    res.json({
-      success: true,
-      data: {
-        available: isAvailable,
-        carId,
-        startDate,
-        endDate,
-      },
+    return sendSuccess(res, {
+      available: isAvailable,
+      carId,
+      startDate: parsedStartDate.toISOString(),
+      endDate: parsedEndDate.toISOString(),
     });
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to check availability',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to check availability');
   }
 };
 
@@ -688,16 +647,9 @@ export const getUpcomingBookings = async (req: Request, res: Response) => {
       ? bookings
       : bookings.filter((b) => b.customerId === context.userId);
 
-    res.json({
-      success: true,
-      data: filteredBookings,
-    });
+    return sendSuccess(res, filteredBookings);
   } catch (error: unknown) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch upcoming bookings',
-      error: getErrorMessage(error),
-    });
+    return sendError(res, error, 'Failed to fetch upcoming bookings');
   }
 };
 
@@ -726,28 +678,14 @@ export const getExpiringBookings = async (req: Request, res: Response) => {
 
     // Only admin/manager can view expiring bookings
     if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
-      throw new AppError('Only administrators can view expiring bookings', 403, true);
+      return sendForbidden(res, 'Only administrators can view expiring bookings');
     }
 
     const days = Math.ceil(hours / 24);
     const bookings = await bookingService.getExpiringBookings(days);
 
-    res.json({
-      success: true,
-      data: bookings,
-    });
+    return sendSuccess(res, bookings);
   } catch (error: unknown) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to fetch expiring bookings',
-        error: getErrorMessage(error),
-      });
-    }
+    return sendError(res, error, 'Failed to fetch expiring bookings');
   }
 };
