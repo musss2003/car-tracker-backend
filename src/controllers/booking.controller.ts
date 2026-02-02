@@ -131,7 +131,8 @@ export const getAllBookings = async (req: Request, res: Response) => {
       filters.customerId = context.userId;
     }
 
-    const result = await bookingService.getPaginated(page, limit, {}, context);
+    // Use repository's findWithFilters for proper query handling
+    const result = await bookingRepository.findWithFilters(filters);
 
     res.json({
       success: true,
@@ -139,8 +140,8 @@ export const getAllBookings = async (req: Request, res: Response) => {
       pagination: {
         total: result.total,
         page: result.page,
-        limit: limit,
-        pages: result.totalPages,
+        limit: result.limit,
+        pages: result.pages,
       },
     });
   } catch (error: unknown) {
@@ -563,11 +564,24 @@ export const getBookingsByCustomer = async (req: Request, res: Response) => {
 export const getBookingsByCar = async (req: Request, res: Response) => {
   try {
     const { carId } = req.params;
-    const bookings = await bookingRepository.findByCar(carId);
+    const context = extractAuditContext(req);
+    
+    const result = await bookingRepository.findByCar(carId);
+
+    // Authorization: Users can only see their own bookings
+    const filteredData = ['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')
+      ? result.data
+      : result.data.filter((b) => b.customerId === context.userId);
 
     res.json({
       success: true,
-      data: bookings,
+      data: filteredData,
+      pagination: {
+        total: filteredData.length,
+        page: result.page,
+        limit: filteredData.length,
+        pages: 1,
+      },
     });
   } catch (error: unknown) {
     res.status(500).json({

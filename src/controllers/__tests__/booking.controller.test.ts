@@ -1,10 +1,3 @@
-import { Request, Response } from 'express';
-import { AppError } from '../../common/errors/app-error';
-import { BookingStatus } from '../../models/booking.model';
-import { UserRole } from '../../models/user.model';
-import * as requestUtils from '../../common/utils/request.utils';
-import bookingRepository from '../../repositories/booking.repository';
-
 // Mock service methods
 const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
@@ -18,8 +11,20 @@ const mockCheckAvailability = jest.fn();
 const mockGetUpcomingBookings = jest.fn();
 const mockGetExpiringBookings = jest.fn();
 
-// Mock dependencies
-jest.mock('../../repositories/booking.repository');
+// Mock repository methods
+const mockFindWithFilters = jest.fn();
+const mockFindByCar = jest.fn();
+const mockFindByCustomer = jest.fn();
+
+// Mock dependencies BEFORE imports
+jest.mock('../../repositories/booking.repository', () => ({
+  __esModule: true,
+  default: {
+    findWithFilters: mockFindWithFilters,
+    findByCar: mockFindByCar,
+    findByCustomer: mockFindByCustomer,
+  },
+}));
 jest.mock('../../common/utils/request.utils');
 jest.mock('../../services/booking.service', () => ({
   BookingService: jest.fn().mockImplementation(() => ({
@@ -36,6 +41,13 @@ jest.mock('../../services/booking.service', () => ({
     getExpiringBookings: mockGetExpiringBookings,
   })),
 }));
+
+// Now import after mocks are set up
+import { Request, Response } from 'express';
+import { AppError } from '../../common/errors/app-error';
+import { BookingStatus } from '../../models/booking.model';
+import { UserRole } from '../../models/user.model';
+import * as requestUtils from '../../common/utils/request.utils';
 
 // Import controller after mocks
 import {
@@ -255,10 +267,11 @@ describe('Booking Controller', () => {
         ],
         total: 2,
         page: 1,
-        totalPages: 1,
+        limit: 10,
+        pages: 1,
       };
 
-      mockGetPaginated.mockResolvedValue(mockResult as any);
+      mockFindWithFilters.mockResolvedValue(mockResult as any);
 
       await getAllBookings(mockRequest as Request, mockResponse as Response);
 
@@ -284,14 +297,15 @@ describe('Booking Controller', () => {
         data: [{ id: 'booking-1', customerId: 'user-123' }],
         total: 1,
         page: 1,
-        totalPages: 1,
+        limit: 10,
+        pages: 1,
       };
 
-      mockGetPaginated.mockResolvedValue(mockResult as any);
+      mockFindWithFilters.mockResolvedValue(mockResult as any);
 
       await getAllBookings(mockRequest as Request, mockResponse as Response);
 
-      expect(mockGetPaginated).toHaveBeenCalled();
+      expect(mockFindWithFilters).toHaveBeenCalled();
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
@@ -301,7 +315,7 @@ describe('Booking Controller', () => {
     });
 
     it('should handle errors', async () => {
-      mockGetPaginated.mockRejectedValue(new Error('Database error'));
+      mockFindWithFilters.mockRejectedValue(new Error('Database error'));
 
       await getAllBookings(mockRequest as Request, mockResponse as Response);
 
@@ -692,7 +706,7 @@ describe('Booking Controller', () => {
         { id: 'booking-2', customerId: 'customer-123' },
       ];
 
-      (bookingRepository.findByCustomer as jest.Mock).mockResolvedValue(mockBookings);
+      mockFindByCustomer.mockResolvedValue(mockBookings);
 
       await getBookingsByCustomer(mockRequest as Request, mockResponse as Response);
 
@@ -719,12 +733,17 @@ describe('Booking Controller', () => {
           message: 'You do not have permission to view these bookings',
         })
       );
+
+      // Reset for next test
+      (requestUtils.extractAuditContext as jest.Mock).mockReturnValue({
+        userId: 'user-123',
+        userRole: 'ADMIN',
+        ipAddress: '127.0.0.1',
+      });
     });
 
     it('should handle errors', async () => {
-      (bookingRepository.findByCustomer as jest.Mock).mockRejectedValue(
-        new Error('Database error')
-      );
+      mockFindByCustomer.mockRejectedValue(new Error('Database error'));
 
       await getBookingsByCustomer(mockRequest as Request, mockResponse as Response);
 
@@ -737,24 +756,75 @@ describe('Booking Controller', () => {
       mockRequest.params = { carId: 'car-123' };
     });
 
-    it('should return bookings for the car', async () => {
-      const mockBookings = [
-        { id: 'booking-1', carId: 'car-123' },
-        { id: 'booking-2', carId: 'car-123' },
-      ];
+    it('should return all bookings for the car for admin users', async () => {
+      const mockResult = {
+        data: [
+          { id: 'booking-1', carId: 'car-123', customerId: 'customer-1' },
+          { id: 'booking-2', carId: 'car-123', customerId: 'customer-2' },
+        ],
+        total: 2,
+        page: 1,
+        pages: 1,
+      };
 
-      (bookingRepository.findByCar as jest.Mock).mockResolvedValue(mockBookings);
+      mockFindByCar.mockResolvedValue(mockResult);
 
       await getBookingsByCar(mockRequest as Request, mockResponse as Response);
 
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
-        data: mockBookings,
+        data: mockResult.data,
+        pagination: {
+          total: 2,
+          page: 1,
+          limit: 2,
+          pages: 1,
+        },
+      });
+    });
+
+    it('should filter bookings for non-admin users', async () => {
+      (requestUtils.extractAuditContext as jest.Mock).mockReturnValue({
+        userId: 'user-123',
+        userRole: 'USER',
+      });
+
+      const mockResult = {
+        data: [
+          { id: 'booking-1', carId: 'car-123', customerId: 'user-123' },
+          { id: 'booking-2', carId: 'car-123', customerId: 'customer-2' },
+        ],
+        total: 2,
+        page: 1,
+        pages: 1,
+      };
+
+      mockFindByCar.mockResolvedValue(mockResult);
+
+      await getBookingsByCar(mockRequest as Request, mockResponse as Response);
+
+      // Should only return booking-1 (belongs to user-123)
+      expect(jsonMock).toHaveBeenCalledWith({
+        success: true,
+        data: [{ id: 'booking-1', carId: 'car-123', customerId: 'user-123' }],
+        pagination: {
+          total: 1,
+          page: 1,
+          limit: 1,
+          pages: 1,
+        },
+      });
+
+      // Reset for next test
+      (requestUtils.extractAuditContext as jest.Mock).mockReturnValue({
+        userId: 'user-123',
+        userRole: 'ADMIN',
+        ipAddress: '127.0.0.1',
       });
     });
 
     it('should handle errors', async () => {
-      (bookingRepository.findByCar as jest.Mock).mockRejectedValue(new Error('Database error'));
+      mockFindByCar.mockRejectedValue(new Error('Database error'));
 
       await getBookingsByCar(mockRequest as Request, mockResponse as Response);
 
