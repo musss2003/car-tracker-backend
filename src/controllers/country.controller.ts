@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../config/db';
 import { Country } from '../models/country.model';
+import logger from '../config/logger';
 
 // Get all countries
 export const getCountries = async (req: Request, res: Response) => {
@@ -22,10 +23,12 @@ export const getCountries = async (req: Request, res: Response) => {
 
     res.json(transformedCountries);
   } catch (error) {
-    console.error('Error fetching countries:', error);
+    logger.error('Error fetching countries', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error : 'Something went wrong',
     });
   }
 };

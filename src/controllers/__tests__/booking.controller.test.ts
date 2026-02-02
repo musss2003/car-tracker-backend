@@ -1094,4 +1094,103 @@ describe('Booking Controller', () => {
       expect(statusMock).toHaveBeenCalledWith(500);
     });
   });
+
+  /**
+   * Security Tests - Ensure error responses don't leak internal details
+   */
+  describe('Security: Error Response Sanitization', () => {
+    beforeEach(() => {
+      // Mock validation to pass for these security tests
+      (validate as jest.Mock).mockResolvedValue([]);
+    });
+
+    it('should not expose internal error details in generic errors', async () => {
+      const internalError = new Error('Database connection failed: Connection to pg://admin:secret123@localhost:5432/db refused');
+      mockCreate.mockRejectedValue(internalError);
+
+      mockRequest.body = {
+        carId: 'car-123',
+        customerId: 'customer-123',
+        startDate: '2024-02-01T00:00:00Z',
+        endDate: '2024-02-07T00:00:00Z',
+        totalCost: 500,
+      };
+
+      await createBooking(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(500);
+      const responseCall = jsonMock.mock.calls[0][0];
+      expect(responseCall).toHaveProperty('success', false);
+      expect(responseCall).toHaveProperty('message', 'Failed to create booking');
+      // Should NOT contain error details
+      expect(responseCall).not.toHaveProperty('error');
+      expect(responseCall).not.toHaveProperty('errors');
+      // Should not expose database credentials
+      expect(JSON.stringify(responseCall)).not.toContain('secret123');
+      expect(JSON.stringify(responseCall)).not.toContain('Connection to pg://');
+    });
+
+    it('should not expose stack traces in error responses', async () => {
+      const errorWithStack = new Error('Internal processing error');
+      errorWithStack.stack = 'Error: Internal processing error\n    at Object.<anonymous> (/app/src/services/booking.service.ts:123:45)\n    at Module._compile (internal/modules/cjs/loader.js:1063:30)';
+      mockGetById.mockRejectedValue(errorWithStack);
+
+      mockRequest.params = { id: 'booking-123' };
+
+      await getBookingById(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(500);
+      const responseCall = jsonMock.mock.calls[0][0];
+      // Should not contain stack trace information
+      expect(JSON.stringify(responseCall)).not.toContain('booking.service.ts');
+      expect(JSON.stringify(responseCall)).not.toContain('loader.js');
+      expect(JSON.stringify(responseCall)).not.toContain('/app/src/');
+    });
+
+    it('should allow controlled AppError messages to be shown', async () => {
+      const controlledError = new AppError('Booking not found', 404, true);
+      mockGetById.mockRejectedValue(controlledError);
+
+      mockRequest.params = { id: 'booking-123' };
+
+      await getBookingById(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(404);
+      const responseCall = jsonMock.mock.calls[0][0];
+      expect(responseCall).toHaveProperty('success', false);
+      expect(responseCall).toHaveProperty('message', 'Booking not found');
+    });
+
+    it('should not expose system paths in error responses', async () => {
+      const systemError = new Error('ENOENT: no such file or directory, open \'/usr/local/app/config/secrets.json\'');
+      mockUpdate.mockRejectedValue(systemError);
+
+      mockRequest.params = { id: 'booking-123' };
+      mockRequest.body = { totalCost: 600 };
+
+      await updateBooking(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(500);
+      const responseCall = jsonMock.mock.calls[0][0];
+      // Should not expose file paths
+      expect(JSON.stringify(responseCall)).not.toContain('/usr/local/app/');
+      expect(JSON.stringify(responseCall)).not.toContain('secrets.json');
+    });
+
+    it('should handle unknown error types without exposure', async () => {
+      const weirdError = { someProperty: 'Database admin panel URL: https://admin:pass@db.internal.com' };
+      mockDelete.mockRejectedValue(weirdError);
+
+      mockRequest.params = { id: 'booking-123' };
+
+      await deleteBooking(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(500);
+      const responseCall = jsonMock.mock.calls[0][0];
+      expect(responseCall).toHaveProperty('message', 'Failed to delete booking');
+      // Should not expose the object's internal properties
+      expect(JSON.stringify(responseCall)).not.toContain('admin:pass');
+      expect(JSON.stringify(responseCall)).not.toContain('db.internal.com');
+    });
+  });
 });

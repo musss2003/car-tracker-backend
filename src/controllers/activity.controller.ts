@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../config/db';
 import { User } from '../models/user.model';
+import logger from '../config/logger';
 
 // Get all users with their online status
 export const getUsersWithStatus = async (req: Request, res: Response): Promise<void> => {
@@ -46,7 +47,10 @@ export const getUsersWithStatus = async (req: Request, res: Response): Promise<v
       users: usersWithStatus,
     });
   } catch (error) {
-    console.error('Error fetching users with status:', error);
+    logger.error('Error fetching users with status', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Error fetching users',
@@ -65,7 +69,10 @@ export const getOnlineUsers = async (req: Request, res: Response): Promise<void>
       onlineUsers: Array.from(onlineUserIds),
     });
   } catch (error) {
-    console.error('Error fetching online users:', error);
+    logger.error('Error fetching online users', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({
       success: false,
       message: 'Error fetching online users',

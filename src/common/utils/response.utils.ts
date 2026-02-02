@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { AppError } from '../errors/app-error';
+import logger from '../../config/logger';
 
 /**
  * Standard API response format
@@ -56,12 +57,32 @@ export function sendSuccessWithPagination<T>(
 
 /**
  * Send standardized error response
+ * Logs detailed error information internally but never exposes internal details to clients
  */
 export function sendError(
   res: Response,
   error: unknown,
   defaultMessage: string = 'An error occurred'
 ): void {
+  // Log detailed error information internally for debugging
+  if (error instanceof Error) {
+    logger.error('Internal error occurred', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      ...(error instanceof AppError && {
+        statusCode: error.statusCode,
+        isOperational: error.isOperational,
+        errors: error.errors,
+      }),
+    });
+  } else {
+    logger.error('Unknown error occurred', {
+      error: String(error),
+    });
+  }
+
+  // Handle AppError instances - these are safe to expose
   if (error instanceof AppError) {
     res.status(error.statusCode).json({
       success: false,
@@ -71,13 +92,11 @@ export function sendError(
     return;
   }
 
-  // Generic error
-  const message = error instanceof Error ? error.message : String(error);
-
+  // For all other errors, return only the generic message to the client
+  // NEVER expose internal error details, stack traces, or system information
   res.status(500).json({
     success: false,
     message: defaultMessage,
-    errors: [message],
   });
 }
 
