@@ -1,6 +1,7 @@
 # Booking Scheduler
 
 ## Overview
+
 The booking scheduler automatically expires bookings that have passed their expiration date. It runs as a cron job on a configurable schedule.
 
 ## Features
@@ -55,12 +56,14 @@ BOOKING_EXPIRATION_CRON=0 * * * *
 ### Notifications
 
 #### Customer Notification
+
 ```
-Your booking for {manufacturer} {model} (Reference: {bookingReference}) has expired. 
+Your booking for {manufacturer} {model} (Reference: {bookingReference}) has expired.
 The booking was scheduled for {startDate} to {endDate}.
 ```
 
 #### Admin Notification
+
 ```
 {count} booking(s) have expired. References: {references}
 ```
@@ -201,12 +204,14 @@ io.to(admin.id).emit('receiveNotification', {
 ## Monitoring
 
 ### Success Metrics
+
 - Total bookings processed
 - Successful expirations
 - Failed expirations (with details)
 - Processing duration
 
 ### Failure Detection
+
 - Failed bookings are logged with full context
 - Admins receive notifications about expirations
 - Errors are logged to Winston for aggregation
