@@ -71,10 +71,8 @@ describe('Booking Scheduler', () => {
       // Mock data
       const mockCustomer = {
         id: 'customer-1',
-        userId: 'user-1',
         name: 'Test Customer',
-        user: { id: 'user-1' },
-      } as Customer;
+      } as unknown as Customer;
 
       const mockCar = {
         id: 'car-1',
@@ -91,6 +89,7 @@ describe('Booking Scheduler', () => {
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2), // Day after tomorrow
         customerId: 'customer-1',
         carId: 'car-1',
+        createdById: 'user-1',
         customer: mockCustomer,
         car: mockCar,
       } as Booking;
@@ -144,12 +143,6 @@ describe('Booking Scheduler', () => {
     });
 
     it('should not process bookings with future expiration dates', async () => {
-      const futureBooking = {
-        id: 'booking-2',
-        status: BookingStatus.PENDING,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60), // 1 hour from now
-      } as Booking;
-
       mockBookingRepository.find.mockResolvedValue([]);
 
       await processExpiredBookings();
@@ -192,9 +185,7 @@ describe('Booking Scheduler', () => {
     it('should retry failed operations up to max retries', async () => {
       const mockCustomer = {
         id: 'customer-1',
-        userId: 'user-1',
-        user: { id: 'user-1' },
-      } as Customer;
+      } as unknown as Customer;
 
       const mockCar = {
         id: 'car-1',
@@ -211,6 +202,7 @@ describe('Booking Scheduler', () => {
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
         customerId: 'customer-1',
         carId: 'car-1',
+        createdById: 'user-1',
         customer: mockCustomer,
         car: mockCar,
       } as Booking;
@@ -260,9 +252,7 @@ describe('Booking Scheduler', () => {
     it('should send notifications to admins about expired bookings', async () => {
       const mockCustomer = {
         id: 'customer-1',
-        userId: 'user-1',
-        user: { id: 'user-1' },
-      } as Customer;
+      } as unknown as Customer;
 
       const mockCar = {
         id: 'car-1',
@@ -280,6 +270,7 @@ describe('Booking Scheduler', () => {
           endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
           customerId: 'customer-1',
           carId: 'car-1',
+          createdById: 'user-1',
           customer: mockCustomer,
           car: mockCar,
         } as Booking,
@@ -292,13 +283,14 @@ describe('Booking Scheduler', () => {
           endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
           customerId: 'customer-1',
           carId: 'car-1',
+          createdById: 'user-1',
           customer: mockCustomer,
           car: mockCar,
         } as Booking,
       ];
 
       mockBookingRepository.find.mockResolvedValue(expiredBookings);
-      mockBookingRepository.save.mockImplementation((booking) =>
+      mockBookingRepository.save.mockImplementation((booking: Booking) =>
         Promise.resolve({
           ...booking,
           status: BookingStatus.EXPIRED,
@@ -342,9 +334,7 @@ describe('Booking Scheduler', () => {
     it('should continue processing even if notification fails', async () => {
       const mockCustomer = {
         id: 'customer-1',
-        userId: 'user-1',
-        user: { id: 'user-1' },
-      } as Customer;
+      } as unknown as Customer;
 
       const mockCar = {
         id: 'car-1',
@@ -361,6 +351,7 @@ describe('Booking Scheduler', () => {
         endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
         customerId: 'customer-1',
         carId: 'car-1',
+        createdById: 'user-1',
         customer: mockCustomer,
         car: mockCar,
       } as Booking;
