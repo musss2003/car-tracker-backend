@@ -20,16 +20,17 @@ jest.mock('../../config/db', () => ({
   },
 }));
 
-// Mock UserRepository
+// Mock UserRepository - use singleton pattern
+const mockUserRepositoryInstance = {
+  findByRole: jest.fn(),
+};
+
 jest.mock('../../repositories/user.repository', () => ({
-  UserRepository: jest.fn().mockImplementation(() => ({
-    findByRole: jest.fn(),
-  })),
+  UserRepository: jest.fn().mockImplementation(() => mockUserRepositoryInstance),
 }));
 
 import { AppDataSource } from '../../config/db';
 import { processExpiredBookings } from '../bookingScheduler';
-import { UserRepository } from '../../repositories/user.repository';
 
 describe('Booking Scheduler', () => {
   let mockBookingRepository: any;
@@ -37,6 +38,9 @@ describe('Booking Scheduler', () => {
   let mockUserRepository: any;
 
   beforeEach(() => {
+    // Use fake timers to handle setTimeout in retry logic
+    jest.useFakeTimers();
+
     // Reset all mocks
     jest.clearAllMocks();
 
@@ -52,7 +56,8 @@ describe('Booking Scheduler', () => {
       save: jest.fn(),
     };
 
-    mockUserRepository = new UserRepository();
+    // Use the singleton mock instance
+    mockUserRepository = mockUserRepositoryInstance;
 
     // Setup AppDataSource mock
     (AppDataSource.getRepository as jest.Mock).mockImplementation((entity: any) => {
@@ -64,6 +69,13 @@ describe('Booking Scheduler', () => {
       }
       return {};
     });
+  });
+
+  afterEach(() => {
+    // Clear all timers to prevent test hanging
+    jest.clearAllTimers();
+    // Restore real timers
+    jest.useRealTimers();
   });
 
   describe('processExpiredBookings', () => {
@@ -239,7 +251,12 @@ describe('Booking Scheduler', () => {
         },
       ]);
 
-      await processExpiredBookings();
+      const processPromise = processExpiredBookings();
+
+      // Fast-forward through all retry delays (2 retries with exponential backoff)
+      await jest.runAllTimersAsync();
+
+      await processPromise;
 
       // Verify retry logic - save should be called 3 times
       expect(mockSave).toHaveBeenCalledTimes(3);
@@ -375,7 +392,12 @@ describe('Booking Scheduler', () => {
 
       mockUserRepository.findByRole.mockResolvedValue([]);
 
-      await processExpiredBookings();
+      const processPromise = processExpiredBookings();
+
+      // Fast-forward through all retry delays (3 retries with exponential backoff)
+      await jest.runAllTimersAsync();
+
+      await processPromise;
 
       // Booking should still be expired
       expect(mockBookingRepository.save).toHaveBeenCalledWith(
