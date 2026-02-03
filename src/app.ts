@@ -39,6 +39,10 @@ import {
   scheduleExpiredContractsCheck,
   setSocketIO,
 } from './scripts/contractScheduler';
+import {
+  scheduleBookingExpiration,
+  setSocketIO as setBookingSchedulerSocketIO,
+} from './scripts/bookingScheduler';
 import * as Sentry from '@sentry/node';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -300,10 +304,12 @@ const startServer = async () => {
 
       // Initialize Socket.IO for schedulers
       setSocketIO(io);
+      setBookingSchedulerSocketIO(io);
 
       // Start scheduled tasks
       scheduleExpiringContractsCheck();
       scheduleExpiredContractsCheck();
+      scheduleBookingExpiration();
       console.log(`⏰ Scheduled tasks initialized`);
     });
   } catch (error) {
