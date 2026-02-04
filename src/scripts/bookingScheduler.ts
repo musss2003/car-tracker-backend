@@ -4,8 +4,9 @@ import { Booking, BookingStatus } from '../models/booking.model';
 import { Notification, NotificationStatus } from '../models/notification.model';
 import { UserRepository } from '../repositories/user.repository';
 import { UserRole } from '../models/user.model';
+import { Car } from '../models/car.model';
 import logger from '../config/logger';
-import { LessThan, In } from 'typeorm';
+import { LessThan, In, Not } from 'typeorm';
 import { Server as SocketIOServer } from 'socket.io';
 
 let io: SocketIOServer | undefined;
@@ -146,10 +147,12 @@ const notifyAdminsAboutExpirations = async (expiredBookings: Booking[]): Promise
 
 /**
  * Expire a single booking with retry logic
+ * Also manages car availability - sets car to 'available' if no other active bookings exist
  */
 const expireBooking = async (booking: Booking, retryCount = 0): Promise<boolean> => {
   try {
     const bookingRepository = AppDataSource.getRepository(Booking);
+    const carRepository = AppDataSource.getRepository(Car);
 
     // Update booking status to expired
     booking.status = BookingStatus.EXPIRED;
@@ -162,6 +165,39 @@ const expireBooking = async (booking: Booking, retryCount = 0): Promise<boolean>
       carId: booking.carId,
       expiresAt: booking.expiresAt,
     });
+
+    // Check if car should be made available
+    // Car becomes available if there are no other active bookings (pending, confirmed, or converted to contract)
+    const activeBookingsCount = await bookingRepository.count({
+      where: {
+        carId: booking.carId,
+        status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CONVERTED]),
+        id: Not(booking.id), // Exclude current booking
+      },
+    });
+
+    if (activeBookingsCount === 0) {
+      const car = await carRepository.findOne({ where: { id: booking.carId } });
+
+      if (car && car.status !== 'available') {
+        car.status = 'available';
+        await carRepository.save(car);
+
+        logger.info('Car availability restored', {
+          carId: car.id,
+          licensePlate: car.licensePlate,
+          manufacturer: car.manufacturer,
+          model: car.model,
+          expiredBookingId: booking.id,
+        });
+      }
+    } else {
+      logger.info('Car remains unavailable - other active bookings exist', {
+        carId: booking.carId,
+        activeBookingsCount,
+        expiredBookingId: booking.id,
+      });
+    }
 
     // Send notification to customer
     try {

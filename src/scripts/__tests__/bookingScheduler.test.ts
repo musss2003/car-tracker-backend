@@ -35,6 +35,7 @@ import { processExpiredBookings } from '../bookingScheduler';
 describe('Booking Scheduler', () => {
   let mockBookingRepository: any;
   let mockNotificationRepository: any;
+  let mockCarRepository: any;
   let mockUserRepository: any;
 
   beforeEach(() => {
@@ -49,10 +50,16 @@ describe('Booking Scheduler', () => {
       find: jest.fn(),
       save: jest.fn(),
       create: jest.fn(),
+      count: jest.fn(),
     };
 
     mockNotificationRepository = {
       create: jest.fn(),
+      save: jest.fn(),
+    };
+
+    mockCarRepository = {
+      findOne: jest.fn(),
       save: jest.fn(),
     };
 
@@ -66,6 +73,9 @@ describe('Booking Scheduler', () => {
       }
       if (entity.name === 'Notification') {
         return mockNotificationRepository;
+      }
+      if (entity.name === 'Car') {
+        return mockCarRepository;
       }
       return {};
     });
@@ -112,6 +122,9 @@ describe('Booking Scheduler', () => {
         ...expiredBooking,
         status: BookingStatus.EXPIRED,
       });
+      mockBookingRepository.count.mockResolvedValue(0); // No other active bookings
+      mockCarRepository.findOne.mockResolvedValue({ ...mockCar, status: 'available' });
+      mockCarRepository.save.mockResolvedValue({ ...mockCar, status: 'available' });
       mockNotificationRepository.create.mockReturnValue({
         recipientId: 'user-1',
         type: 'booking-expired',
@@ -230,6 +243,10 @@ describe('Booking Scheduler', () => {
           status: BookingStatus.EXPIRED,
         });
 
+      mockBookingRepository.count.mockResolvedValue(0);
+      mockCarRepository.findOne.mockResolvedValue(mockCar);
+      mockCarRepository.save.mockResolvedValue(mockCar);
+
       mockNotificationRepository.create.mockReturnValue({
         recipientId: 'user-1',
         type: 'booking-expired',
@@ -313,6 +330,9 @@ describe('Booking Scheduler', () => {
           status: BookingStatus.EXPIRED,
         })
       );
+      mockBookingRepository.count.mockResolvedValue(0);
+      mockCarRepository.findOne.mockResolvedValue(mockCar);
+      mockCarRepository.save.mockResolvedValue(mockCar);
 
       mockNotificationRepository.create.mockReturnValue({
         recipientId: 'user-1',
@@ -378,6 +398,9 @@ describe('Booking Scheduler', () => {
         ...expiredBooking,
         status: BookingStatus.EXPIRED,
       });
+      mockBookingRepository.count.mockResolvedValue(0);
+      mockCarRepository.findOne.mockResolvedValue(mockCar);
+      mockCarRepository.save.mockResolvedValue(mockCar);
 
       // Notification fails after max retries
       mockNotificationRepository.create.mockReturnValue({
@@ -410,6 +433,163 @@ describe('Booking Scheduler', () => {
       expect(logger.error).toHaveBeenCalledWith(
         'Notification failed but booking was expired',
         expect.any(Object)
+      );
+    });
+
+    it('should restore car availability when last booking expires', async () => {
+      const mockCustomer = {
+        id: 'customer-1',
+        name: 'Test Customer',
+      } as unknown as Customer;
+
+      const mockCar = {
+        id: 'car-1',
+        manufacturer: 'Toyota',
+        model: 'Camry',
+        status: 'archived', // Car is currently not available
+      } as Car;
+
+      const expiredBooking = {
+        id: 'booking-1',
+        bookingReference: 'BK-2024-001',
+        status: BookingStatus.PENDING,
+        expiresAt: new Date(Date.now() - 1000 * 60 * 60),
+        startDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
+        customerId: 'customer-1',
+        carId: 'car-1',
+        createdById: 'user-1',
+        customer: mockCustomer,
+        car: mockCar,
+      } as Booking;
+
+      const mockCarRepository = {
+        findOne: jest.fn().mockResolvedValue(mockCar),
+        save: jest.fn().mockResolvedValue({ ...mockCar, status: 'available' }),
+        count: jest.fn(),
+      };
+
+      // Setup AppDataSource to include car repository
+      (AppDataSource.getRepository as jest.Mock).mockImplementation((entity: any) => {
+        if (entity.name === 'Booking') {
+          return {
+            ...mockBookingRepository,
+            count: jest.fn().mockResolvedValue(0), // No other active bookings
+          };
+        }
+        if (entity.name === 'Notification') {
+          return mockNotificationRepository;
+        }
+        if (entity.name === 'Car') {
+          return mockCarRepository;
+        }
+        return {};
+      });
+
+      mockBookingRepository.find.mockResolvedValue([expiredBooking]);
+      mockBookingRepository.save.mockResolvedValue({
+        ...expiredBooking,
+        status: BookingStatus.EXPIRED,
+      });
+      mockNotificationRepository.create.mockReturnValue({});
+      mockNotificationRepository.save.mockResolvedValue({});
+      mockUserRepository.findByRole.mockResolvedValue([{ id: 'admin-1', role: UserRole.ADMIN }]);
+
+      await processExpiredBookings();
+
+      // Verify car was found
+      expect(mockCarRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'car-1' },
+      });
+
+      // Verify car status was updated to available
+      expect(mockCarRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'available',
+        })
+      );
+
+      // Verify logging
+      expect(logger.info).toHaveBeenCalledWith(
+        'Car availability restored',
+        expect.objectContaining({
+          carId: 'car-1',
+          licensePlate: mockCar.licensePlate,
+        })
+      );
+    });
+
+    it('should NOT restore car availability when other active bookings exist', async () => {
+      const mockCustomer = {
+        id: 'customer-1',
+        name: 'Test Customer',
+      } as unknown as Customer;
+
+      const mockCar = {
+        id: 'car-1',
+        manufacturer: 'Toyota',
+        model: 'Camry',
+        status: 'archived',
+      } as Car;
+
+      const expiredBooking = {
+        id: 'booking-1',
+        bookingReference: 'BK-2024-001',
+        status: BookingStatus.PENDING,
+        expiresAt: new Date(Date.now() - 1000 * 60 * 60),
+        startDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
+        customerId: 'customer-1',
+        carId: 'car-1',
+        createdById: 'user-1',
+        customer: mockCustomer,
+        car: mockCar,
+      } as Booking;
+
+      const mockCarRepository = {
+        findOne: jest.fn(),
+        save: jest.fn(),
+      };
+
+      // Setup AppDataSource to include car repository
+      (AppDataSource.getRepository as jest.Mock).mockImplementation((entity: any) => {
+        if (entity.name === 'Booking') {
+          return {
+            ...mockBookingRepository,
+            count: jest.fn().mockResolvedValue(2), // 2 other active bookings exist
+          };
+        }
+        if (entity.name === 'Notification') {
+          return mockNotificationRepository;
+        }
+        if (entity.name === 'Car') {
+          return mockCarRepository;
+        }
+        return {};
+      });
+
+      mockBookingRepository.find.mockResolvedValue([expiredBooking]);
+      mockBookingRepository.save.mockResolvedValue({
+        ...expiredBooking,
+        status: BookingStatus.EXPIRED,
+      });
+      mockNotificationRepository.create.mockReturnValue({});
+      mockNotificationRepository.save.mockResolvedValue({});
+      mockUserRepository.findByRole.mockResolvedValue([{ id: 'admin-1', role: UserRole.ADMIN }]);
+
+      await processExpiredBookings();
+
+      // Verify car repository was NOT accessed (car status not changed)
+      expect(mockCarRepository.findOne).not.toHaveBeenCalled();
+      expect(mockCarRepository.save).not.toHaveBeenCalled();
+
+      // Verify appropriate logging
+      expect(logger.info).toHaveBeenCalledWith(
+        'Car remains unavailable - other active bookings exist',
+        expect.objectContaining({
+          carId: 'car-1',
+          activeBookingsCount: 2,
+        })
       );
     });
   });

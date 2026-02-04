@@ -7,6 +7,7 @@ The booking scheduler automatically expires bookings that have passed their expi
 ## Features
 
 - **Automatic Expiration**: Finds and expires bookings where `expiresAt < current time` and status is `pending` or `confirmed`
+- **Car Availability Management**: Automatically restores car status to 'available' when the last booking expires
 - **Customer Notifications**: Sends notifications to customers when their bookings expire
 - **Admin Notifications**: Notifies admins about all expired bookings in a batch
 - **Error Handling**: Robust error handling with retry logic (up to 3 attempts)
@@ -39,6 +40,8 @@ BOOKING_EXPIRATION_CRON=0 * * * *
 
 2. **Process Each Booking**:
    - Update status to `expired`
+   - Check if car has other active bookings (`pending`, `confirmed`, or `converted`)
+   - If no other active bookings exist, restore car status to `available`
    - Send notification to customer
    - Log the expiration
    - Retry up to 3 times if operation fails
@@ -149,6 +152,61 @@ io.to(admin.id).emit('receiveNotification', {
 });
 ```
 
+## Car Availability Management
+
+### Overview
+
+When a booking expires, the scheduler intelligently manages car availability:
+
+1. **Check Active Bookings**: Counts remaining active bookings for the car
+2. **Restore Availability**: If no active bookings remain, sets car status to `available`
+3. **Maintain Status**: If other bookings exist, car status remains unchanged
+
+### Logic
+
+```typescript
+// Check if car has other active bookings
+const activeBookingsCount = await bookingRepository.count({
+  where: {
+    carId: booking.carId,
+    status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CONVERTED]),
+    id: Not(booking.id), // Exclude current booking
+  },
+});
+
+// Restore car availability if no other bookings
+if (activeBookingsCount === 0) {
+  car.status = 'available';
+  await carRepository.save(car);
+}
+```
+
+### Benefits
+
+- **Automatic Resource Management**: Cars become available automatically when bookings expire
+- **Prevents Manual Updates**: No need for manual intervention to restore car availability
+- **Accurate Inventory**: Real-time car availability reflects actual booking status
+- **Smart Logic**: Only restores availability when truly no active bookings remain
+
+### Example Scenarios
+
+#### Scenario 1: Last Booking Expires
+
+- Car has 1 pending booking (expires today)
+- Booking expires → Car status changed to `available` ✅
+- Car is now available for new bookings
+
+#### Scenario 2: Multiple Bookings
+
+- Car has 3 bookings: 1 expired today, 2 still pending
+- First booking expires → Car status remains unchanged ❌
+- Car availability will be restored when the last booking expires
+
+#### Scenario 3: Already Available
+
+- Booking expires but car status is already `available`
+- No update needed, status remains `available`
+
 ## Logging
 
 ### Log Levels
@@ -181,6 +239,24 @@ io.to(admin.id).emit('receiveNotification', {
   "bookingReference": "BK-2024-001",
   "customerId": "customer-123",
   "carId": "car-456"
+}
+
+{
+  "level": "info",
+  "message": "Car availability restored",
+  "carId": "car-456",
+  "licensePlate": "ABC-123",
+  "manufacturer": "Toyota",
+  "model": "Camry",
+  "expiredBookingId": "uuid-123"
+}
+
+{
+  "level": "info",
+  "message": "Car remains unavailable - other active bookings exist",
+  "carId": "car-456",
+  "activeBookingsCount": 2,
+  "expiredBookingId": "uuid-123"
 }
 
 {
