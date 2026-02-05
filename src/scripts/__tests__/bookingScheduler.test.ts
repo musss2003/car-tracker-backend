@@ -163,7 +163,7 @@ describe('Booking Scheduler', () => {
 
       // Verify logging
       expect(logger.info).toHaveBeenCalledWith('Starting booking expiration process');
-      expect(logger.info).toHaveBeenCalledWith('Found bookings to expire', expect.any(Object));
+      expect(logger.info).toHaveBeenCalledWith('Processing batch of bookings', expect.any(Object));
       expect(logger.info).toHaveBeenCalledWith('Booking expired successfully', expect.any(Object));
     });
 
