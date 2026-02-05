@@ -25,6 +25,8 @@ const SCHEDULER_CONFIG = {
   maxRetries: 3,
   // Delay between retries in milliseconds
   retryDelay: 1000,
+  // Batch size for processing expired bookings
+  batchSize: parseInt(process.env.BOOKING_BATCH_SIZE || '100', 10),
 };
 
 /**
@@ -235,8 +237,8 @@ const expireBooking = async (booking: Booking, retryCount = 0): Promise<boolean>
 };
 
 /**
- * Process expired bookings
- * Finds all bookings that should be expired and processes them
+ * Process expired bookings in batches
+ * Finds all bookings that should be expired and processes them in parallel batches for performance
  */
 export const processExpiredBookings = async (): Promise<void> => {
   const startTime = Date.now();
@@ -247,76 +249,108 @@ export const processExpiredBookings = async (): Promise<void> => {
     const bookingRepository = AppDataSource.getRepository(Booking);
     const now = new Date();
 
-    // Find all bookings that should be expired
-    // Conditions:
-    // 1. Status is 'pending' or 'confirmed'
-    // 2. expiresAt is less than current time
-    const expirableBookings = await bookingRepository.find({
-      where: {
-        status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED]),
-        expiresAt: LessThan(now),
-      },
-      relations: ['customer', 'customer.user', 'car'],
-      order: {
-        expiresAt: 'ASC', // Process oldest first
-      },
-    });
+    let page = 0;
+    let hasMore = true;
+    let totalProcessed = 0;
+    let totalSucceeded = 0;
+    let totalFailed = 0;
+    const allFailedBookings: { id: string; reference: string; error: string }[] = [];
+    const allSuccessfullyExpired: Booking[] = [];
 
-    if (expirableBookings.length === 0) {
-      logger.info('No bookings to expire');
-      return;
-    }
+    while (hasMore) {
+      // Find bookings in batches for better memory efficiency
+      const expirableBookings = await bookingRepository.find({
+        where: {
+          status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED]),
+          expiresAt: LessThan(now),
+        },
+        relations: ['customer', 'customer.user', 'car'],
+        order: {
+          expiresAt: 'ASC', // Process oldest first
+        },
+        take: SCHEDULER_CONFIG.batchSize,
+        skip: page * SCHEDULER_CONFIG.batchSize,
+      });
 
-    logger.info('Found bookings to expire', {
-      count: expirableBookings.length,
-      oldestExpiry: expirableBookings[0]?.expiresAt,
-      newestExpiry: expirableBookings[expirableBookings.length - 1]?.expiresAt,
-    });
+      if (expirableBookings.length === 0) {
+        hasMore = false;
+        if (page === 0) {
+          logger.info('No bookings to expire');
+        }
+        break;
+      }
 
-    // Process each booking
-    const results = {
-      succeeded: 0,
-      failed: 0,
-      failedBookings: [] as { id: string; reference: string; error: string }[],
-    };
+      logger.info('Processing batch of bookings', {
+        batch: page + 1,
+        count: expirableBookings.length,
+        oldestExpiry: expirableBookings[0]?.expiresAt,
+        newestExpiry: expirableBookings[expirableBookings.length - 1]?.expiresAt,
+      });
 
-    for (const booking of expirableBookings) {
-      const success = await expireBooking(booking);
-
-      if (success) {
-        results.succeeded++;
-      } else {
-        results.failed++;
-        results.failedBookings.push({
-          id: booking.id,
-          reference: booking.bookingReference,
+      // Process bookings in parallel for better performance
+      const processingPromises = expirableBookings.map(async (booking) => {
+        const success = await expireBooking(booking);
+        if (success) {
+          return { status: 'succeeded' as const, booking };
+        }
+        return {
+          status: 'failed' as const,
+          booking,
           error: 'Failed after max retries',
-        });
+        };
+      });
+
+      const outcomes = await Promise.all(processingPromises);
+
+      // Collect results from this batch
+      for (const outcome of outcomes) {
+        if (outcome.status === 'succeeded') {
+          totalSucceeded++;
+          allSuccessfullyExpired.push(outcome.booking);
+        } else {
+          totalFailed++;
+          allFailedBookings.push({
+            id: outcome.booking.id,
+            reference: outcome.booking.bookingReference,
+            error: outcome.error,
+          });
+        }
+      }
+
+      totalProcessed += expirableBookings.length;
+
+      // Check if there might be more bookings
+      if (expirableBookings.length < SCHEDULER_CONFIG.batchSize) {
+        hasMore = false;
+      } else {
+        page++;
       }
     }
 
     // Notify admins if any bookings were expired
-    if (results.succeeded > 0) {
-      const successfullyExpired = expirableBookings.filter((b, idx) => idx < results.succeeded);
-      await notifyAdminsAboutExpirations(successfullyExpired);
+    if (allSuccessfullyExpired.length > 0) {
+      await notifyAdminsAboutExpirations(allSuccessfullyExpired);
     }
 
     const duration = Date.now() - startTime;
 
-    logger.info('Booking expiration process completed', {
-      totalProcessed: expirableBookings.length,
-      succeeded: results.succeeded,
-      failed: results.failed,
-      durationMs: duration,
-      failedBookings: results.failedBookings,
-    });
-
-    // Log errors for failed bookings
-    if (results.failed > 0) {
-      logger.error('Some bookings failed to expire', {
-        count: results.failed,
-        failedBookings: results.failedBookings,
+    if (totalProcessed > 0) {
+      logger.info('Booking expiration process completed', {
+        totalProcessed,
+        succeeded: totalSucceeded,
+        failed: totalFailed,
+        durationMs: duration,
+        batches: page + 1,
+        failedBookings: allFailedBookings,
       });
+
+      // Log errors for failed bookings
+      if (totalFailed > 0) {
+        logger.error('Some bookings failed to expire', {
+          count: totalFailed,
+          failedBookings: allFailedBookings,
+        });
+      }
     }
   } catch (error) {
     const duration = Date.now() - startTime;
