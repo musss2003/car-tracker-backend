@@ -340,12 +340,20 @@ describe('Booking Scheduler', () => {
         message: expect.any(String),
         status: 'new',
       });
-      mockNotificationRepository.save.mockResolvedValue({
-        id: 'notification-1',
-        recipientId: 'user-1',
-        type: 'booking-expired',
-        message: expect.any(String),
-        status: 'new',
+      mockNotificationRepository.save.mockImplementation((notification: any) => {
+        // Handle both single notification and array of notifications
+        if (Array.isArray(notification)) {
+          return Promise.resolve(
+            notification.map((n) => ({
+              ...n,
+              id: `notification-${Math.random()}`,
+            }))
+          );
+        }
+        return Promise.resolve({
+          ...notification,
+          id: 'notification-1',
+        });
       });
 
       const mockAdmins = [
