@@ -52,12 +52,12 @@ const sendExpirationNotification = async (booking: Booking, retryCount = 0): Pro
       status: NotificationStatus.NEW,
     });
 
-    await notificationRepository.save(notification);
+    const savedNotification = await notificationRepository.save(notification);
 
     // Emit real-time notification via Socket.IO
     if (io) {
       io.to(booking.createdById).emit('receiveNotification', {
-        ...notification,
+        ...savedNotification,
         booking: {
           id: booking.id,
           bookingReference: booking.bookingReference,
@@ -80,7 +80,7 @@ const sendExpirationNotification = async (booking: Booking, retryCount = 0): Pro
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
-      await sleep(SCHEDULER_CONFIG.retryDelay * (retryCount + 1));
+      await sleep(SCHEDULER_CONFIG.retryDelay * 2 ** retryCount);
       return sendExpirationNotification(booking, retryCount + 1);
     }
 
@@ -114,25 +114,28 @@ const notifyAdminsAboutExpirations = async (expiredBookings: Booking[]): Promise
 
     const message = `${expiredBookings.length} booking${expiredBookings.length > 1 ? 's have' : ' has'} expired. References: ${expiredBookings.map((b) => b.bookingReference).join(', ')}`;
 
-    // Send notification to each admin
-    for (const admin of admins) {
-      const notification = notificationRepository.create({
+    // Create notifications for all admins
+    const notificationsToSave = admins.map((admin) =>
+      notificationRepository.create({
         recipientId: admin.id,
         type: 'bookings-expired-admin',
         message,
         status: NotificationStatus.NEW,
-      });
+      })
+    );
 
-      await notificationRepository.save(notification);
+    // Save all notifications in a single transaction
+    const savedNotifications = await notificationRepository.save(notificationsToSave);
 
-      // Emit real-time notification via Socket.IO
+    // Emit real-time notifications
+    savedNotifications.forEach((notification) => {
       if (io) {
-        io.to(admin.id).emit('receiveNotification', {
+        io.to(notification.recipientId).emit('receiveNotification', {
           ...notification,
           bookingsCount: expiredBookings.length,
         });
       }
-    }
+    });
 
     logger.info('Admin notifications sent for expired bookings', {
       adminCount: admins.length,
