@@ -162,9 +162,27 @@ describe('Booking Scheduler', () => {
       expect(mockNotificationRepository.save).toHaveBeenCalled();
 
       // Verify logging
-      expect(logger.info).toHaveBeenCalledWith('Starting booking expiration process');
-      expect(logger.info).toHaveBeenCalledWith('Processing batch of bookings', expect.any(Object));
-      expect(logger.info).toHaveBeenCalledWith('Booking expired successfully', expect.any(Object));
+      expect(logger.info).toHaveBeenCalledWith(
+        'Starting booking expiration process',
+        expect.objectContaining({
+          actor: 'system-scheduler',
+          action: 'start_expiration_process',
+        })
+      );
+      expect(logger.info).toHaveBeenCalledWith(
+        'Processing batch of bookings',
+        expect.objectContaining({
+          actor: 'system-scheduler',
+          action: 'process_batch',
+        })
+      );
+      expect(logger.info).toHaveBeenCalledWith(
+        'Booking expired successfully',
+        expect.objectContaining({
+          actor: 'system-scheduler',
+          action: 'expire_booking',
+        })
+      );
     });
 
     it('should not process bookings with future expiration dates', async () => {
@@ -173,7 +191,13 @@ describe('Booking Scheduler', () => {
       await processExpiredBookings();
 
       expect(mockBookingRepository.save).not.toHaveBeenCalled();
-      expect(logger.info).toHaveBeenCalledWith('No bookings to expire');
+      expect(logger.info).toHaveBeenCalledWith(
+        'No bookings to expire',
+        expect.objectContaining({
+          actor: 'system-scheduler',
+          action: 'no_bookings_found',
+        })
+      );
     });
 
     it('should not process bookings that are already expired', async () => {
@@ -203,6 +227,8 @@ describe('Booking Scheduler', () => {
         'Booking expiration process failed',
         expect.objectContaining({
           error: 'Database error',
+          actor: 'system-scheduler',
+          action: 'expiration_process_failed',
         })
       );
     });
@@ -279,7 +305,10 @@ describe('Booking Scheduler', () => {
       expect(mockSave).toHaveBeenCalledTimes(3);
       expect(logger.warn).toHaveBeenCalledWith(
         'Failed to expire booking, retrying...',
-        expect.any(Object)
+        expect.objectContaining({
+          actor: 'system-scheduler',
+          action: 'retry_expire_booking',
+        })
       );
     });
 
@@ -372,6 +401,8 @@ describe('Booking Scheduler', () => {
         expect.objectContaining({
           adminCount: 2,
           expiredBookingsCount: 2,
+          actor: 'system-scheduler',
+          action: 'notify_admins_success',
         })
       );
     });
@@ -440,7 +471,10 @@ describe('Booking Scheduler', () => {
       // Error should be logged but process continues
       expect(logger.error).toHaveBeenCalledWith(
         'Notification failed but booking was expired',
-        expect.any(Object)
+        expect.objectContaining({
+          actor: 'system-scheduler',
+          action: 'send_notification_failed',
+        })
       );
     });
 
@@ -523,6 +557,8 @@ describe('Booking Scheduler', () => {
         expect.objectContaining({
           carId: 'car-1',
           licensePlate: mockCar.licensePlate,
+          actor: 'system-scheduler',
+          action: 'restore_car_availability',
         })
       );
     });
@@ -597,6 +633,8 @@ describe('Booking Scheduler', () => {
         expect.objectContaining({
           carId: 'car-1',
           activeBookingsCount: 2,
+          actor: 'system-scheduler',
+          action: 'check_car_availability',
         })
       );
     });
