@@ -35,6 +35,9 @@ COPY --from=builder /app/dist ./dist
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
+# Default runtime port for container
+ENV PORT=3000
+
 # Expose port
 EXPOSE 3000
 
