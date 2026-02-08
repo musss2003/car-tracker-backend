@@ -83,6 +83,20 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: Copy docker-compose.yml to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}
+        KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+      run: |
+        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        mkdir -p ~/.ssh
+        echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        ssh -i private_key ${USER}@${HOST} "mkdir -p ~/car-tracker-backend"
+        scp -i private_key docker-compose.yml ${USER}@${HOST}:~/car-tracker-backend/
+        rm -f private_key
+    
     - name: Deploy to EC2
       env:
         PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
@@ -99,10 +113,9 @@ jobs:
         ssh -i private_key ${USER}@${HOST} "
           set -e
           cd ~/car-tracker-backend &&
-          git pull origin main &&
           export IMAGE_TAG=${IMAGE_TAG} &&
-          docker-compose pull &&
-          docker-compose up -d &&
+          docker compose pull &&
+          docker compose up -d &&
           echo \"✅ Deployment completed successfully\"
         "
         rm -f private_key
@@ -119,7 +132,7 @@ jobs:
         echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
         ssh -i private_key ${USER}@${HOST} '
           cd ~/car-tracker-backend &&
-          docker-compose ps &&
-          docker-compose logs --tail=50 app
+          docker compose ps &&
+          docker compose logs --tail=50 app
         '
         rm -f private_key
