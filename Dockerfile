@@ -31,9 +31,6 @@ RUN npm ci --only=production
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy migrations directory
-COPY --from=builder /app/src/migrations ./src/migrations
-
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
