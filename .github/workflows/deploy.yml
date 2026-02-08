@@ -47,9 +47,13 @@ jobs:
         PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
+        KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+        mkdir -p ~/.ssh
+        echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        ssh -i private_key ${USER}@${HOST} '
+          set -e
           cd ~/car-tracker-backend &&
           git pull origin main &&
           docker-compose down &&
@@ -64,9 +68,12 @@ jobs:
         PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
+        KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-        ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+        mkdir -p ~/.ssh
+        echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        ssh -i private_key ${USER}@${HOST} '
           cd ~/car-tracker-backend &&
           docker-compose ps &&
           docker-compose logs --tail=50 app
