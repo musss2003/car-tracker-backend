@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/app.js",
-    "start:prod": "pm2 start dist/app.js --name cartrack",
+    "start:prod": "node dist/app.js",
     "dev": "nodemon --ext ts --exec ts-node src/app.ts",
     "build": "tsc && mkdir -p dist/assets && cp -r src/assets/* dist/assets/",
     "setup-countries": "ts-node src/scripts/setupCountries.ts",
@@ -25,7 +25,7 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"**/*.{json,md}\"",
     "type-check": "tsc --noEmit",
     "docker:build": "docker build -t cartrack-backend .",
-    "docker:run": "docker run -p 3000:3000 --env-file .env cartrack-backend",
+    "docker:run": "docker run -p 3000:3000 --env-file .env -e PORT=3000 cartrack-backend",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
@@ -69,6 +69,7 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
+    "typeorm-ts-node-commonjs": "^0.3.20",
     "typescript": "^5.6.2"
   },
   "dependencies": {

@@ -75,6 +75,7 @@ docker build -t cartrack-backend .
 
 # Run container
 docker run -p 3000:3000 \
+   -e PORT=3000 \
   -e DB_HOST=your-db-host \
   -e DB_PASSWORD=your-password \
   --name cartrack-app \
@@ -134,6 +135,7 @@ REDIS_PORT=6379
 
 # Node
 NODE_ENV=production
+PORT=3000
 ```
 
 ## Database Migrations
@@ -181,8 +183,8 @@ Docker health check runs every 30 seconds and checks this endpoint.
 
    ```bash
    cd ~
-   git clone <repository-url> cartrack-backend
-   cd cartrack-backend
+   git clone <repository-url> car-tracker-backend
+   cd car-tracker-backend
    ```
 
 3. **Create production .env**
