@@ -50,7 +50,7 @@ jobs:
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
-          cd ~/cartrack-backend &&
+          cd ~/car-tracker-backend &&
           git pull origin main &&
           docker-compose down &&
           docker-compose build &&
@@ -67,7 +67,7 @@ jobs:
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
-          cd ~/cartrack-backend &&
+          cd ~/car-tracker-backend &&
           docker-compose ps &&
           docker-compose logs --tail=50 app
         '

@@ -13,23 +13,27 @@ This guide explains how to deploy the Car Tracker Backend using Docker and Docke
 ### Local Development with Docker Compose
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd car-tracker-backend
    ```
 
 2. **Create environment file**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 3. **Start all services**
+
    ```bash
    docker-compose up -d
    ```
 
 4. **View logs**
+
    ```bash
    docker-compose logs -f
    ```
@@ -99,11 +103,11 @@ services:
   app:
     ports: 3000:3000
     depends_on: [db, redis]
-    
+
   db:
     ports: 5432:5432
     volumes: postgres_data
-    
+
   redis:
     ports: 6379:6379
     volumes: redis_data
@@ -164,6 +168,7 @@ Docker health check runs every 30 seconds and checks this endpoint.
 ### On EC2 Server
 
 1. **Install Docker and Docker Compose**
+
    ```bash
    sudo apt update
    sudo apt install -y docker.io docker-compose
@@ -173,6 +178,7 @@ Docker health check runs every 30 seconds and checks this endpoint.
    ```
 
 2. **Clone repository**
+
    ```bash
    cd ~
    git clone <repository-url> cartrack-backend
@@ -180,12 +186,14 @@ Docker health check runs every 30 seconds and checks this endpoint.
    ```
 
 3. **Create production .env**
+
    ```bash
    nano .env
    # Add production environment variables
    ```
 
 4. **Start services**
+
    ```bash
    docker-compose up -d
    ```
@@ -341,6 +349,7 @@ gunzip < backup.sql.gz | docker-compose exec -T db psql -U postgres cartrack
 ## Support
 
 For issues:
+
 1. Check container logs: `docker-compose logs -f`
 2. Verify environment variables
 3. Test database connectivity
