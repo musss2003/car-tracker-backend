@@ -4,13 +4,18 @@ import { CreateUserDto, UpdateUserDto, ChangePasswordDto, ResetPasswordDto } fro
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse, createErrorResponse } from '../common/dto/response.dto';
 import { AuditContext } from '../common/interfaces/base-service.interface';
-import { io } from '../app';
 
-const userService = new UserService(io);
+// Get Socket.IO instance from global
+const getIO = () => (global as Record<string, unknown>).io;
+
+const userService = new UserService(getIO() as any);
 
 // Set Socket.IO after initialization
 setTimeout(() => {
-  userService.setSocketIO(io);
+  const io = getIO();
+  if (io) {
+    userService.setSocketIO(io as any);
+  }
 }, 100);
 
 /**

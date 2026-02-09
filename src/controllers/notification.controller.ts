@@ -4,13 +4,18 @@ import { CreateNotificationDto, UpdateNotificationDto } from '../dto/notificatio
 import { asyncHandler } from '../common/errors/error-handler';
 import { createSuccessResponse, createErrorResponse } from '../common/dto/response.dto';
 import { AuditContext } from '../common/interfaces/base-service.interface';
-import { io } from '../app';
 
-const notificationService = new NotificationService(io);
+// Get Socket.IO instance from global
+const getIO = () => (global as Record<string, unknown>).io;
+
+const notificationService = new NotificationService(getIO() as any);
 
 // Set Socket.IO after initialization
 setTimeout(() => {
-  notificationService.setSocketIO(io);
+  const io = getIO();
+  if (io) {
+    notificationService.setSocketIO(io as any);
+  }
 }, 100);
 
 /**

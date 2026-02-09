@@ -35,13 +35,10 @@ import { errorHandler, notFoundHandler } from './common/errors/error-handler';
 import { closeEmailQueue } from './queues/email.queue';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import path from 'path';
 import http from 'http';
-import { Server } from 'socket.io'; // Using Socket.IO
-import { Notification, NotificationStatus } from './models/notification.model'; // Import the TypeORM Notification model
-import { User } from './models/user.model'; // Import User model for online status tracking
 import 'reflect-metadata'; // Required for TypeORM
 import { testEmailConfiguration } from './services/email.service';
+import { initializeSocketIO, onlineUsers } from './config/socketio';
 console.log('🔧 [APP] Utility imports loaded');
 import {
   scheduleExpiringContractsCheck,
@@ -57,8 +54,6 @@ console.log('🔧 [APP] Scheduler imports loaded');
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './config/swagger';
 console.log('🔧 [APP] All imports completed');
 
 dotenv.config();
@@ -129,17 +124,6 @@ const globalLimiter = rateLimit({
 
 app.use(globalLimiter);
 
-// Initialize Socket.IO with CORS configuration (only for WebSocket transport)
-const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-  // Allow WebSocket transport
-  transports: ['websocket', 'polling'],
-});
-
 // ✅ Response compression (gzip)
 app.use(
   compression({
@@ -156,151 +140,28 @@ app.use(
 // ✅ Cookie parser
 app.use(cookieParser());
 
-// Store online users in memory (userId -> socketId mapping)
-const onlineUsers = new Map<string, Set<string>>();
-
 // Middleware to attach online users to request object
 app.use((req, res, next) => {
-  (req as any).onlineUsers = onlineUsers;
+  (req as unknown as Record<string, unknown>).onlineUsers = onlineUsers;
   next();
 });
 
 // Audit logging middleware
 app.use(auditLogMiddleware);
 
-// Handle WebSocket connections
-io.on('connection', (socket) => {
-  // Handle user going online
-  socket.on('user:online', async (userId: string) => {
-    try {
-      // Add user to online users map
-      if (!onlineUsers.has(userId)) {
-        onlineUsers.set(userId, new Set());
-      }
-      onlineUsers.get(userId)!.add(socket.id);
-
-      // Update last_active_at in database
-      const userRepository = AppDataSource.getRepository(User);
-      await userRepository.update(userId, { lastActiveAt: new Date() });
-
-      // Join user's personal room
-      socket.join(userId);
-
-      // Store userId in socket for later use
-      (socket as any).userId = userId;
-
-      // Broadcast to all clients that this user is online
-      io.emit('user:status', { userId, isOnline: true });
-    } catch (err) {
-      console.error('Error marking user online:', err);
-    }
-  });
-
-  // Handle joining a specific room for a user (kept for backward compatibility)
-  socket.on('join', (userId: string) => {
-    socket.join(userId); // Join a room with the user's ID
-  });
-
-  // Emit a notification to a specific user
-  socket.on('sendNotification', async (data) => {
-    const { recipientId, type, message, senderId } = data;
-
-    try {
-      const notificationRepository = AppDataSource.getRepository(Notification);
-
-      const notification = notificationRepository.create({
-        recipientId,
-        senderId: senderId || undefined,
-        type,
-        message,
-        status: NotificationStatus.NEW,
-      });
-
-      const savedNotification = await notificationRepository.save(notification);
-      io.to(recipientId).emit('receiveNotification', savedNotification);
-    } catch (err) {
-      console.error('Error sending notification:', err);
-    }
-  });
-
-  // Listen for a mark-as-read event from the client
-  socket.on('markAsRead', async (notificationId) => {
-    try {
-      const notificationRepository = AppDataSource.getRepository(Notification);
-      const notification = await notificationRepository.findOne({
-        where: { id: notificationId },
-      });
-
-      if (notification) {
-        notification.status = NotificationStatus.SEEN;
-        const updatedNotification = await notificationRepository.save(notification);
-
-        // Notify the client that the status has been updated
-        socket.emit('notificationUpdated', updatedNotification);
-      }
-    } catch (err) {
-      console.error('Error updating notification:', err);
-    }
-  });
-
-  // Listen for a bulk mark-as-read event
-  socket.on('markAllAsRead', async (recipientId) => {
-    try {
-      const notificationRepository = AppDataSource.getRepository(Notification);
-      const updateResult = await notificationRepository.update(
-        { recipientId, status: NotificationStatus.NEW },
-        { status: NotificationStatus.SEEN }
-      );
-
-      // Notify the client about the bulk update
-      socket.emit('allNotificationsUpdated', {
-        affected: updateResult.affected,
-      });
-    } catch (err) {
-      console.error('Error updating notifications:', err);
-    }
-  });
-
-  socket.on('disconnect', async () => {
-    // Handle user going offline
-    const userId = (socket as any).userId;
-    if (userId && onlineUsers.has(userId)) {
-      const userSockets = onlineUsers.get(userId)!;
-      userSockets.delete(socket.id);
-
-      // If user has no more active sockets, mark as offline
-      if (userSockets.size === 0) {
-        onlineUsers.delete(userId);
-
-        // Update last_active_at in database
-        try {
-          const userRepository = AppDataSource.getRepository(User);
-          await userRepository.update(userId, { lastActiveAt: new Date() });
-        } catch (err) {
-          console.error('Error updating last active:', err);
-        }
-
-        // Broadcast to all clients that this user is offline
-        io.emit('user:status', { userId, isOnline: false });
-      }
-    }
-  });
-});
-// Middleware to serve static files
-app.use('/src/assets', express.static(path.join(__dirname, 'src/assets')));
-
-app.get('/src/assets/contract_template.docx', (req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
-  res.sendFile(path.join(__dirname, 'src/assets/contract_template.docx'));
-});
-
-// Initialize database connection
+// Start server function
 const startServer = async () => {
   console.log('🔧 startServer() function called');
   try {
     console.log('🔧 About to call initializeTypeORM()...');
     // Only initialize TypeORM (PostgreSQL)
     await initializeTypeORM();
+
+    // Initialize Socket.IO
+    const io = initializeSocketIO(server, allowedOrigins);
+
+    // Store io globally for access by other modules
+    (global as Record<string, unknown>).io = io;
 
     // Test email configuration (non-blocking)
     console.log('📧 Testing email configuration...');
@@ -342,9 +203,12 @@ const gracefulShutdown = async (signal: string) => {
 
     try {
       // Close Socket.IO
-      io.close(() => {
-        console.log('✅ Socket.IO closed');
-      });
+      const io = (global as Record<string, unknown>).io;
+      if (io && typeof io === 'object' && 'close' in io) {
+        (io as { close: (callback: () => void) => void }).close(() => {
+          console.log('✅ Socket.IO closed');
+        });
+      }
 
       // Close database connections
       if (AppDataSource.isInitialized) {
@@ -434,31 +298,9 @@ app.get('/health', async (req: Request, res: Response) => {
 if (process.env.NODE_ENV !== 'production') {
   app.get('/routes', getRoutesJSON(app));
   app.get('/api-docs', getAPIDocs(app));
-
-  // Swagger UI
-  app.use(
-    '/api/swagger',
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec, {
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: 'Car Tracker API Docs',
-    })
-  );
-  app.get('/api/swagger.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-  });
-
-  console.log('📚 API documentation available at:');
-  console.log('   - Swagger UI: /api/swagger');
-  console.log('   - OpenAPI JSON: /api/swagger.json');
-  console.log('   - Routes list: /routes');
-  console.log('   - HTML docs: /api-docs');
-} else {
-  console.log('🔒 API documentation endpoints disabled in production');
 }
 
-// Error handling middleware - must be last
+// 404 handler
 app.use(notFoundHandler);
 
 // ✅ CORS error handler (must be before generic error handler)
@@ -475,9 +317,6 @@ const corsErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
 
 app.use(corsErrorHandler);
 app.use(errorHandler);
-
-// Export io for use in other modules
-export { io };
 
 console.log('🔧 Module initialization complete, about to call startServer()');
 

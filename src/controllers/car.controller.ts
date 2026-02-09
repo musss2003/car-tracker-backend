@@ -5,7 +5,9 @@ import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
 import { notifyAdmins } from '../services/notification.service';
-import { io } from '../app';
+
+// Get Socket.IO instance from global
+const getIO = () => (global as Record<string, unknown>).io;
 
 const carRepository = new CarRepository();
 const carService = new CarService(carRepository);
