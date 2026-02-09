@@ -15,7 +15,7 @@ console.log('🔧 [APP] Rate limiter imports loaded');
 // NOTE: Routes are now loaded dynamically in startServer() after DB initialization
 // to prevent module-level repository instantiation before database is ready
 console.log('🔧 [APP] Route imports loaded');
-import { getRoutesJSON, getAPIDocs } from './routes/docs.route';
+// NOTE: docs.route is loaded conditionally only in development to avoid loading express-list-endpoints in production
 import { auditLogMiddleware } from './middlewares/audit-log.middleware';
 import { errorHandler, notFoundHandler } from './common/errors/error-handler';
 import { closeEmailQueue } from './queues/email.queue';
@@ -305,8 +305,14 @@ app.get('/health', async (req: Request, res: Response) => {
 
 // Documentation routes (ONLY in development - security risk in production)
 if (process.env.NODE_ENV !== 'production') {
-  app.get('/routes', getRoutesJSON(app));
-  app.get('/api-docs', getAPIDocs(app));
+  // Dynamically import docs route to avoid loading express-list-endpoints in production
+  import('./routes/docs.route').then(({ getRoutesJSON, getAPIDocs }) => {
+    app.get('/routes', getRoutesJSON(app));
+    app.get('/api-docs', getAPIDocs(app));
+    console.log('📚 Documentation routes loaded (development only)');
+  }).catch((err) => {
+    console.warn('⚠️  Failed to load documentation routes:', err.message);
+  });
 }
 
 // 404 handler
