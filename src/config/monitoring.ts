@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node';
+let Sentry: typeof import('@sentry/node') | null = null;
 
 /**
  * Initialize Sentry for error tracking and performance monitoring
@@ -7,6 +7,16 @@ export function initializeSentry(): void {
   if (!process.env.SENTRY_DSN) {
     console.log('⚠️  Sentry DSN not configured, skipping Sentry initialization');
     return;
+  }
+
+  // Lazy load Sentry to avoid blocking module initialization
+  if (!Sentry) {
+    try {
+      Sentry = require('@sentry/node');
+    } catch (error) {
+      console.error('❌ Failed to load Sentry:', error);
+      return;
+    }
   }
 
   Sentry.init({
@@ -50,6 +60,7 @@ export function initializeSentry(): void {
  * Capture exception manually
  */
 export function captureException(error: Error, context?: Record<string, any>): void {
+  if (!Sentry) return;
   if (context) {
     Sentry.setContext('additional', context);
   }
@@ -59,7 +70,8 @@ export function captureException(error: Error, context?: Record<string, any>): v
 /**
  * Capture message manually
  */
-export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): void {
+export function captureMessage(message: string, level: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug' = 'info'): void {
+  if (!Sentry) return;
   Sentry.captureMessage(message, level);
 }
 
@@ -71,7 +83,8 @@ export function setUserContext(user: {
   email?: string;
   username?: string;
   role?: string;
-}): void {
+})if (!Sentry) return;
+  : void {
   Sentry.setUser({
     id: user.id,
     email: user.email,
@@ -83,6 +96,7 @@ export function setUserContext(user: {
 /**
  * Clear user context
  */
-export function clearUserContext(): void {
+exif (!Sentry) return;
+  port function clearUserContext(): void {
   Sentry.setUser(null);
 }
