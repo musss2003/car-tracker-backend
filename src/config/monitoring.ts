@@ -44,7 +44,7 @@ export function initializeSentry(): void {
 
       // Remove password fields
       if (event.request?.data) {
-        const data = event.request.data as any;
+        const data = event.request.data as Record<string, unknown>;
         if (typeof data === 'object') {
           delete data.password;
           delete data.currentPassword;
@@ -65,7 +65,7 @@ export function initializeSentry(): void {
 /**
  * Capture exception manually
  */
-export function captureException(error: Error, context?: Record<string, any>): void {
+export function captureException(error: Error, context?: Record<string, unknown>): void {
   if (!Sentry) return;
   if (context) {
     Sentry.setContext('additional', context);
