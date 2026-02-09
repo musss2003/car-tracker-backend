@@ -27,23 +27,24 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
 
   // Detect and skip malicious/scanner requests
   const suspiciousPatterns = [
-    /\.php$/i,           // PHP files (we're a Node.js app)
-    /\.env$/i,           // Environment files
-    /\.git/i,            // Git files
-    /\.aws/i,            // AWS credentials
-    /wp-admin/i,         // WordPress
-    /wp-content/i,       // WordPress
-    /wp-includes/i,      // WordPress
-    /phpmyadmin/i,       // phpMyAdmin
-    /admin(ws)?$/i,      // Generic admin paths
-    /\.sql$/i,           // SQL files
-    /\.bak$/i,           // Backup files
-    /\.config$/i,        // Config files
+    /\.php$/i, // PHP files (we're a Node.js app)
+    /\.env$/i, // Environment files
+    /\.git/i, // Git files
+    /\.aws/i, // AWS credentials
+    /wp-admin/i, // WordPress
+    /wp-content/i, // WordPress
+    /wp-includes/i, // WordPress
+    /phpmyadmin/i, // phpMyAdmin
+    /admin(ws)?$/i, // Generic admin paths
+    /\.sql$/i, // SQL files
+    /\.bak$/i, // Backup files
+    /\.config$/i, // Config files
   ];
 
   if (suspiciousPatterns.some((pattern) => pattern.test(req.path))) {
     // Return 403 Forbidden immediately for known malicious patterns
-    return res.status(403).json({ message: 'Forbidden' });
+    res.status(403).json({ message: 'Forbidden' });
+    return;
   }
 
   // Capture the original res.json to intercept response
