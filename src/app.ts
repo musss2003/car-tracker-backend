@@ -284,7 +284,9 @@ app.get('/src/assets/contract_template.docx', (req, res) => {
 
 // Initialize database connection
 const startServer = async () => {
+  console.log('🔧 startServer() function called');
   try {
+    console.log('🔧 About to call initializeTypeORM()...');
     // Only initialize TypeORM (PostgreSQL)
     await initializeTypeORM();
 
