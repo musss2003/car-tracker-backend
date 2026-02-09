@@ -28,6 +28,7 @@ import documentsRoutes from './routes/upload.route';
 import auditLogRoutes from './routes/audit-log.route';
 import activityRoutes from './routes/activity.route';
 import bookingRoutes from './routes/booking.route';
+console.log('🔧 [APP] Route imports loaded');
 import { getRoutesJSON, getAPIDocs } from './routes/docs.route';
 import { auditLogMiddleware } from './middlewares/audit-log.middleware';
 import { errorHandler, notFoundHandler } from './common/errors/error-handler';
@@ -41,6 +42,7 @@ import { Notification, NotificationStatus } from './models/notification.model'; 
 import { User } from './models/user.model'; // Import User model for online status tracking
 import 'reflect-metadata'; // Required for TypeORM
 import { testEmailConfiguration } from './services/email.service';
+console.log('🔧 [APP] Utility imports loaded');
 import {
   scheduleExpiringContractsCheck,
   scheduleExpiredContractsCheck,
@@ -50,17 +52,21 @@ import {
   scheduleBookingExpiration,
   setSocketIO as setBookingSchedulerSocketIO,
 } from './scripts/bookingScheduler';
-import * as Sentry from '@sentry/node';
+console.log('🔧 [APP] Scheduler imports loaded');
+// Remove duplicate Sentry import - already loaded in monitoring.ts
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+console.log('🔧 [APP] All imports completed');
 
 dotenv.config();
+console.log('🔧 [APP] Dotenv configured');
 
 // ✅ Initialize Sentry for error tracking
 initializeSentry();
+console.log('🔧 [APP] Sentry initialized');
 
 const app: Application = express();
 
@@ -92,7 +98,6 @@ const server = http.createServer(app); // Create the HTTP server
 const allowedOrigins = [
   'https://car-tracker-frontend-lime.vercel.app',
   'http://localhost:5173',
-  'http://localhost:5174',
   process.env.BASE_URL,
 ].filter((origin): origin is string => typeof origin === 'string' && origin.length > 0);
 
