@@ -25,8 +25,38 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
     return next();
   }
 
+  // Detect and skip malicious/scanner requests
+  const suspiciousPatterns = [
+    /\.php$/i,           // PHP files (we're a Node.js app)
+    /\.env$/i,           // Environment files
+    /\.git/i,            // Git files
+    /\.aws/i,            // AWS credentials
+    /wp-admin/i,         // WordPress
+    /wp-content/i,       // WordPress
+    /wp-includes/i,      // WordPress
+    /phpmyadmin/i,       // phpMyAdmin
+    /admin(ws)?$/i,      // Generic admin paths
+    /\.sql$/i,           // SQL files
+    /\.bak$/i,           // Backup files
+    /\.config$/i,        // Config files
+  ];
+
+  if (suspiciousPatterns.some((pattern) => pattern.test(req.path))) {
+    // Return 403 Forbidden immediately for known malicious patterns
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
   // Capture the original res.json to intercept response
   const originalJson = res.json.bind(res);
+  const originalStatus = res.status.bind(res);
+
+  // Track the actual status code set
+  let finalStatusCode = 200;
+
+  res.status = function (code: number) {
+    finalStatusCode = code;
+    return originalStatus(code);
+  };
 
   res.json = function (body: any) {
     // Calculate request duration
@@ -56,8 +86,9 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
     // Extract resource ID from path or body
     const resourceId = extractResourceId(req);
 
-    // Determine status based on response code
-    const isSuccess = res.statusCode >= 200 && res.statusCode < 400;
+    // Determine status based on final response code (use finalStatusCode which tracks res.status() calls)
+    const actualStatusCode = finalStatusCode || res.statusCode;
+    const isSuccess = actualStatusCode >= 200 && actualStatusCode < 400;
 
     // Create audit log (async, non-blocking)
     auditLogService
