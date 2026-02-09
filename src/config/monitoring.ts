@@ -19,6 +19,12 @@ export function initializeSentry(): void {
     }
   }
 
+  // TypeScript guard: Sentry should be loaded at this point
+  if (!Sentry) {
+    console.error('❌ Sentry failed to load');
+    return;
+  }
+
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
