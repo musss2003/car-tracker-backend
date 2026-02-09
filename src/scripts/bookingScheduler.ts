@@ -373,12 +373,12 @@ export const processExpiredBookings = async (): Promise<void> => {
           status: In([BookingStatus.PENDING, BookingStatus.CONFIRMED]),
           expiresAt: LessThan(now),
         },
-        relations: ['customer', 'customer.user', 'car'],
+        relations: ['customer', 'car'],
         order: {
           expiresAt: 'ASC', // Process oldest first
         },
         take: SCHEDULER_CONFIG.batchSize,
-        skip: page * SCHEDULER_CONFIG.batchSize,
+        skip: SCHEDULER_CONFIG.batchSize,
       });
 
       if (expirableBookings.length === 0) {
