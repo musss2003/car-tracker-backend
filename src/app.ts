@@ -467,5 +467,7 @@ app.use(errorHandler);
 // Export io for use in other modules
 export { io };
 
+console.log('🔧 Module initialization complete, about to call startServer()');
+
 // Start the server
 startServer();
