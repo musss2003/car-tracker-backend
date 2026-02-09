@@ -8,15 +8,15 @@ import { AuditContext } from '../common/interfaces/base-service.interface';
 // Get Socket.IO instance from global
 const getIO = () => (global as Record<string, unknown>).io;
 
-const notificationService = new NotificationService(getIO() as any);
+let notificationService: NotificationService | null = null;
 
-// Set Socket.IO after initialization
-setTimeout(() => {
-  const io = getIO();
-  if (io) {
-    notificationService.setSocketIO(io as any);
+// Lazy initialize notification service
+const getNotificationService = (): NotificationService => {
+  if (!notificationService) {
+    notificationService = new NotificationService(getIO() as any);
   }
-}, 100);
+  return notificationService;
+};
 
 /**
  * Get all notifications for the current user
@@ -28,7 +28,7 @@ export const getNotifications = asyncHandler(async (req: Request, res: Response)
     return res.status(401).json(createErrorResponse('Unauthorized'));
   }
 
-  const notifications = await notificationService.getUserNotifications(userId);
+  const notifications = await getNotificationService().getUserNotifications(userId);
   res.json(createSuccessResponse(notifications));
 });
 
@@ -42,7 +42,7 @@ export const getUnreadNotifications = asyncHandler(async (req: Request, res: Res
     return res.status(401).json(createErrorResponse('Unauthorized'));
   }
 
-  const notifications = await notificationService.getUnreadNotifications(userId);
+  const notifications = await getNotificationService().getUnreadNotifications(userId);
   res.json(createSuccessResponse(notifications));
 });
 
@@ -56,7 +56,7 @@ export const getNotification = asyncHandler(async (req: Request, res: Response) 
     return res.status(401).json(createErrorResponse('Unauthorized'));
   }
 
-  const notification = await notificationService.getNotificationById(req.params.id, userId);
+  const notification = await getNotificationService().getNotificationById(req.params.id, userId);
   res.json(createSuccessResponse(notification));
 });
 
@@ -73,7 +73,7 @@ export const createNotification = asyncHandler(async (req: Request, res: Respons
     userAgent: req.headers['user-agent'],
   };
 
-  const notification = await notificationService.createNotification(data, context);
+  const notification = await getNotificationService().createNotification(data, context);
   res.status(201).json(createSuccessResponse(notification, 'Notification created successfully'));
 });
 
@@ -96,7 +96,7 @@ export const updateNotification = asyncHandler(async (req: Request, res: Respons
     userAgent: req.headers['user-agent'],
   };
 
-  const notification = await notificationService.updateNotification(
+  const notification = await getNotificationService().updateNotification(
     req.params.id,
     data,
     userId,
@@ -122,7 +122,7 @@ export const markNotificationAsRead = asyncHandler(async (req: Request, res: Res
     userAgent: req.headers['user-agent'],
   };
 
-  const notification = await notificationService.markAsRead(req.params.id, userId, context);
+  const notification = await getNotificationService().markAsRead(req.params.id, userId, context);
   res.json(createSuccessResponse(notification, 'Notification marked as read'));
 });
 
@@ -143,7 +143,7 @@ export const markAllNotificationsAsRead = asyncHandler(async (req: Request, res:
     userAgent: req.headers['user-agent'],
   };
 
-  const affected = await notificationService.markAllAsRead(userId, context);
+  const affected = await getNotificationService().markAllAsRead(userId, context);
   res.json(createSuccessResponse({ affected }, 'All notifications marked as read'));
 });
 
@@ -164,7 +164,7 @@ export const deleteNotification = asyncHandler(async (req: Request, res: Respons
     userAgent: req.headers['user-agent'],
   };
 
-  await notificationService.deleteNotification(req.params.id, userId, context);
+  await getNotificationService().deleteNotification(req.params.id, userId, context);
   res.json(createSuccessResponse(null, 'Notification deleted successfully'));
 });
 
@@ -178,7 +178,7 @@ export const getUnreadCount = asyncHandler(async (req: Request, res: Response) =
     return res.status(401).json(createErrorResponse('Unauthorized'));
   }
 
-  const count = await notificationService.getUnreadCount(userId);
+  const count = await getNotificationService().getUnreadCount(userId);
   res.json(createSuccessResponse({ count }));
 });
 
@@ -193,6 +193,6 @@ export const getRecentNotifications = asyncHandler(async (req: Request, res: Res
   }
 
   const days = req.query.days ? parseInt(req.query.days as string) : 7;
-  const notifications = await notificationService.getRecentNotifications(userId, days);
+  const notifications = await getNotificationService().getRecentNotifications(userId, days);
   res.json(createSuccessResponse(notifications));
 });

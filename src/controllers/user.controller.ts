@@ -8,21 +8,21 @@ import { AuditContext } from '../common/interfaces/base-service.interface';
 // Get Socket.IO instance from global
 const getIO = () => (global as Record<string, unknown>).io;
 
-const userService = new UserService(getIO() as any);
+let userService: UserService | null = null;
 
-// Set Socket.IO after initialization
-setTimeout(() => {
-  const io = getIO();
-  if (io) {
-    userService.setSocketIO(io as any);
+// Lazy initialize user service
+const getUserService = (): UserService => {
+  if (!userService) {
+    userService = new UserService(getIO() as any);
   }
-}, 100);
+  return userService;
+};
 
 /**
  * Get all users
  */
 export const getUsers = asyncHandler(async (req: Request, res: Response) => {
-  const users = await userService.getAllUsers();
+  const users = await getUserService().getAllUsers();
   res.json(createSuccessResponse(users));
 });
 
@@ -30,7 +30,7 @@ export const getUsers = asyncHandler(async (req: Request, res: Response) => {
  * Get user by ID
  */
 export const getUser = asyncHandler(async (req: Request, res: Response) => {
-  const user = await userService.getUserById(req.params.id);
+  const user = await getUserService().getUserById(req.params.id);
   res.json(createSuccessResponse(user));
 });
 
@@ -47,7 +47,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
     userAgent: req.headers['user-agent'],
   };
 
-  const user = await userService.createUser(data, context);
+  const user = await getUserService().createUser(data, context);
   res.status(201).json(createSuccessResponse(user, 'User created successfully'));
 });
 
@@ -64,7 +64,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     userAgent: req.headers['user-agent'],
   };
 
-  const user = await userService.updateUser(req.params.id, data, context);
+  const user = await getUserService().updateUser(req.params.id, data, context);
   res.json(createSuccessResponse(user, 'User updated successfully'));
 });
 
@@ -81,7 +81,7 @@ export const changeUserPassword = asyncHandler(async (req: Request, res: Respons
     userAgent: req.headers['user-agent'],
   };
 
-  await userService.changePassword(req.params.id, data, context);
+  await getUserService().changePassword(req.params.id, data, context);
   res.json(createSuccessResponse(null, 'Password changed successfully'));
 });
 
@@ -98,7 +98,7 @@ export const resetUserPassword = asyncHandler(async (req: Request, res: Response
     userAgent: req.headers['user-agent'],
   };
 
-  await userService.resetPassword(req.params.id, data, context);
+  await getUserService().resetPassword(req.params.id, data, context);
   res.json(createSuccessResponse(null, 'Password reset successfully'));
 });
 
@@ -113,7 +113,7 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
     userAgent: req.headers['user-agent'],
   };
 
-  await userService.deleteUser(req.params.id, context);
+  await getUserService().deleteUser(req.params.id, context);
   res.json(createSuccessResponse(null, 'User deleted successfully'));
 });
 
@@ -127,6 +127,6 @@ export const searchUsers = asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json(createErrorResponse('Search term is required'));
   }
 
-  const users = await userService.searchUsers(search);
+  const users = await getUserService().searchUsers(search);
   res.json(createSuccessResponse(users));
 });
