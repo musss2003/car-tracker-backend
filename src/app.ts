@@ -12,22 +12,8 @@ import { closeRedis } from './config/redis';
 console.log('🔧 [APP] Redis imports loaded');
 import { apiLimiter, authLimiter } from './middlewares/rate-limit.middleware';
 console.log('🔧 [APP] Rate limiter imports loaded');
-import authRoutes from './routes/auth.route';
-import userRoutes from './routes/user.route';
-import contractRoutes from './routes/contract.route';
-import carRoutes from './routes/car.route';
-import carAnalyticsRoutes from './routes/car-analytics.route';
-import carRegistrationRoutes from './routes/car-registration.route';
-import carInsuranceRoutes from './routes/car-insurance.route';
-import carServiceRoutes from './routes/car-service-history.route';
-import carIssueReportRoutes from './routes/car-issue-report.route';
-import customerRoutes from './routes/customer.route';
-import notificationRoutes from './routes/notification.route';
-import countryRoutes from './routes/country.route';
-import documentsRoutes from './routes/upload.route';
-import auditLogRoutes from './routes/audit-log.route';
-import activityRoutes from './routes/activity.route';
-import bookingRoutes from './routes/booking.route';
+// NOTE: Routes are now loaded dynamically in startServer() after DB initialization
+// to prevent module-level repository instantiation before database is ready
 console.log('🔧 [APP] Route imports loaded');
 import { getRoutesJSON, getAPIDocs } from './routes/docs.route';
 import { auditLogMiddleware } from './middlewares/audit-log.middleware';
@@ -163,6 +149,45 @@ const startServer = async () => {
     // Store io globally for access by other modules
     (global as Record<string, unknown>).io = io;
 
+    // NOW load routes after DB is initialized (prevents repository instantiation errors)
+    console.log('🔧 Loading routes after DB initialization...');
+    const authRoutes = (await import('./routes/auth.route')).default;
+    const userRoutes = (await import('./routes/user.route')).default;
+    const contractRoutes = (await import('./routes/contract.route')).default;
+    const carRoutes = (await import('./routes/car.route')).default;
+    const carAnalyticsRoutes = (await import('./routes/car-analytics.route')).default;
+    const carRegistrationRoutes = (await import('./routes/car-registration.route')).default;
+    const carInsuranceRoutes = (await import('./routes/car-insurance.route')).default;
+    const carServiceRoutes = (await import('./routes/car-service-history.route')).default;
+    const carIssueReportRoutes = (await import('./routes/car-issue-report.route')).default;
+    const customerRoutes = (await import('./routes/customer.route')).default;
+    const notificationRoutes = (await import('./routes/notification.route')).default;
+    const countryRoutes = (await import('./routes/country.route')).default;
+    const documentsRoutes = (await import('./routes/upload.route')).default;
+    const auditLogRoutes = (await import('./routes/audit-log.route')).default;
+    const activityRoutes = (await import('./routes/activity.route')).default;
+    const bookingRoutes = (await import('./routes/booking.route')).default;
+    console.log('🔧 All routes loaded successfully');
+
+    // Register routes
+    app.use('/api/auth', authLimiter, authRoutes);
+    app.use('/api/users', apiLimiter, userRoutes);
+    app.use('/api/contracts', apiLimiter, contractRoutes);
+    app.use('/api/bookings', apiLimiter, bookingRoutes);
+    app.use('/api/cars', apiLimiter, carAnalyticsRoutes);
+    app.use('/api/cars', apiLimiter, carRoutes);
+    app.use('/api/car-registration', apiLimiter, carRegistrationRoutes);
+    app.use('/api/car-insurance', apiLimiter, carInsuranceRoutes);
+    app.use('/api/car-service-history', apiLimiter, carServiceRoutes);
+    app.use('/api/car-issue-report', apiLimiter, carIssueReportRoutes);
+    app.use('/api/customers', apiLimiter, customerRoutes);
+    app.use('/api/notifications', apiLimiter, notificationRoutes);
+    app.use('/api/countries', apiLimiter, countryRoutes);
+    app.use('/api/audit-logs', apiLimiter, auditLogRoutes);
+    app.use('/api/activity', apiLimiter, activityRoutes);
+    app.use('/api', apiLimiter, documentsRoutes);
+    console.log('🔧 All routes registered');
+
     // Test email configuration (non-blocking)
     console.log('📧 Testing email configuration...');
     testEmailConfiguration().catch((err) => {
@@ -256,23 +281,7 @@ process.on('uncaughtException', (error) => {
 // Note: Multer is configured per-route, not globally
 // Each route that needs file upload should configure its own multer middleware
 
-// Routes with rate limiting
-app.use('/api/auth', authLimiter, authRoutes); // ✅ Strict rate limit for auth
-app.use('/api/users', apiLimiter, userRoutes);
-app.use('/api/contracts', apiLimiter, contractRoutes);
-app.use('/api/bookings', apiLimiter, bookingRoutes);
-app.use('/api/cars', apiLimiter, carAnalyticsRoutes); // Analytics routes (must be before general car routes)
-app.use('/api/cars', apiLimiter, carRoutes);
-app.use('/api/car-registration', apiLimiter, carRegistrationRoutes);
-app.use('/api/car-insurance', apiLimiter, carInsuranceRoutes);
-app.use('/api/car-service-history', apiLimiter, carServiceRoutes);
-app.use('/api/car-issue-report', apiLimiter, carIssueReportRoutes);
-app.use('/api/customers', apiLimiter, customerRoutes);
-app.use('/api/notifications', apiLimiter, notificationRoutes);
-app.use('/api/countries', apiLimiter, countryRoutes);
-app.use('/api/audit-logs', apiLimiter, auditLogRoutes);
-app.use('/api/activity', apiLimiter, activityRoutes);
-app.use('/api', apiLimiter, documentsRoutes);
+// Routes are now registered dynamically in startServer() after DB initialization
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
