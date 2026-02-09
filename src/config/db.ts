@@ -24,9 +24,7 @@ export const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  ssl: {
-    rejectUnauthorized: false, // needed for RDS SSL in some setups
-  },
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   max: 10, // Maximum number of connections in the pool
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
   connectionTimeoutMillis: 2000, // How long to wait for a connection
@@ -40,9 +38,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   entities: [
     User,
     Customer,
