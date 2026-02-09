@@ -55,7 +55,7 @@ export const createCar = asyncHandler(async (req: Request, res: Response) => {
       `Novo vozilo dodato: ${car.manufacturer} ${car.model} (${car.licensePlate})`,
       'car-new',
       context.userId || 'system',
-      io
+      getIO() as any
     );
   } catch (notifError) {
     console.error('Error sending notification:', notifError);

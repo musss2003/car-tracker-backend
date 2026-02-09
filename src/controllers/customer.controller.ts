@@ -46,7 +46,7 @@ export const createCustomer = asyncHandler(async (req: Request, res: Response) =
 
   // Send notification to admins
   try {
-    await notifyAdmins(`Novi korisnik dodat: ${customer.name}`, 'customer-new', context.userId, io);
+    await notifyAdmins(`Novi korisnik dodat: ${customer.name}`, 'customer-new', context.userId, getIO() as any);
   } catch (notifError) {
     console.error('Error sending notification:', notifError);
   }
