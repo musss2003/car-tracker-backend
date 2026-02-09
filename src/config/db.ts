@@ -75,9 +75,14 @@ export const initializeTypeORM = async (): Promise<void> => {
   const maxRetries = 3;
   let retries = 0;
 
+  console.log('🔗 Attempting to connect to TypeORM...');
+  console.log(`📍 Database: ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
+  console.log(`🔐 SSL: ${process.env.DB_SSL === 'true' ? 'enabled' : 'disabled'}`);
+
   while (retries < maxRetries) {
     try {
       if (!AppDataSource.isInitialized) {
+        console.log(`🔄 Initializing TypeORM (attempt ${retries + 1}/${maxRetries})...`);
         await AppDataSource.initialize();
         console.log('✅ TypeORM connected to PostgreSQL');
 
