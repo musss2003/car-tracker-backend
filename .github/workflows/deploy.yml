@@ -104,17 +104,13 @@ jobs:
         HOST: ${{ secrets.EC2_HOST }}
         USER: ${{ secrets.EC2_USER }}
         KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
-        GIT_REF_NAME: ${{ github.ref_name }}
-        GIT_SHA: ${{ github.sha }}
       run: |
         echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
         mkdir -p ~/.ssh
         echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-        IMAGE_TAG="${GIT_REF_NAME}-${GIT_SHA::7}"
         ssh -i private_key ${USER}@${HOST} "
           set -e
           cd ~/car-tracker-backend &&
-          export IMAGE_TAG=${IMAGE_TAG} &&
           docker compose pull &&
           docker compose up -d &&
           echo \"✅ Deployment completed successfully\"
