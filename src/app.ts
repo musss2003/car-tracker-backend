@@ -151,7 +151,7 @@ const startServer = async () => {
     const activityRoutes = (await import('./routes/activity.route')).default;
     const bookingRoutes = (await import('./routes/booking.route')).default;
 
-    // Register routes
+    // Register routes BEFORE starting the server
     app.use('/api/auth', authLimiter, authRoutes);
     app.use('/api/users', apiLimiter, userRoutes);
     app.use('/api/contracts', apiLimiter, contractRoutes);
@@ -169,12 +169,30 @@ const startServer = async () => {
     app.use('/api/activity', apiLimiter, activityRoutes);
     app.use('/api', apiLimiter, documentsRoutes);
 
+    // Register 404 handler AFTER all routes
+    app.use(notFoundHandler);
+
+    // CORS error handler (must be before generic error handler)
+    const corsErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+      if (err.message === 'Not allowed by CORS') {
+        res.status(403).json({
+          error: 'CORS origin denied',
+          message: 'Your origin is not allowed to access this resource',
+        });
+        return;
+      }
+      next(err);
+    };
+
+    app.use(corsErrorHandler);
+    app.use(errorHandler);
+
     // Test email configuration (non-blocking)
     testEmailConfiguration().catch((err) => {
       console.warn('⚠️  Email service not configured or failed:', err.message);
     });
 
-    // Start the server only after successful database connection
+    // Start the server only after successful database connection AND route registration
     const PORT = parseInt(process.env.PORT || '5001', 10);
 
     server.listen(PORT, '0.0.0.0', () => {
@@ -296,24 +314,6 @@ if (process.env.NODE_ENV !== 'production') {
       console.warn('⚠️  Failed to load documentation routes:', err.message);
     });
 }
-
-// 404 handler
-app.use(notFoundHandler);
-
-// ✅ CORS error handler (must be before generic error handler)
-const corsErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  if (err.message === 'Not allowed by CORS') {
-    res.status(403).json({
-      error: 'CORS origin denied',
-      message: 'Your origin is not allowed to access this resource',
-    });
-    return;
-  }
-  next(err);
-};
-
-app.use(corsErrorHandler);
-app.use(errorHandler);
 
 // Start the server
 startServer();
