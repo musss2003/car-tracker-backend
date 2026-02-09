@@ -1,10 +1,17 @@
+console.log('🔧 [APP] Module loading started...');
+
 import express, { Application, Request, Response, ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import compression from 'compression';
+console.log('🔧 [APP] Basic imports loaded');
 import { initializeTypeORM, AppDataSource } from './config/db';
+console.log('🔧 [APP] DB imports loaded');
 import { initializeSentry } from './config/monitoring';
+console.log('🔧 [APP] Monitoring imports loaded');
 import { closeRedis } from './config/redis';
+console.log('🔧 [APP] Redis imports loaded');
 import { apiLimiter, authLimiter } from './middlewares/rate-limit.middleware';
+console.log('🔧 [APP] Rate limiter imports loaded');
 import authRoutes from './routes/auth.route';
 import userRoutes from './routes/user.route';
 import contractRoutes from './routes/contract.route';
