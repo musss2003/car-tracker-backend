@@ -12,4 +12,9 @@ else
   echo "⚠️ Skipping database migrations (set RUN_MIGRATIONS=true to enable)"
 fi
 echo "🚀 Starting application..."
-exec "$@"
+
+# Run node directly to see all errors
+node dist/app.js 2>&1 || {
+  echo "❌ Application crashed with exit code $?"
+  exit 1
+}
