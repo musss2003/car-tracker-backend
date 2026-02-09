@@ -1,20 +1,12 @@
-console.log('🔧 [APP] Module loading started...');
-
 import express, { Application, Request, Response, ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import compression from 'compression';
-console.log('🔧 [APP] Basic imports loaded');
 import { initializeTypeORM, AppDataSource } from './config/db';
-console.log('🔧 [APP] DB imports loaded');
 import { initializeSentry, captureException } from './config/monitoring';
-console.log('🔧 [APP] Monitoring imports loaded');
 import { closeRedis } from './config/redis';
-console.log('🔧 [APP] Redis imports loaded');
 import { apiLimiter, authLimiter } from './middlewares/rate-limit.middleware';
-console.log('🔧 [APP] Rate limiter imports loaded');
 // NOTE: Routes are now loaded dynamically in startServer() after DB initialization
 // to prevent module-level repository instantiation before database is ready
-console.log('🔧 [APP] Route imports loaded');
 // NOTE: docs.route is loaded conditionally only in development to avoid loading express-list-endpoints in production
 import { auditLogMiddleware } from './middlewares/audit-log.middleware';
 import { errorHandler, notFoundHandler } from './common/errors/error-handler';
@@ -25,7 +17,6 @@ import http from 'http';
 import 'reflect-metadata'; // Required for TypeORM
 import { testEmailConfiguration } from './services/email.service';
 import { initializeSocketIO, onlineUsers } from './config/socketio';
-console.log('🔧 [APP] Utility imports loaded');
 import {
   scheduleExpiringContractsCheck,
   scheduleExpiredContractsCheck,
@@ -35,19 +26,14 @@ import {
   scheduleBookingExpiration,
   setSocketIO as setBookingSchedulerSocketIO,
 } from './scripts/bookingScheduler';
-console.log('🔧 [APP] Scheduler imports loaded');
-// Remove duplicate Sentry import - already loaded in monitoring.ts
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-console.log('🔧 [APP] All imports completed');
 
 dotenv.config();
-console.log('🔧 [APP] Dotenv configured');
 
-// ✅ Initialize Sentry for error tracking
+// Initialize Sentry for error tracking
 initializeSentry();
-console.log('🔧 [APP] Sentry initialized');
 
 const app: Application = express();
 
@@ -78,6 +64,7 @@ const server = http.createServer(app); // Create the HTTP server
 // Filter out undefined values to prevent CORS bypass vulnerability
 const allowedOrigins = [
   'https://car-tracker-frontend-lime.vercel.app',
+  'https://cartrackerbooo.mooo.com',
   'http://localhost:5173',
   process.env.BASE_URL,
 ].filter((origin): origin is string => typeof origin === 'string' && origin.length > 0);
@@ -88,10 +75,9 @@ app.use(
       // Allow requests with no origin (same-origin, server-to-server, health checks)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
-        console.log(`✅ CORS allowed origin: ${origin}`);
         return callback(null, true);
       }
-      console.warn(`❌ CORS blocked origin: ${origin}`);
+      console.warn(`⚠️  CORS blocked origin: ${origin}`);
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
@@ -137,10 +123,8 @@ app.use(auditLogMiddleware);
 
 // Start server function
 const startServer = async () => {
-  console.log('🔧 startServer() function called');
   try {
-    console.log('🔧 About to call initializeTypeORM()...');
-    // Only initialize TypeORM (PostgreSQL)
+    // Initialize TypeORM (PostgreSQL)
     await initializeTypeORM();
 
     // Initialize Socket.IO
@@ -149,8 +133,7 @@ const startServer = async () => {
     // Store io globally for access by other modules
     (global as Record<string, unknown>).io = io;
 
-    // NOW load routes after DB is initialized (prevents repository instantiation errors)
-    console.log('🔧 Loading routes after DB initialization...');
+    // Load routes after DB is initialized (prevents repository instantiation errors)
     const authRoutes = (await import('./routes/auth.route')).default;
     const userRoutes = (await import('./routes/user.route')).default;
     const contractRoutes = (await import('./routes/contract.route')).default;
@@ -167,7 +150,6 @@ const startServer = async () => {
     const auditLogRoutes = (await import('./routes/audit-log.route')).default;
     const activityRoutes = (await import('./routes/activity.route')).default;
     const bookingRoutes = (await import('./routes/booking.route')).default;
-    console.log('🔧 All routes loaded successfully');
 
     // Register routes
     app.use('/api/auth', authLimiter, authRoutes);
@@ -186,10 +168,8 @@ const startServer = async () => {
     app.use('/api/audit-logs', apiLimiter, auditLogRoutes);
     app.use('/api/activity', apiLimiter, activityRoutes);
     app.use('/api', apiLimiter, documentsRoutes);
-    console.log('🔧 All routes registered');
 
     // Test email configuration (non-blocking)
-    console.log('📧 Testing email configuration...');
     testEmailConfiguration().catch((err) => {
       console.warn('⚠️  Email service not configured or failed:', err.message);
     });
@@ -334,8 +314,6 @@ const corsErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
 
 app.use(corsErrorHandler);
 app.use(errorHandler);
-
-console.log('🔧 Module initialization complete, about to call startServer()');
 
 // Start the server
 startServer();
