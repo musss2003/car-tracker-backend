@@ -70,7 +70,10 @@ export function captureException(error: Error, context?: Record<string, any>): v
 /**
  * Capture message manually
  */
-export function captureMessage(message: string, level: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug' = 'info'): void {
+export function captureMessage(
+  message: string,
+  level: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug' = 'info'
+): void {
   if (!Sentry) return;
   Sentry.captureMessage(message, level);
 }
@@ -83,8 +86,8 @@ export function setUserContext(user: {
   email?: string;
   username?: string;
   role?: string;
-})if (!Sentry) return;
-  : void {
+}): void {
+  if (!Sentry) return;
   Sentry.setUser({
     id: user.id,
     email: user.email,
@@ -96,7 +99,7 @@ export function setUserContext(user: {
 /**
  * Clear user context
  */
-exif (!Sentry) return;
-  port function clearUserContext(): void {
+export function clearUserContext(): void {
+  if (!Sentry) return;
   Sentry.setUser(null);
 }
