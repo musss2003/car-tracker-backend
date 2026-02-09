@@ -6,7 +6,7 @@ import compression from 'compression';
 console.log('🔧 [APP] Basic imports loaded');
 import { initializeTypeORM, AppDataSource } from './config/db';
 console.log('🔧 [APP] DB imports loaded');
-import { initializeSentry } from './config/monitoring';
+import { initializeSentry, captureException } from './config/monitoring';
 console.log('🔧 [APP] Monitoring imports loaded');
 import { closeRedis } from './config/redis';
 console.log('🔧 [APP] Redis imports loaded');
@@ -379,13 +379,13 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-  Sentry.captureException(reason);
+  captureException(reason as Error);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
-  Sentry.captureException(error);
+  captureException(error);
   gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
 
