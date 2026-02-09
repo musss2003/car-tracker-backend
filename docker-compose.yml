@@ -11,6 +11,9 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
+      - BASE_URL=${BASE_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DEBUG=${DEBUG:-false}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT:-5432}
       - DB_USER=${DB_USER}
@@ -24,6 +27,14 @@ services:
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - APP_NAME=${APP_NAME}
+      - APP_URL=${APP_URL}
       - RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
     networks:
       - cartrack-network
