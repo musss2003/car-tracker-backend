@@ -36,6 +36,7 @@ services:
       - APP_NAME=${APP_NAME}
       - APP_URL=${APP_URL}
       - RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
+      - TYPEORM_SYNCHRONIZE=${TYPEORM_SYNCHRONIZE:-false}
     networks:
       - cartrack-network
     restart: unless-stopped
