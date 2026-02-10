@@ -54,7 +54,7 @@ export const AppDataSource = new DataSource({
     RefreshToken,
     AuditLog,
   ],
-  synchronize: process.env.NODE_ENV !== 'production', // Only in development
+  synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true' || process.env.NODE_ENV !== 'production', // Allow manual override
   logging: process.env.NODE_ENV === 'development',
   extra: {
     // ✅ Optimized Connection pool settings for scalability
