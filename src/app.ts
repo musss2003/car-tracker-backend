@@ -49,8 +49,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ✅ 4. Body parsers sa limitima
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // ✅ 5. Helmet – security headeri
 app.use(
