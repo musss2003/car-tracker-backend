@@ -25,7 +25,7 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
     return next();
   }
 
-  // Detect and skip malicious/scanner requests
+  // Detect and block malicious/scanner requests
   const suspiciousPatterns = [
     /\.php$/i, // PHP files (we're a Node.js app)
     /\.env$/i, // Environment files
@@ -39,10 +39,37 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
     /\.sql$/i, // SQL files
     /\.bak$/i, // Backup files
     /\.config$/i, // Config files
+    /\/containers\/json/i, // Docker API
+    /\/hello\.world/i, // Scanner probe
+    /geoserver/i, // GeoServer
+    /\/owa\//i, // Outlook Web Access
+    /RDWeb/i, // Remote Desktop Web
+    /\/webui\//i, // Generic WebUI
   ];
 
   if (suspiciousPatterns.some((pattern) => pattern.test(req.path))) {
-    // Return 403 Forbidden immediately for known malicious patterns
+    // Log malicious request BEFORE blocking
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    auditLogService
+      .createLog({
+        userId: null,
+        username: 'anonymous',
+        userRole: undefined,
+        ipAddress,
+        userAgent,
+        action: AuditAction.READ,
+        resource: AuditResource.AUTH,
+        resourceId: undefined,
+        description: `🚨 BLOCKED: ${req.method} ${req.path}`,
+        status: AuditStatus.FAILURE,
+        errorMessage: 'Suspicious pattern detected - potential attack',
+        duration: req.startTime ? Date.now() - req.startTime : undefined,
+      })
+      .catch((err) => console.error('Failed to log malicious request:', err));
+
+    // Return 403 Forbidden immediately
     res.status(403).json({ message: 'Forbidden' });
     return;
   }
@@ -51,8 +78,8 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
   const originalJson = res.json.bind(res);
   const originalStatus = res.status.bind(res);
 
-  // Track the actual status code set
-  let finalStatusCode = 200;
+  // Track the actual status code set (default to undefined to detect unset status)
+  let finalStatusCode: number | undefined = undefined;
 
   res.status = function (code: number) {
     finalStatusCode = code;
@@ -87,9 +114,28 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
     // Extract resource ID from path or body
     const resourceId = extractResourceId(req);
 
-    // Determine status based on final response code (use finalStatusCode which tracks res.status() calls)
-    const actualStatusCode = finalStatusCode || res.statusCode;
+    // Determine status based on status code
+    // Use finalStatusCode if set, otherwise fall back to res.statusCode
+    const actualStatusCode = finalStatusCode ?? res.statusCode;
     const isSuccess = actualStatusCode >= 200 && actualStatusCode < 400;
+
+    // Add description for 404s and other errors
+    let description = `${req.method} ${req.path}`;
+    let errorMessage: string | undefined;
+
+    if (actualStatusCode === 404) {
+      description = `404 NOT FOUND: ${req.method} ${req.path}`;
+      errorMessage = 'Route not found';
+    } else if (actualStatusCode === 403) {
+      description = `403 FORBIDDEN: ${req.method} ${req.path}`;
+      errorMessage = 'Access denied';
+    } else if (actualStatusCode >= 400 && actualStatusCode < 500) {
+      description = `${actualStatusCode} CLIENT ERROR: ${req.method} ${req.path}`;
+      errorMessage = typeof body === 'object' ? JSON.stringify(body) : String(body);
+    } else if (actualStatusCode >= 500) {
+      description = `${actualStatusCode} SERVER ERROR: ${req.method} ${req.path}`;
+      errorMessage = typeof body === 'object' ? JSON.stringify(body) : String(body);
+    }
 
     // Create audit log (async, non-blocking)
     auditLogService
@@ -102,9 +148,9 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
         action,
         resource,
         resourceId,
-        description: `${req.method} ${req.path}`,
+        description,
         status: isSuccess ? AuditStatus.SUCCESS : AuditStatus.FAILURE,
-        errorMessage: !isSuccess ? JSON.stringify(body) : undefined,
+        errorMessage: !isSuccess ? errorMessage : undefined,
         duration,
       })
       .catch((err) => {
