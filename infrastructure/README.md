@@ -47,17 +47,29 @@ sudo systemctl enable nginx
 
 ### Step 3: Update Backend to Listen on Localhost
 ```bash
-# Edit your backend .env file
+# Edit your backend .env file (or docker-compose.yml environment variables)
 nano ~/car-tracker-backend/.env
 
 # Add or modify:
 HOST=127.0.0.1
 PORT=5001
 
-# Restart your backend service
-pm2 restart car-tracker-backend
-# OR if using systemd:
-# sudo systemctl restart car-tracker-backend
+# If using docker-compose, update docker-compose.yml:
+# services:
+#   backend:
+#     environment:
+#       - HOST=127.0.0.1
+#       - PORT=5001
+#     ports:
+#       - "127.0.0.1:5001:5001"  # Bind to localhost only
+
+# Restart your Docker container
+docker-compose down
+docker-compose up -d
+# OR if using standalone Docker:
+# docker stop car-tracker-backend
+# docker rm car-tracker-backend
+# docker run -d --name car-tracker-backend -p 127.0.0.1:5001:5001 --env-file .env your-image:tag
 ```
 
 ### Step 4: Update EC2 Security Groups
@@ -84,6 +96,10 @@ curl http://YOUR_DOMAIN.com/api/health
 # Check backend is listening on localhost only
 netstat -tuln | grep 5001
 # Should show: 127.0.0.1:5001 (NOT 0.0.0.0:5001)
+
+# For Docker, verify port binding
+docker ps --format "table {{.Names}}\t{{.Ports}}"
+# Should show: 127.0.0.1:5001->5001/tcp (NOT 0.0.0.0:5001->5001/tcp)
 ```
 
 ---
@@ -242,10 +258,15 @@ sudo netstat -tuln | grep :80
 
 ### Backend Returns 502 Bad Gateway
 ```bash
-# Check if backend is running
-pm2 status
+# Check if backend container is running
+docker ps | grep car-tracker
 # OR
-systemctl status car-tracker-backend
+docker-compose ps
+
+# Check container logs
+docker logs car-tracker-backend
+# OR
+docker-compose logs backend
 
 # Check if backend is listening on localhost
 netstat -tuln | grep 5001
@@ -256,6 +277,9 @@ curl http://127.0.0.1:5001/api/health
 
 # Check Nginx error logs
 sudo tail -f /var/log/nginx/error.log
+
+# Restart container if needed
+docker-compose restart backend
 ```
 
 ### Fail2ban Not Banning IPs
@@ -307,7 +331,7 @@ If you encounter issues:
 1. Check the logs:
    - Nginx: `/var/log/nginx/error.log` and `/var/log/nginx/access.log`
    - Fail2ban: `/var/log/fail2ban.log`
-   - Backend: `pm2 logs` or `/var/log/car-tracker-backend/`
+   - Backend: `docker logs car-tracker-backend` or `docker-compose logs backend`
 
 2. Run the monitoring script: `sudo ./monitor-security.sh`
 
