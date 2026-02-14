@@ -79,7 +79,8 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: false  # ❌ DISABLED - Deploy manually from local machine to keep SSH secure
+    # To deploy: ssh into EC2, git pull, docker-compose pull && docker-compose up -d
     
     steps:
     - uses: actions/checkout@v3
