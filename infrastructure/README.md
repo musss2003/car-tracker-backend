@@ -4,24 +4,26 @@ This directory contains ready-to-use configuration files for securing your EC2 b
 
 ## 📁 Files Overview
 
-| File | Purpose | Deployment Location |
-|------|---------|---------------------|
-| `nginx-car-tracker.conf` | Nginx reverse proxy configuration | `/etc/nginx/sites-available/car-tracker` |
-| `fail2ban-nginx.conf` | Fail2ban jail configurations | `/etc/fail2ban/jail.d/nginx.local` |
-| `fail2ban-nginx-scanner-filter.conf` | Custom scanner detection filter | `/etc/fail2ban/filter.d/nginx-scanner.conf` |
-| `monitor-security.sh` | Security monitoring script | Can run from anywhere |
+| File                                 | Purpose                           | Deployment Location                         |
+| ------------------------------------ | --------------------------------- | ------------------------------------------- |
+| `nginx-car-tracker.conf`             | Nginx reverse proxy configuration | `/etc/nginx/sites-available/car-tracker`    |
+| `fail2ban-nginx.conf`                | Fail2ban jail configurations      | `/etc/fail2ban/jail.d/nginx.local`          |
+| `fail2ban-nginx-scanner-filter.conf` | Custom scanner detection filter   | `/etc/fail2ban/filter.d/nginx-scanner.conf` |
+| `monitor-security.sh`                | Security monitoring script        | Can run from anywhere                       |
 
 ---
 
 ## 🚀 Quick Start (30 Minutes)
 
 ### Step 1: Install Nginx
+
 ```bash
 sudo apt update
 sudo apt install nginx -y
 ```
 
 ### Step 2: Deploy Nginx Configuration
+
 ```bash
 # Copy the configuration file
 sudo cp ~/car-tracker-backend/infrastructure/nginx-car-tracker.conf /etc/nginx/sites-available/car-tracker
@@ -46,6 +48,7 @@ sudo systemctl enable nginx
 ```
 
 ### Step 3: Update Backend to Listen on Localhost
+
 ```bash
 # Edit your backend .env file (or docker-compose.yml environment variables)
 nano ~/car-tracker-backend/.env
@@ -73,6 +76,7 @@ docker-compose up -d
 ```
 
 ### Step 4: Update EC2 Security Groups
+
 1. Open AWS Console → EC2 → Security Groups
 2. Select your backend security group
 3. **Edit Inbound Rules**:
@@ -82,6 +86,7 @@ docker-compose up -d
    - **HTTPS (443)**: Add if using SSL - `0.0.0.0/0` or `::/0`
 
 ### Step 5: Verify Security
+
 ```bash
 # Test that port 5001 is NOT publicly accessible
 curl http://YOUR_EC2_PUBLIC_IP:5001/api/health
@@ -107,11 +112,13 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 ## 🛡️ Install Fail2ban (1 Hour)
 
 ### Step 1: Install Fail2ban
+
 ```bash
 sudo apt install fail2ban -y
 ```
 
 ### Step 2: Deploy Configurations
+
 ```bash
 # Copy jail configuration
 sudo cp fail2ban-nginx.conf /etc/fail2ban/jail.d/nginx.local
@@ -125,6 +132,7 @@ sudo systemctl enable fail2ban
 ```
 
 ### Step 3: Verify Fail2ban
+
 ```bash
 # Check status
 sudo fail2ban-client status
@@ -138,6 +146,7 @@ sudo fail2ban-client status nginx-scanner | grep "Banned IP"
 ```
 
 ### Step 4: Unban an IP (if needed)
+
 ```bash
 sudo fail2ban-client set nginx-scanner unbanip YOUR_IP
 ```
@@ -147,6 +156,7 @@ sudo fail2ban-client set nginx-scanner unbanip YOUR_IP
 ## 📊 Security Monitoring
 
 ### Run the Security Report
+
 ```bash
 # From this directory
 ./monitor-security.sh
@@ -156,6 +166,7 @@ sudo ./monitor-security.sh
 ```
 
 ### Schedule Daily Reports (Optional)
+
 ```bash
 # Edit crontab
 crontab -e
@@ -169,6 +180,7 @@ crontab -e
 ## 🔒 Configuration Details
 
 ### Nginx Rate Limiting
+
 The configuration includes two rate limiting zones:
 
 1. **Auth Endpoints** (`/api/auth`): 2 requests/second with burst of 5
@@ -178,23 +190,27 @@ If a client exceeds these limits, they receive a `429 Too Many Requests` respons
 
 ### Fail2ban Jails
 
-| Jail | Trigger | Ban Time | Purpose |
-|------|---------|----------|---------|
-| `nginx-scanner` | Access to malicious paths (phpmyadmin, wp-admin, etc.) | 7 days | Blocks scanners immediately |
-| `nginx-badbots` | Known bot user agents | 24 hours | Blocks automated tools |
-| `nginx-noscript` | Script-based attacks | 2 hours | Blocks injection attempts |
-| `nginx-http-auth` | Failed HTTP authentication | 1 hour | Blocks brute force |
-| `sshd` | Failed SSH login | 24 hours | Blocks SSH brute force |
+| Jail              | Trigger                                                | Ban Time | Purpose                     |
+| ----------------- | ------------------------------------------------------ | -------- | --------------------------- |
+| `nginx-scanner`   | Access to malicious paths (phpmyadmin, wp-admin, etc.) | 7 days   | Blocks scanners immediately |
+| `nginx-badbots`   | Known bot user agents                                  | 24 hours | Blocks automated tools      |
+| `nginx-noscript`  | Script-based attacks                                   | 2 hours  | Blocks injection attempts   |
+| `nginx-http-auth` | Failed HTTP authentication                             | 1 hour   | Blocks brute force          |
+| `sshd`            | Failed SSH login                                       | 24 hours | Blocks SSH brute force      |
 
 ### Blocked Paths
+
 Nginx automatically blocks (403 Forbidden):
+
 - `*.php`, `*.asp`, `*.aspx`, `*.cgi`, `*.jsp`
 - `/wp-admin/*`, `/phpmyadmin/*`, `/geoserver/*`
 - `/containers/*`, `/webui/*`, `/owa/*`
 - Hidden files (`/.git`, `/.env`)
 
 ### Security Headers
+
 All responses include:
+
 - `X-Frame-Options: DENY` - Prevents clickjacking
 - `X-Content-Type-Options: nosniff` - Prevents MIME sniffing
 - `X-XSS-Protection: 1; mode=block` - Blocks XSS attempts
@@ -205,6 +221,7 @@ All responses include:
 ## 🧪 Testing Security
 
 ### Test 1: Rate Limiting
+
 ```bash
 # Should succeed
 for i in {1..5}; do curl http://YOUR_DOMAIN/api/health; done
@@ -214,6 +231,7 @@ for i in {1..30}; do curl http://YOUR_DOMAIN/api/auth/login -X POST; done
 ```
 
 ### Test 2: Scanner Blocking
+
 ```bash
 # Should return 403 Forbidden
 curl http://YOUR_DOMAIN/phpmyadmin
@@ -225,6 +243,7 @@ sudo fail2ban-client status nginx-scanner
 ```
 
 ### Test 3: Bad Bot Blocking
+
 ```bash
 # Should return 403 Forbidden
 curl -A "python-requests/2.31.0" http://YOUR_DOMAIN/api/health
@@ -232,6 +251,7 @@ curl -A "Nikto" http://YOUR_DOMAIN/api/health
 ```
 
 ### Test 4: Backend Not Exposed
+
 ```bash
 # Should fail (connection refused)
 curl http://YOUR_EC2_PUBLIC_IP:5001/api/health
@@ -245,6 +265,7 @@ curl http://YOUR_EC2_PUBLIC_IP/api/health
 ## 🆘 Troubleshooting
 
 ### Nginx Won't Start
+
 ```bash
 # Check configuration syntax
 sudo nginx -t
@@ -257,6 +278,7 @@ sudo netstat -tuln | grep :80
 ```
 
 ### Backend Returns 502 Bad Gateway
+
 ```bash
 # Check if backend container is running
 docker ps | grep car-tracker
@@ -283,6 +305,7 @@ docker-compose restart backend
 ```
 
 ### Fail2ban Not Banning IPs
+
 ```bash
 # Check jail status
 sudo fail2ban-client status nginx-scanner
@@ -295,6 +318,7 @@ sudo tail -f /var/log/fail2ban.log
 ```
 
 ### Legitimate Users Getting Blocked
+
 ```bash
 # Unban an IP
 sudo fail2ban-client set nginx-scanner unbanip 203.0.113.45

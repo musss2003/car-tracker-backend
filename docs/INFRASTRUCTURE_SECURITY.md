@@ -13,6 +13,7 @@ Your EC2 instance is **publicly exposed** and being actively scanned by bots:
 - ❌ **Network security**: No CDN/WAF protection ✗
 
 **Evidence from audit logs**:
+
 ```
 GET /containers/json       # Docker API probe
 GET /geoserver/web/        # GeoServer exploit attempt
@@ -66,6 +67,7 @@ Custom TCP      TCP         5001          127.0.0.1/32        App port (localhos
 ```
 
 **Get your IP address**:
+
 ```bash
 curl ifconfig.me
 # Example output: 203.0.113.45
@@ -138,7 +140,7 @@ server {
     location /api/auth {
         limit_req zone=auth_limit burst=5 nodelay;
         limit_req_status 429;
-        
+
         proxy_pass http://127.0.0.1:5001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -148,7 +150,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
@@ -159,7 +161,7 @@ server {
     location /api {
         limit_req zone=api_limit burst=20 nodelay;
         limit_req_status 429;
-        
+
         proxy_pass http://127.0.0.1:5001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -441,6 +443,7 @@ sudo systemctl enable ufw
 ### 3.1 AWS CloudFront CDN Setup
 
 **Benefits**:
+
 - Hides your EC2 IP address
 - DDoS protection
 - Global caching and performance
@@ -476,6 +479,7 @@ sudo systemctl enable ufw
 **AWS Console → WAF → Create Web ACL**
 
 **Managed Rules to Enable** (Free tier available):
+
 - ✅ **Core Rule Set**: SQL injection, XSS protection
 - ✅ **Known Bad Inputs**: Common attack patterns
 - ✅ **IP Reputation List**: Known malicious IPs
@@ -493,21 +497,21 @@ sudo systemctl enable ufw
         {
           "ByteMatchStatement": {
             "SearchString": "phpmyadmin",
-            "FieldToMatch": {"UriPath": {}},
-            "TextTransformations": [{"Priority": 0, "Type": "LOWERCASE"}]
+            "FieldToMatch": { "UriPath": {} },
+            "TextTransformations": [{ "Priority": 0, "Type": "LOWERCASE" }]
           }
         },
         {
           "ByteMatchStatement": {
             "SearchString": "wp-admin",
-            "FieldToMatch": {"UriPath": {}},
-            "TextTransformations": [{"Priority": 0, "Type": "LOWERCASE"}]
+            "FieldToMatch": { "UriPath": {} },
+            "TextTransformations": [{ "Priority": 0, "Type": "LOWERCASE" }]
           }
         }
       ]
     }
   },
-  "Action": {"Block": {}},
+  "Action": { "Block": {} },
   "VisibilityConfig": {
     "SampledRequestsEnabled": true,
     "CloudWatchMetricsEnabled": true,
@@ -563,6 +567,7 @@ server {
 ### 3.4 CloudWatch Alerts
 
 **Create SNS Topic**:
+
 ```bash
 aws sns create-topic --name car-tracker-security-alerts
 aws sns subscribe --topic-arn arn:aws:sns:REGION:ACCOUNT:car-tracker-security-alerts \
@@ -570,6 +575,7 @@ aws sns subscribe --topic-arn arn:aws:sns:REGION:ACCOUNT:car-tracker-security-al
 ```
 
 **CloudWatch Alarms**:
+
 1. **High CPU usage** (>80% for 5 min)
 2. **High network traffic** (DDoS indicator)
 3. **Failed SSH attempts** (brute force)
@@ -638,7 +644,7 @@ location / {
     # Whitelist your IP only
     allow YOUR_IP/32;
     deny all;
-    
+
     proxy_pass http://127.0.0.1:5001;
 }
 ```
@@ -648,6 +654,7 @@ location / {
 ## 📈 Expected Results
 
 **Before Implementation**:
+
 ```
 Audit Logs:
 ✗ anonymous | GET / | SUCCESS (bot traffic)
@@ -656,6 +663,7 @@ Audit Logs:
 ```
 
 **After Implementation**:
+
 ```
 Audit Logs:
 ✅ anonymous | 🚨 BLOCKED: GET /phpmyadmin | FAILURE
@@ -675,29 +683,29 @@ Fail2ban:
 
 ## 🎯 Summary
 
-| Security Layer | Before | After | Status |
-|---|---|---|---|
-| EC2 Security Groups | ❌ Port 5001 exposed | ✅ Localhost only | **CRITICAL** |
-| Nginx Reverse Proxy | ❌ None | ✅ Rate limiting + filtering | **ESSENTIAL** |
-| Fail2ban | ❌ None | ✅ Auto-blocks malicious IPs | **HIGH PRIORITY** |
-| Firewall (UFW) | ❌ Disabled | ✅ Strict rules | **RECOMMENDED** |
-| SSL/TLS | ❌ HTTP only | ✅ Let's Encrypt HTTPS | **RECOMMENDED** |
-| CloudFront + WAF | ❌ Direct exposure | ⚠️ Optional ($5/mo) | **NICE TO HAVE** |
+| Security Layer      | Before               | After                        | Status            |
+| ------------------- | -------------------- | ---------------------------- | ----------------- |
+| EC2 Security Groups | ❌ Port 5001 exposed | ✅ Localhost only            | **CRITICAL**      |
+| Nginx Reverse Proxy | ❌ None              | ✅ Rate limiting + filtering | **ESSENTIAL**     |
+| Fail2ban            | ❌ None              | ✅ Auto-blocks malicious IPs | **HIGH PRIORITY** |
+| Firewall (UFW)      | ❌ Disabled          | ✅ Strict rules              | **RECOMMENDED**   |
+| SSL/TLS             | ❌ HTTP only         | ✅ Let's Encrypt HTTPS       | **RECOMMENDED**   |
+| CloudFront + WAF    | ❌ Direct exposure   | ⚠️ Optional ($5/mo)          | **NICE TO HAVE**  |
 
 ---
 
 ## 💰 Cost Impact
 
-| Item | Monthly Cost |
-|---|---|
-| Nginx Reverse Proxy | **$0** (free) |
-| Fail2ban | **$0** (free) |
-| UFW Firewall | **$0** (free) |
-| Let's Encrypt SSL | **$0** (free) |
-| CloudFront (optional) | ~$1-3 |
-| AWS WAF (optional) | ~$5-10 |
-| **Total (without CDN/WAF)** | **$0** |
-| **Total (with CDN/WAF)** | **~$6-13** |
+| Item                        | Monthly Cost  |
+| --------------------------- | ------------- |
+| Nginx Reverse Proxy         | **$0** (free) |
+| Fail2ban                    | **$0** (free) |
+| UFW Firewall                | **$0** (free) |
+| Let's Encrypt SSL           | **$0** (free) |
+| CloudFront (optional)       | ~$1-3         |
+| AWS WAF (optional)          | ~$5-10        |
+| **Total (without CDN/WAF)** | **$0**        |
+| **Total (with CDN/WAF)**    | **~$6-13**    |
 
 ---
 
