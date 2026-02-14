@@ -118,6 +118,7 @@ export class AuditLogService {
         resourceId: params.resourceId,
         description: params.description,
         changes: this.sanitizeChanges(params.changes), // ✅ Sanitized
+        status: params.status || AuditStatus.SUCCESS, // ✅ Use provided status or default to SUCCESS
         errorMessage: params.errorMessage,
         duration: params.duration,
       });
