@@ -24,12 +24,12 @@ sudo apt install nginx -y
 ### Step 2: Deploy Nginx Configuration
 ```bash
 # Copy the configuration file
-sudo cp nginx-car-tracker.conf /etc/nginx/sites-available/car-tracker
+sudo cp ~/car-tracker-backend/infrastructure/nginx-car-tracker.conf /etc/nginx/sites-available/car-tracker
 
-# Edit the configuration to set your domain
+# Edit the configuration to set your domain (if needed)
 sudo nano /etc/nginx/sites-available/car-tracker
-# Change: server_name cartrackerbooo.mooo.com;
-# To:     server_name YOUR_DOMAIN.com;
+# Verify: server_name cartrackerbooo.mooo.com;
+# (Already set correctly - no need to change)
 
 # Enable the site
 sudo ln -s /etc/nginx/sites-available/car-tracker /etc/nginx/sites-enabled/

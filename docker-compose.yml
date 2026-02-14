@@ -7,10 +7,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "127.0.0.1:5001:5001"  # ✅ Bind to localhost only (was 3000:3000)
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-      - PORT=${PORT:-3000}
+      - PORT=${PORT:-5001}
+      - HOST=0.0.0.0  # ✅ Internal container listens on all (safe inside Docker network)
       - BASE_URL=${BASE_URL}
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - DEBUG=${DEBUG:-false}
@@ -48,7 +49,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"  # ✅ Bind to localhost only
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -66,7 +67,7 @@ services:
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"  # ✅ Bind to localhost only
     volumes:
       - redis_data:/data
     healthcheck:

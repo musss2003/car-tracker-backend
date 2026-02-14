@@ -194,9 +194,10 @@ const startServer = async () => {
 
     // Start the server only after successful database connection AND route registration
     const PORT = parseInt(process.env.PORT || '5001', 10);
+    const HOST = process.env.HOST || '0.0.0.0';
 
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+    server.listen(PORT, HOST, () => {
+      console.log(`🚀 Server running on ${HOST}:${PORT}`);
       console.log(`📊 Database connected and ready`);
       console.log(`🔌 Socket.IO server initialized and ready`);
 
