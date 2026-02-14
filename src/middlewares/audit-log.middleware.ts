@@ -54,7 +54,7 @@ export const auditLogMiddleware = async (req: Request, res: Response, next: Next
 
     auditLogService
       .createLog({
-        userId: null,
+        userId: undefined,
         username: 'anonymous',
         userRole: undefined,
         ipAddress,
