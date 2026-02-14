@@ -283,7 +283,7 @@ process.on('uncaughtException', (error) => {
 // Routes are now registered dynamically in startServer() after DB initialization
 
 // Health check endpoint
-app.get('/health', async (req: Request, res: Response) => {
+app.get('/api/health', async (req: Request, res: Response) => {
   try {
     // Test database connection
     await AppDataSource.query('SELECT 1');
