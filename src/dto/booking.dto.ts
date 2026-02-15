@@ -69,6 +69,25 @@ export class BookingExtraDto {
 }
 
 /**
+ * Coordinates DTO for location data
+ */
+export class CoordinatesDto {
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  @IsNotEmpty()
+  lat!: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  @IsNotEmpty()
+  lng!: number;
+}
+
+/**
  * Custom validator: Start date must be in the future
  */
 @ValidatorConstraint({ name: 'isFutureDate', async: false })
@@ -195,12 +214,32 @@ export class CreateBookingDto {
   pickupLocation?: string;
 
   @IsString()
+  @MaxLength(1000, { message: 'Pickup location notes must not exceed 1000 characters' })
+  @IsOptional()
+  pickupLocationNotes?: string;
+
+  @ValidateNested()
+  @Type(() => CoordinatesDto)
+  @IsOptional()
+  pickupCoordinates?: CoordinatesDto;
+
+  @IsString()
   @MaxLength(255, { message: 'Dropoff location must not exceed 255 characters' })
   @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
     message: 'Dropoff location contains invalid characters',
   })
   @IsOptional()
   dropoffLocation?: string;
+
+  @IsString()
+  @MaxLength(1000, { message: 'Dropoff location notes must not exceed 1000 characters' })
+  @IsOptional()
+  dropoffLocationNotes?: string;
+
+  @ValidateNested()
+  @Type(() => CoordinatesDto)
+  @IsOptional()
+  dropoffCoordinates?: CoordinatesDto;
 
   @IsArray()
   @IsString({ each: true })
@@ -255,12 +294,32 @@ export class UpdateBookingDto {
   pickupLocation?: string;
 
   @IsString()
+  @MaxLength(1000, { message: 'Pickup location notes must not exceed 1000 characters' })
+  @IsOptional()
+  pickupLocationNotes?: string;
+
+  @ValidateNested()
+  @Type(() => CoordinatesDto)
+  @IsOptional()
+  pickupCoordinates?: CoordinatesDto;
+
+  @IsString()
   @MaxLength(255, { message: 'Dropoff location must not exceed 255 characters' })
   @Matches(/^[a-zA-Z0-9\s,.\-()]*$/, {
     message: 'Dropoff location contains invalid characters',
   })
   @IsOptional()
   dropoffLocation?: string;
+
+  @IsString()
+  @MaxLength(1000, { message: 'Dropoff location notes must not exceed 1000 characters' })
+  @IsOptional()
+  dropoffLocationNotes?: string;
+
+  @ValidateNested()
+  @Type(() => CoordinatesDto)
+  @IsOptional()
+  dropoffCoordinates?: CoordinatesDto;
 
   @IsArray()
   @IsString({ each: true })

@@ -122,8 +122,20 @@ export class Booking {
   @Column({ name: 'pickup_location', type: 'varchar', length: 255, nullable: true })
   pickupLocation?: string;
 
+  @Column({ name: 'pickup_location_notes', type: 'text', nullable: true })
+  pickupLocationNotes?: string;
+
+  @Column({ name: 'pickup_coordinates', type: 'json', nullable: true })
+  pickupCoordinates?: { lat: number; lng: number };
+
   @Column({ name: 'dropoff_location', type: 'varchar', length: 255, nullable: true })
   dropoffLocation?: string;
+
+  @Column({ name: 'dropoff_location_notes', type: 'text', nullable: true })
+  dropoffLocationNotes?: string;
+
+  @Column({ name: 'dropoff_coordinates', type: 'json', nullable: true })
+  dropoffCoordinates?: { lat: number; lng: number };
 
   // Additional drivers (stored as JSON array)
   @Column({ name: 'additional_drivers', type: 'json', nullable: true })
@@ -196,7 +208,11 @@ export interface IBooking {
   depositAmount: number;
   depositPaid: boolean;
   pickupLocation?: string;
+  pickupLocationNotes?: string;
+  pickupCoordinates?: { lat: number; lng: number };
   dropoffLocation?: string;
+  dropoffLocationNotes?: string;
+  dropoffCoordinates?: { lat: number; lng: number };
   additionalDrivers?: string[];
   extras?: IBookingExtra[];
   notes?: string;
