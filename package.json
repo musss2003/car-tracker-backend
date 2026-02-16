@@ -10,6 +10,7 @@
     "dev": "nodemon --ext ts --exec ts-node src/app.ts",
     "build": "tsc && mkdir -p dist/assets && cp -r src/assets/* dist/assets/",
     "setup-countries": "ts-node src/scripts/setupCountries.ts",
+    "setup-countries:prod": "node dist/scripts/setupCountries.js",
     "swagger": "ts-node swagger-only.ts",
     "migration:run": "typeorm migration:run -d dist/config/db.js",
     "migration:revert": "typeorm migration:revert -d dist/config/db.js",
