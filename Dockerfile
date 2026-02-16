@@ -31,6 +31,11 @@ RUN npm ci --only=production
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
+# Create upload directory with correct permissions
+RUN mkdir -p /app/private_uploads && \
+    chmod 755 /app/private_uploads && \
+    chown -R node:node /app/private_uploads
+
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh

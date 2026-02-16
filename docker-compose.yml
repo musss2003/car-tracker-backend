@@ -38,6 +38,8 @@ services:
       - APP_URL=${APP_URL}
       - RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
       - TYPEORM_SYNCHRONIZE=${TYPEORM_SYNCHRONIZE:-false}
+    volumes:
+      - uploads_data:/app/private_uploads
     networks:
       - cartrack-network
     restart: unless-stopped
@@ -82,6 +84,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  uploads_data:
 
 networks:
   cartrack-network:

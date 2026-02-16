@@ -34,3 +34,7 @@ rescue-key
 rescue-key.pub
 car-tracker.pem
 logs/
+
+# Uploaded files
+private_uploads/
+/private_uploads
