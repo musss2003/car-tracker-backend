@@ -48,9 +48,20 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// ✅ 4. Body parsers sa limitima
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+// ✅ 4. Body parsers sa limitima (skip for file uploads)
+app.use((req, res, next) => {
+  // Skip JSON/URL encoding for upload routes (use multer instead)
+  if (req.path.startsWith('/api/upload')) {
+    return next();
+  }
+  express.json({ limit: '20mb' })(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/upload')) {
+    return next();
+  }
+  express.urlencoded({ extended: true, limit: '20mb' })(req, res, next);
+});
 
 // ✅ 5. Helmet – security headeri
 app.use(
