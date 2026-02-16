@@ -229,16 +229,44 @@ router.get('/documents/:filename', (req, res) => {
   // Send file with proper content type
   const ext = path.extname(filename).toLowerCase();
   const contentTypeMap: Record<string, string> = {
+    // Common image types
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
+    '.jpe': 'image/jpeg',
     '.png': 'image/png',
     '.gif': 'image/gif',
     '.webp': 'image/webp',
+    '.bmp': 'image/bmp',
+    '.tiff': 'image/tiff',
+    '.tif': 'image/tiff',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.heic': 'image/heic',
+    '.heif': 'image/heif',
+    '.avif': 'image/avif',
+
+    // Common document types
     '.pdf': 'application/pdf',
     '.doc': 'application/msword',
     '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     '.xls': 'application/vnd.ms-excel',
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.ppt': 'application/vnd.ms-powerpoint',
+    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    '.odt': 'application/vnd.oasis.opendocument.text',
+    '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
+    '.odp': 'application/vnd.oasis.opendocument.presentation',
+    '.rtf': 'application/rtf',
+    '.txt': 'text/plain',
+    '.csv': 'text/csv',
+    '.tsv': 'text/tab-separated-values',
+    '.md': 'text/markdown',
+    '.json': 'application/json',
+    '.xml': 'application/xml',
+    '.epub': 'application/epub+zip',
+    '.zip': 'application/zip',
+    '.rar': 'application/vnd.rar',
+    '.7z': 'application/x-7z-compressed',
   };
 
   const contentType = contentTypeMap[ext] || 'application/octet-stream';
