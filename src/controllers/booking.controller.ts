@@ -171,7 +171,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
     const filters = plainToClass(BookingQueryDto, req.query);
 
     // Authorization: Users can only see their own bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
+    if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       filters.customerId = context.userId;
     }
 
@@ -222,7 +222,7 @@ export const getBookingById = async (req: Request, res: Response) => {
 
     // Authorization: Users can only view their own bookings
     if (
-      !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') &&
+      !['admin', 'employee'].includes((context.userRole || '').toLowerCase()) &&
       booking.customerId !== context.userId
     ) {
       return sendForbidden(res, 'You do not have permission to view this booking');
@@ -280,7 +280,7 @@ export const updateBooking = async (req: Request, res: Response) => {
 
     // Authorization: Users can only update their own bookings
     if (
-      !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') &&
+      !['admin', 'employee'].includes((context.userRole || '').toLowerCase()) &&
       existingBooking.customerId !== context.userId
     ) {
       return sendForbidden(res, 'You do not have permission to update this booking');
@@ -318,7 +318,7 @@ export const deleteBooking = async (req: Request, res: Response) => {
     const context = extractAuditContext(req);
 
     // Only admin/manager can delete bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
+    if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       return sendForbidden(res, 'Only administrators can delete bookings');
     }
 
@@ -354,7 +354,7 @@ export const confirmBooking = async (req: Request, res: Response) => {
     const context = extractAuditContext(req);
 
     // Only admin/manager can confirm bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
+    if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       return sendForbidden(res, 'Only administrators can confirm bookings');
     }
 
@@ -391,7 +391,7 @@ export const cancelBooking = async (req: Request, res: Response) => {
     const { reason } = req.body;
 
     // Only admin/manager can cancel bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
+    if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       return sendForbidden(res, 'Only administrators can cancel bookings');
     }
 
@@ -427,7 +427,7 @@ export const convertToContract = async (req: Request, res: Response) => {
     const context = extractAuditContext(req);
 
     // Only admin/manager can convert bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
+    if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       return sendForbidden(res, 'Only administrators can convert bookings to contracts');
     }
 
@@ -463,7 +463,10 @@ export const getBookingsByCustomer = async (req: Request, res: Response) => {
     const context = extractAuditContext(req);
 
     // Authorization: Users can only view their own bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '') && customerId !== context.userId) {
+    if (
+      !['admin', 'employee'].includes((context.userRole || '').toLowerCase()) &&
+      customerId !== context.userId
+    ) {
       return sendForbidden(res, 'You do not have permission to view these bookings');
     }
 
@@ -676,7 +679,7 @@ export const getExpiringBookings = async (req: Request, res: Response) => {
     const context = extractAuditContext(req);
 
     // Only admin/manager can view expiring bookings
-    if (!['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')) {
+    if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       return sendForbidden(res, 'Only administrators can view expiring bookings');
     }
 
