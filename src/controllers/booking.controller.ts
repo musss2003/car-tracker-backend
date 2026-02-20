@@ -57,7 +57,7 @@ export const createBooking = async (req: Request, res: Response) => {
     // Authorization: Users can only create bookings for themselves unless they're admin/manager
     if (
       dto.customerId !== context.userId &&
-      !['ADMIN', 'EMPLOYEE'].includes(context.userRole || '')
+      !['admin', 'employee'].includes((context.userRole || '').toLowerCase())
     ) {
       return sendForbidden(res, 'You can only create bookings for yourself');
     }

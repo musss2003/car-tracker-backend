@@ -86,7 +86,7 @@ const defaultOptions = {
 export const apiLimiter: RateLimitRequestHandler = rateLimit({
   store: createRedisStore('rl:api:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 600,
+  max: 1200, // Increased to 1200 requests per 15 minutes
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.',
@@ -95,9 +95,9 @@ export const apiLimiter: RateLimitRequestHandler = rateLimit({
   ...defaultOptions,
   skip: (req) => {
     const path = req.path || '';
-    // ✅ Skip rate limiting for health checks and internal routes
-    const skipPaths = ['/health', '/metrics'];
-    if (skipPaths.includes(path)) return true;
+    // ✅ Skip rate limiting for health checks, metrics, and static assets
+    const skipPaths = ['/health', '/metrics', '/favicon.ico', '/static', '/assets', '/public'];
+    if (skipPaths.some((skip) => path.startsWith(skip))) return true;
 
     // ✅ Skip rate limiting for internal requests (from same server)
     const ip = req.ip || '';
