@@ -90,48 +90,6 @@ const skipInternalRequests = (req: any) => {
 /**
  * General API rate limiter — 1200 requests per 15 minutes per IP
  */
-<<<<<<< Updated upstream
-export const apiLimiter: RateLimitRequestHandler = rateLimit({
-  store: createRedisStore('rl:api:'),
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1200, // Increased to 1200 requests per 15 minutes
-  message: {
-    success: false,
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: '15 minutes',
-  },
-  ...defaultOptions,
-  skip: (req) => {
-    const path = req.path || '';
-    // ✅ Skip rate limiting for health checks, metrics, and static assets
-    const skipPaths = ['/health', '/metrics', '/favicon.ico', '/static', '/assets', '/public'];
-    if (skipPaths.some((skip) => path.startsWith(skip))) return true;
-
-    // ✅ Skip rate limiting for internal requests (from same server)
-    const ip = req.ip || '';
-    if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') {
-      return true;
-    }
-
-    return false;
-  },
-  // ✅ Custom handler for rate limit exceeded
-  handler: (req, res) => {
-    const ip = req.ip || 'unknown';
-    console.warn(`⚠️  Rate limit exceeded for IP: ${ip} on ${req.path}`);
-
-    // Add CORS headers to prevent CORS errors on rate limit responses
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-    res.status(429).json({
-      success: false,
-      error: 'Too many requests, please try again later.',
-      retryAfter: '15 minutes',
-    });
-  },
-});
-=======
 export const apiLimiter: RateLimitRequestHandler = isProd
   ? rateLimit({
       store: createRedisStore('rl:api:'),
@@ -157,7 +115,6 @@ export const apiLimiter: RateLimitRequestHandler = isProd
       },
     })
   : (noLimit as unknown as RateLimitRequestHandler);
->>>>>>> Stashed changes
 
 /**
  * Strict limiter for auth endpoints — 10 attempts per 15 minutes per IP
