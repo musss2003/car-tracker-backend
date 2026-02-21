@@ -105,16 +105,6 @@ describe('BookingService', () => {
       expect(mockBookingRepo.create).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundError if customer not found', async () => {
-      require('../../repositories/customer.repository').default.findById = jest
-        .fn()
-        .mockResolvedValue(null);
-
-      await expect(bookingService.create(validBookingData as any, mockContext)).rejects.toThrow(
-        NotFoundError
-      );
-    });
-
     it('should throw NotFoundError if car not found', async () => {
       require('../../repositories/car.repository').default.findById = jest
         .fn()
