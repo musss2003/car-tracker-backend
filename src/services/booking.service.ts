@@ -91,12 +91,6 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
   async create(data: CreateBookingDto, context: AuditContext): Promise<Booking> {
     await this.loadDependencies();
 
-    // 1. Validate customer exists
-    const customer = await this.customerRepository!.findById(data.customerId);
-    if (!customer) {
-      throw new NotFoundError('Customer not found');
-    }
-
     // 2. Validate car exists and is active
     const car = await this.carRepository!.findById(data.carId);
     if (!car) {
@@ -164,7 +158,6 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
       endDate, // ✅ Date object
       pickupLocation: data.pickupLocation,
       dropoffLocation: data.dropoffLocation,
-      additionalDrivers: data.additionalDrivers,
       extras: data.extras,
       notes: data.notes,
       bookingReference,

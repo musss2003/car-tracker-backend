@@ -126,7 +126,6 @@ const sendExpirationNotification = async (
     logger.info('Expiration notification sent', {
       bookingId: booking.id,
       bookingReference: maskSensitiveId(booking.bookingReference),
-      customerId: maskSensitiveId(booking.customerId),
       userId: maskSensitiveId(booking.createdById),
       actor: 'system-scheduler',
       jobId,
@@ -151,7 +150,6 @@ const sendExpirationNotification = async (
     logger.error('Failed to send expiration notification after max retries', {
       bookingId: booking.id,
       bookingReference: maskSensitiveId(booking.bookingReference),
-      customerId: maskSensitiveId(booking.customerId),
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       actor: 'system-scheduler',
@@ -247,7 +245,6 @@ const expireBooking = async (booking: Booking, jobId: string, retryCount = 0): P
     logger.info('Booking expired successfully', {
       bookingId: booking.id,
       bookingReference: maskSensitiveId(booking.bookingReference),
-      customerId: maskSensitiveId(booking.customerId),
       carId: booking.carId,
       expiresAt: booking.expiresAt,
       actor: 'system-scheduler',
