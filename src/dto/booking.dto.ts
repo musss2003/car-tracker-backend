@@ -185,8 +185,8 @@ export class IsValidDateConstraint implements ValidatorConstraintInterface {
  */
 export class CreateBookingDto {
   @IsUUID('4', { message: 'Customer ID must be a valid UUID' })
-  @IsNotEmpty()
-  customerId!: string;
+  @IsOptional()
+  customerId?: string;
 
   @IsUUID('4', { message: 'Car ID must be a valid UUID' })
   @IsNotEmpty()
@@ -240,12 +240,6 @@ export class CreateBookingDto {
   @Type(() => CoordinatesDto)
   @IsOptional()
   dropoffCoordinates?: CoordinatesDto;
-
-  @IsArray()
-  @IsString({ each: true })
-  @MaxLength(100, { each: true, message: 'Driver name must not exceed 100 characters' })
-  @IsOptional()
-  additionalDrivers?: string[];
 
   @IsArray()
   @ValidateNested({ each: true })

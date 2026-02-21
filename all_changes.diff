@@ -1,0 +1,77 @@
+diff --git a/src/dto/booking.dto.ts b/src/dto/booking.dto.ts
+index 72714f0..06582c3 100644
+--- a/src/dto/booking.dto.ts
++++ b/src/dto/booking.dto.ts
+@@ -185,8 +185,8 @@ export class IsValidDateConstraint implements ValidatorConstraintInterface {
+  */
+ export class CreateBookingDto {
+   @IsUUID('4', { message: 'Customer ID must be a valid UUID' })
+-  @IsNotEmpty()
+-  customerId!: string;
++  @IsOptional()
++  customerId?: string;
+ 
+   @IsUUID('4', { message: 'Car ID must be a valid UUID' })
+   @IsNotEmpty()
+@@ -241,12 +241,6 @@ export class CreateBookingDto {
+   @IsOptional()
+   dropoffCoordinates?: CoordinatesDto;
+ 
+-  @IsArray()
+-  @IsString({ each: true })
+-  @MaxLength(100, { each: true, message: 'Driver name must not exceed 100 characters' })
+-  @IsOptional()
+-  additionalDrivers?: string[];
+-
+   @IsArray()
+   @ValidateNested({ each: true })
+   @Type(() => BookingExtraDto)
+diff --git a/src/models/booking.model.ts b/src/models/booking.model.ts
+index 85e2ede..99d7dc8 100644
+--- a/src/models/booking.model.ts
++++ b/src/models/booking.model.ts
+@@ -22,12 +22,11 @@ export enum BookingStatus {
+ }
+ 
+ export enum BookingExtraType {
+-  GPS = 'gps',
++  SIM_CARD = 'sim_card',
+   CHILD_SEAT = 'child_seat',
+-  ADDITIONAL_DRIVER = 'additional_driver',
+-  INSURANCE_UPGRADE = 'insurance_upgrade',
+-  WIFI = 'wifi',
++  KASKO_INSURANCE = 'kasko_insurance',
+   ROOF_RACK = 'roof_rack',
++  // For extras like child seat, roof rack, allow quantity selection in UI (not just checkbox)
+ }
+ 
+ export interface IBookingExtra {
+@@ -64,13 +63,12 @@ export class Booking {
+   @Column({ name: 'booking_reference', unique: true, length: 50 })
+   bookingReference: string;
+ 
+-  // Relationship with Customer (cannot be deleted)
+-  @Column({ name: 'customer_id' })
+-  customerId: string;
++  @Column({ name: 'customer_id', nullable: true })
++  customerId?: string;
+ 
+-  @ManyToOne(() => Customer, { eager: true, onDelete: 'RESTRICT' })
++  @ManyToOne(() => Customer, { eager: true, onDelete: 'RESTRICT', nullable: true })
+   @JoinColumn({ name: 'customer_id' })
+-  customer: Customer;
++  customer?: Customer;
+ 
+   // Relationship with Car (cannot be deleted)
+   @Column({ name: 'car_id' })
+@@ -197,8 +195,8 @@ export class Booking {
+ export interface IBooking {
+   id: string;
+   bookingReference: string;
+-  customerId: string;
+-  customer: Customer;
++  customerId?: string;
++  customer?: Customer;
+   carId: string;
+   car: Car;
+   startDate: Date;
