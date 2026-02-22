@@ -1,18 +1,37 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { S3Client, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import path from 'path';
-import fs from 'fs';
 import authenticate from '../middlewares/verify-jwt.middleware';
 
 const router = express.Router();
-
 router.use(authenticate);
 
-// Upload directory - use environment variable with fallback
-const UPLOAD_DIR = process.env.UPLOAD_DIR || '/app/private_uploads';
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+// ── B2 config ─────────────────────────────────────────────────────────────────
+// Required env vars:
+//   B2_ENDPOINT      = https://s3.us-west-004.backblazeb2.com
+//   B2_REGION        = us-west-004
+//   B2_KEY_ID        = your application key ID
+//   B2_APP_KEY       = your application key
+//   B2_BUCKET        = your bucket name
+//   SIGNED_URL_EXPIRY= 900 (optional, default 15 min)
+const s3 = new S3Client({
+  endpoint: process.env.B2_ENDPOINT!,
+  region: process.env.B2_REGION!,
+  forcePathStyle: true, // required for B2 S3-compatible API
+  credentials: {
+    accessKeyId: process.env.B2_KEY_ID!,
+    secretAccessKey: process.env.B2_APP_KEY!,
+  },
+});
 
-// Allowed file types (MIME types)
+const BUCKET = process.env.B2_BUCKET!;
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const SIGNED_URL_EXPIRY = parseInt(process.env.SIGNED_URL_EXPIRY || '900', 10);
+
+// ── Allowed MIME types ────────────────────────────────────────────────────────
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
   'image/jpg',
@@ -26,7 +45,6 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ];
 
-// File filter for security
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
@@ -35,105 +53,45 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   }
 };
 
-// Sanitize filename to prevent security issues
-const sanitizeFilename = (filename: string): string => {
-  return filename
-    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
-    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+const sanitizeFilename = (filename: string): string =>
+  filename
+    .replace(/[^a-zA-Z0-9.-]/g, '_')
+    .replace(/_{2,}/g, '_')
     .toLowerCase();
-};
 
-// Configure multer for private storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Ensure upload directory exists
-    if (!fs.existsSync(UPLOAD_DIR)) {
-      try {
-        fs.mkdirSync(UPLOAD_DIR, { recursive: true, mode: 0o755 });
-        console.log(`Created upload directory: ${UPLOAD_DIR}`);
-      } catch (error) {
-        console.error('Failed to create upload directory:', error);
-        return cb(new Error('Failed to create upload directory'), '');
-      }
-    }
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    const baseName = path.basename(file.originalname, ext);
-    const sanitizedName = sanitizeFilename(baseName);
-    cb(null, `${file.fieldname}-${sanitizedName}-${uniqueSuffix}${ext}`);
-  },
-});
-
+// ── Multer → B2 storage ───────────────────────────────────────────────────────
 const upload = multer({
-  storage,
-  limits: {
-    fileSize: MAX_FILE_SIZE,
-  },
+  storage: multerS3({
+    s3,
+    bucket: BUCKET,
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    metadata: (req, file, cb) => {
+      cb(null, { uploadedBy: (req as any).user?.id || 'unknown' });
+    },
+    key: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      const baseName = path.basename(file.originalname, ext);
+      const sanitized = sanitizeFilename(baseName);
+      cb(null, `uploads/${file.fieldname}-${sanitized}-${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: { fileSize: MAX_FILE_SIZE },
   fileFilter,
 });
 
-/**
- * @swagger
- * /api/upload/upload:
- *   post:
- *     tags: [File Upload]
- *     summary: Upload a document file
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required: [document]
- *             properties:
- *               document:
- *                 type: string
- *                 format: binary
- *                 description: File to upload (max 20MB)
- *     responses:
- *       200:
- *         description: File uploaded successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 filename:
- *                   type: string
- *                 size:
- *                   type: number
- *                 mimetype:
- *                   type: string
- *       400:
- *         description: No file uploaded or invalid file type
- *       401:
- *         description: Unauthorized
- *       413:
- *         description: File too large
- */
+// ── POST /api/upload ──────────────────────────────────────────────────────────
 router.post('/upload', (req, res) => {
   upload.single('document')(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      // Multer-specific errors
       if (err.code === 'LIMIT_FILE_SIZE') {
-        console.error(`File too large: ${err.message}`);
         return res.status(413).json({
           message: 'File too large',
           maxSize: `${MAX_FILE_SIZE / (1024 * 1024)}MB`,
         });
       }
-      console.error('Multer error:', err);
       return res.status(400).json({ message: err.message });
     } else if (err) {
-      // Other errors (e.g., file type validation)
-      console.error('Upload error:', err);
       return res.status(400).json({ message: err.message });
     }
 
@@ -141,143 +99,73 @@ router.post('/upload', (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Log successful upload
+    const file = req.file as Express.MulterS3.File;
     const userId = (req as any).user?.id || 'unknown';
-    console.log(`File uploaded: ${req.file.filename} by user ${userId} (${req.file.size} bytes)`);
+    console.log(`File uploaded to B2: ${file.key} by user ${userId} (${file.size} bytes)`);
 
     res.json({
       message: 'File uploaded successfully',
-      filename: req.file.filename,
-      size: req.file.size,
-      mimetype: req.file.mimetype,
+      filename: file.key,
+      size: file.size,
+      mimetype: file.mimetype,
     });
   });
 });
 
-/**
- * @swagger
- * /api/upload/documents/{filename}:
- *   get:
- *     tags: [File Upload]
- *     summary: Download/view uploaded document
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: filename
- *         required: true
- *         schema:
- *           type: string
- *         description: Name of the file to download
- *     responses:
- *       200:
- *         description: File content
- *         content:
- *           image/jpeg:
- *             schema:
- *               type: string
- *               format: binary
- *           image/png:
- *             schema:
- *               type: string
- *               format: binary
- *           application/pdf:
- *             schema:
- *               type: string
- *               format: binary
- *           application/msword:
- *             schema:
- *               type: string
- *               format: binary
- *           application/vnd.openxmlformats-officedocument.wordprocessingml.document:
- *             schema:
- *               type: string
- *               format: binary
- *       400:
- *         description: Invalid filename
- *       404:
- *         description: File not found
- *       401:
- *         description: Unauthorized
- */
-router.get('/documents/:filename', (req, res) => {
+// ── GET /api/upload/documents/:filename ──────────────────────────────────────
+const getDocument: RequestHandler = async (req, res) => {
   const filename = req.params.filename;
 
-  // Validate filename to prevent directory traversal
-  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-    console.warn(`[Security] Directory traversal attempt: ${filename}`);
-    res.status(400).json({ message: 'Invalid filename' });
-    return;
-  }
-
-  // Additional validation for empty or suspicious filenames
-  if (!filename || filename.trim() === '' || filename.startsWith('.')) {
+  if (!filename || filename.includes('..') || filename.startsWith('/')) {
     console.warn(`[Security] Invalid filename attempt: ${filename}`);
     res.status(400).json({ message: 'Invalid filename' });
     return;
   }
 
-  const filePath = path.join(UPLOAD_DIR, filename);
+  const key = filename.startsWith('uploads/') ? filename : `uploads/${filename}`;
 
-  // Verify file exists
-  if (!fs.existsSync(filePath)) {
-    console.warn(`File not found: ${filename}`);
+  try {
+    const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: SIGNED_URL_EXPIRY });
+
+    const userId = (req as any).user?.id || 'unknown';
+    console.log(
+      `Signed URL generated for: ${key} by user ${userId} (expires in ${SIGNED_URL_EXPIRY}s)`
+    );
+
+    // Redirect to signed URL — client fetches directly from B2, no bandwidth on your server
+    res.redirect(302, signedUrl);
+  } catch (error) {
+    console.error(`Failed to generate signed URL for ${key}:`, error);
     res.status(404).json({ message: 'File not found' });
+  }
+};
+
+// ── DELETE /api/upload/documents/:filename ────────────────────────────────────
+const deleteDocument: RequestHandler = async (req, res) => {
+  const filename = req.params.filename;
+
+  if (!filename || filename.includes('..') || filename.startsWith('/')) {
+    res.status(400).json({ message: 'Invalid filename' });
     return;
   }
 
-  // Send file with proper content type
-  const ext = path.extname(filename).toLowerCase();
-  const contentTypeMap: Record<string, string> = {
-    // Common image types
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.jpe': 'image/jpeg',
-    '.png': 'image/png',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
-    '.bmp': 'image/bmp',
-    '.tiff': 'image/tiff',
-    '.tif': 'image/tiff',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon',
-    '.heic': 'image/heic',
-    '.heif': 'image/heif',
-    '.avif': 'image/avif',
+  const key = filename.startsWith('uploads/') ? filename : `uploads/${filename}`;
 
-    // Common document types
-    '.pdf': 'application/pdf',
-    '.doc': 'application/msword',
-    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    '.xls': 'application/vnd.ms-excel',
-    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    '.ppt': 'application/vnd.ms-powerpoint',
-    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    '.odt': 'application/vnd.oasis.opendocument.text',
-    '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
-    '.odp': 'application/vnd.oasis.opendocument.presentation',
-    '.rtf': 'application/rtf',
-    '.txt': 'text/plain',
-    '.csv': 'text/csv',
-    '.tsv': 'text/tab-separated-values',
-    '.md': 'text/markdown',
-    '.json': 'application/json',
-    '.xml': 'application/xml',
-    '.epub': 'application/epub+zip',
-    '.zip': 'application/zip',
-    '.rar': 'application/vnd.rar',
-    '.7z': 'application/x-7z-compressed',
-  };
+  try {
+    await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
 
-  const contentType = contentTypeMap[ext] || 'application/octet-stream';
-  res.setHeader('Content-Type', contentType);
+    const userId = (req as any).user?.id || 'unknown';
+    console.log(`File deleted from B2: ${key} by user ${userId}`);
 
-  // Log download
-  const userId = (req as any).user?.id || 'unknown';
-  console.log(`File downloaded: ${filename} by user ${userId}`);
+    res.json({ message: 'File deleted successfully' });
+  } catch (error) {
+    console.error(`Failed to delete ${key}:`, error);
+    res.status(500).json({ message: 'Failed to delete file' });
+  }
+};
 
-  // For inline viewing (not forcing download)
-  res.sendFile(filePath);
-});
+router.get('/documents/:filename(*)', getDocument);
+router.delete('/documents/:filename(*)', deleteDocument);
 
 export default router;

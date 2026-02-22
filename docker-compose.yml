@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: ghcr.io/${GITHUB_REPOSITORY:-musss2003/car-tracker-backend}:${APP-VERSION:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY:-musss2003/car-tracker-backend}:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile

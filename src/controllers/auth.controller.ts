@@ -16,13 +16,43 @@ const ACCESS_TOKEN_DURATION = process.env.ACCESS_TOKEN_DURATION;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const REFRESH_TOKEN_DURATION = process.env.REFRESH_TOKEN_DURATION;
 
+// Check if we're in a cross-origin deployment (frontend and backend on different domains)
+// This is true when BASE_URL and APP_URL have different origins, or when running on HTTPS
+const isCrossOriginDeployment = (): boolean => {
+  const baseUrl = process.env.BASE_URL || '';
+  const appUrl = process.env.APP_URL || '';
+
+  // If both URLs are set and have different hosts, it's cross-origin
+  try {
+    if (baseUrl && appUrl) {
+      const baseHost = new URL(baseUrl).host;
+      const appHost = new URL(appUrl).host;
+      if (baseHost !== appHost) return true;
+    }
+  } catch {
+    // URL parsing failed, fall back to NODE_ENV check
+  }
+
+  // Also consider it cross-origin if we're in production (HTTPS)
+  return process.env.NODE_ENV === 'production';
+};
+
+// Determine if we should use cross-site cookie settings
+const useCrossSiteCookies = isCrossOriginDeployment();
+
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production' ? true : false,
-  sameSite: process.env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
+  secure: useCrossSiteCookies ? true : false,
+  sameSite: useCrossSiteCookies ? ('none' as const) : ('lax' as const),
   maxAge: 7 * 24 * 60 * 60 * 1000,
-  partitioned: process.env.NODE_ENV === 'production' ? true : false, // Fix for cross-site cookie warning
+  partitioned: useCrossSiteCookies ? true : false, // Required for cross-site cookies in modern browsers
 };
+
+// Log cookie configuration on startup
+console.log(`🔐 Cookie configuration: ${useCrossSiteCookies ? 'Cross-site' : 'Same-site'} mode`);
+console.log(
+  `   SameSite: ${cookieOptions.sameSite}, Secure: ${cookieOptions.secure}, Partitioned: ${cookieOptions.partitioned}`
+);
 
 interface JwtPayload {
   id: string;
