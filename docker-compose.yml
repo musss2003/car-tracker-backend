@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:5001:5001"  # ✅ Bind to localhost only (was 3000:3000)
+      - "127.0.0.1:5001:5001" 
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-5001}
@@ -21,6 +21,12 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
       - DB_SSL=${DB_SSL:-true}
+      - B2_ENDPOINT=${B2_ENDPOINT}
+      - B2_REGION=${B2_REGION}
+      - B2_KEY_ID=${B2_KEY_ID}
+      - B2_APP_KEY=${B2_APP_KEY}
+      - B2_BUCKET=${B2_BUCKET}
+      - SIGNED_URL_EXPIRY=${SIGNED_URL_EXPIRY:-900}
       - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
       - ACCESS_TOKEN_DURATION=${ACCESS_TOKEN_DURATION:-30m}
       - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
@@ -51,7 +57,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     ports:
-      - "127.0.0.1:5432:5432"  # ✅ Bind to localhost only
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

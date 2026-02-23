@@ -43,12 +43,22 @@ const bookingService = new BookingService(bookingRepository);
 export const createBooking = async (req: Request, res: Response) => {
   try {
     const dto = plainToClass(CreateBookingDto, req.body);
-    const errors = await validate(dto);
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: false,
+    });
 
     if (errors.length > 0) {
+      console.log('Full validation errors:', JSON.stringify(errors, null, 2));
       return sendValidationError(
         res,
-        errors.map((e) => Object.values(e.constraints || {}).join(', '))
+        errors.map((e) => {
+          // Get all constraint messages
+          const messages = e.constraints ? Object.values(e.constraints) : [];
+          return messages.length > 0
+            ? messages.join(', ')
+            : `Field '${e.property}' validation failed`;
+        })
       );
     }
 
