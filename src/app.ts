@@ -67,7 +67,6 @@ const server = http.createServer(app);
 // globalLimiter removed — per-route apiLimiter/authLimiter is sufficient.
 const allowedOrigins = [
   'https://car-tracker-frontend-lime.vercel.app',
-  'https://cartrackerbooo.mooo.com',
   'http://localhost:5173',
   process.env.BASE_URL,
 ].filter((origin): origin is string => typeof origin === 'string' && origin.length > 0);
