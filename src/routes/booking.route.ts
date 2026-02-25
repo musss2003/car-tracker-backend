@@ -55,7 +55,7 @@ router.get('/upcoming', getUpcomingBookings);
  * @desc    Get expiring bookings
  * @access  Admin/Manager only
  */
-router.get('/expiring', verifyRole(['ADMIN', 'EMPLOYEE']), getExpiringBookings);
+router.get('/expiring', verifyRole(['admin', 'employee']), getExpiringBookings);
 
 /**
  * @route   GET /api/bookings/customer/:customerId
@@ -90,27 +90,27 @@ router.put('/:id', updateBooking);
  * @desc    Delete booking
  * @access  Admin/Manager only
  */
-router.delete('/:id', verifyRole(['ADMIN', 'EMPLOYEE']), deleteBooking);
+router.delete('/:id', verifyRole(['admin', 'employee']), deleteBooking);
 
 /**
  * @route   POST /api/bookings/:id/confirm
  * @desc    Confirm booking
  * @access  Admin/Manager only
  */
-router.post('/:id/confirm', verifyRole(['ADMIN', 'EMPLOYEE']), confirmBooking);
+router.post('/:id/confirm', verifyRole(['admin', 'employee']), confirmBooking);
 
 /**
  * @route   POST /api/bookings/:id/cancel
  * @desc    Cancel booking
  * @access  Admin/Manager only
  */
-router.post('/:id/cancel', verifyRole(['ADMIN', 'EMPLOYEE']), cancelBooking);
+router.post('/:id/cancel', verifyRole(['admin', 'employee']), cancelBooking);
 
 /**
  * @route   POST /api/bookings/:id/convert
  * @desc    Convert booking to contract
  * @access  Admin/Manager only
  */
-router.post('/:id/convert', verifyRole(['ADMIN', 'EMPLOYEE']), convertToContract);
+router.post('/:id/convert', verifyRole(['admin', 'employee']), convertToContract);
 
 export default router;

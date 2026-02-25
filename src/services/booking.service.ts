@@ -1,5 +1,5 @@
 import { BaseService } from '../common/services/base.service';
-import { Booking, BookingStatus } from '../models/booking.model';
+import { Booking, BookingStatus, BookingExtraType } from '../models/booking.model';
 import { CreateBookingDto, UpdateBookingDto, BookingQueryDto } from '../dto/booking.dto';
 import bookingRepository, { BookingRepository } from '../repositories/booking.repository';
 import { AuditContext } from '../common/interfaces/base-service.interface';
@@ -135,7 +135,8 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
     if (data.extras && data.extras.length > 0) {
       const days = this.calculateDays(startDate, endDate);
       extrasCost = data.extras.reduce((sum, extra) => {
-        return sum + extra.pricePerDay * extra.quantity * days;
+        const isOneTime = extra.type === BookingExtraType.SIM_CARD;
+        return sum + extra.pricePerDay * extra.quantity * (isOneTime ? 1 : days);
       }, 0);
     }
 
@@ -258,7 +259,8 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
         if (extras && extras.length > 0) {
           const days = this.calculateDays(startDate, endDate);
           extrasCost = extras.reduce((sum, extra) => {
-            return sum + extra.pricePerDay * extra.quantity * days;
+            const isOneTime = extra.type === BookingExtraType.SIM_CARD;
+            return sum + extra.pricePerDay * extra.quantity * (isOneTime ? 1 : days);
           }, 0);
         }
 

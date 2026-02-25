@@ -31,7 +31,7 @@ const authenticate = async (req: Request, res: Response, next: NextFunction): Pr
     const user = await userRepository.findOneBy({ id: decoded.id });
 
     if (!user) {
-      res.status(404).json({ message: 'User not found' });
+      res.status(401).json({ message: 'User not found' });
       return;
     }
 
