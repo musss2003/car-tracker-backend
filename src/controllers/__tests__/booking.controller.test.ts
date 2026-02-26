@@ -663,7 +663,7 @@ describe('Booking Controller', () => {
         status: 'active',
       };
 
-      mockConvertToContract.mockResolvedValue(mockContract as any);
+      mockConvertToContract.mockResolvedValue({ booking: mockContract } as any);
 
       await convertToContract(mockRequest as Request, mockResponse as Response);
 

@@ -194,6 +194,7 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
     };
 
     // Copy non-date fields directly
+    if (data.customerId !== undefined) updateData.customerId = data.customerId;
     if (data.pickupLocation !== undefined) updateData.pickupLocation = data.pickupLocation;
     if (data.dropoffLocation !== undefined) updateData.dropoffLocation = data.dropoffLocation;
     if (data.additionalDrivers !== undefined) updateData.additionalDrivers = data.additionalDrivers;
@@ -227,7 +228,7 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
         endDate = existingBooking.endDate;
       }
 
-      this.validateDates(startDate, endDate);
+      this.validateDates(startDate, endDate, 5); // 5-day grace period for editing past dates
 
       const isAvailable = await this.checkAvailability(
         existingBooking.carId,
@@ -302,7 +303,7 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
    * @throws BadRequestError if booking is not in PENDING status
    * @throws BusinessRuleError if deposit not paid or booking expired
    */
-  async confirmBooking(id: string, context: AuditContext): Promise<Booking> {
+  async confirmBooking(id: string, context: AuditContext, forceConfirm = false): Promise<Booking> {
     const booking = await this.getById(id);
 
     // Validation 1: Status must be PENDING (BadRequestError)
@@ -318,8 +319,8 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
       );
     }
 
-    // Validation 2: Deposit must be paid (BusinessRuleError)
-    if (!booking.depositPaid) {
+    // Validation 2: Deposit must be paid (BusinessRuleError) — skipped if forceConfirm
+    if (!forceConfirm && !booking.depositPaid) {
       logger.warn('Attempted to confirm booking without deposit payment', {
         bookingId: id,
         bookingReference: booking.bookingReference,
@@ -331,13 +332,22 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
       );
     }
 
-    // Validation 3: Booking must not be expired (BusinessRuleError)
+    if (forceConfirm && !booking.depositPaid) {
+      logger.warn('Confirming booking without deposit payment (force)', {
+        bookingId: id,
+        bookingReference: booking.bookingReference,
+        userId: context.userId,
+      });
+    }
+
+    // Validation 3: Booking must not be expired — 5-day grace period for admins/employees
     if (booking.expiresAt) {
       const now = new Date();
       const expiresAt = new Date(booking.expiresAt);
+      const GRACE_MS = 5 * 24 * 60 * 60 * 1000;
 
-      if (now > expiresAt) {
-        logger.warn('Attempted to confirm expired booking', {
+      if (now > new Date(expiresAt.getTime() + GRACE_MS)) {
+        logger.warn('Attempted to confirm booking past 5-day grace period', {
           bookingId: id,
           bookingReference: booking.bookingReference,
           expiresAt: booking.expiresAt,
@@ -345,8 +355,18 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
           userId: context.userId,
         });
         throw new BusinessRuleError(
-          `Cannot confirm booking: booking expired on ${expiresAt.toISOString()}.`
+          `Cannot confirm booking: booking expired on ${expiresAt.toISOString()} and the 5-day grace period has passed.`
         );
+      }
+
+      if (now > expiresAt) {
+        logger.warn('Confirming expired booking within 5-day grace period', {
+          bookingId: id,
+          bookingReference: booking.bookingReference,
+          expiresAt: booking.expiresAt,
+          currentTime: now.toISOString(),
+          userId: context.userId,
+        });
       }
     }
 
@@ -358,7 +378,11 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
       userRole: context.userRole,
     });
 
-    return await this.update(id, { status: BookingStatus.CONFIRMED }, context);
+    return await this.update(
+      id,
+      { status: BookingStatus.CONFIRMED, confirmedAt: new Date() },
+      context
+    );
   }
 
   /**
@@ -424,9 +448,22 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
       throw new BusinessRuleError('Deposit must be paid before converting to contract');
     }
 
-    // Validate booking hasn't expired
-    if (new Date() > booking.expiresAt) {
-      throw new BusinessRuleError('Booking has expired and cannot be converted');
+    // Validate booking hasn't expired — allow 5-day grace period
+    if (booking.expiresAt) {
+      const GRACE_MS = 5 * 24 * 60 * 60 * 1000;
+      if (new Date() > new Date(booking.expiresAt.getTime() + GRACE_MS)) {
+        throw new BusinessRuleError(
+          'Booking has expired and the 5-day grace period for conversion has passed.'
+        );
+      }
+      if (new Date() > booking.expiresAt) {
+        logger.warn('Converting expired booking within 5-day grace period', {
+          bookingId: id,
+          bookingReference: booking.bookingReference,
+          expiresAt: booking.expiresAt,
+          userId: context.userId,
+        });
+      }
     }
 
     // Ensure contractService is loaded
@@ -678,15 +715,18 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
   /**
    * Validate dates are logical
    */
-  private validateDates(startDate: Date, endDate: Date): void {
+  private validateDates(startDate: Date, endDate: Date, allowPastDays = 0): void {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
 
-    // Start date must be today or in the future
-    if (start < now) {
+    const earliest = new Date(now.getTime() - allowPastDays * 24 * 60 * 60 * 1000);
+    earliest.setHours(0, 0, 0, 0);
+
+    // Start date must be today or in the future (or within allowPastDays grace window)
+    if (start < earliest) {
       throw new ValidationError('Start date must be today or in the future');
     }
 

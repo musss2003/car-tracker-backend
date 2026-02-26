@@ -68,8 +68,8 @@ export class Contract {
   @Column({ name: 'additional_notes', type: 'text', nullable: true })
   additionalNotes?: string;
 
-  @Column({ name: 'photo_url', type: 'text' })
-  photoUrl: string;
+  @Column({ name: 'photo_url', type: 'text', nullable: true })
+  photoUrl?: string;
 
   @Column({ name: 'notification_sent', type: 'boolean', default: false })
   notificationSent: boolean;
@@ -99,7 +99,7 @@ export interface IContract {
   dailyRate: number;
   totalAmount: number;
   additionalNotes?: string;
-  photoUrl: string;
+  photoUrl?: string;
   updatedById?: string;
   updatedBy?: User;
   updatedAt?: Date;

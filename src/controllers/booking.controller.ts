@@ -362,13 +362,14 @@ export const confirmBooking = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const context = extractAuditContext(req);
+    const forceConfirm = req.body?.forceConfirm === true;
 
     // Only admin/manager can confirm bookings
     if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       return sendForbidden(res, 'Only administrators can confirm bookings');
     }
 
-    const booking = await bookingService.confirmBooking(id, context);
+    const booking = await bookingService.confirmBooking(id, context, forceConfirm);
 
     return sendSuccess(res, booking, 200, 'Booking confirmed successfully');
   } catch (error: unknown) {
@@ -441,9 +442,9 @@ export const convertToContract = async (req: Request, res: Response) => {
       return sendForbidden(res, 'Only administrators can convert bookings to contracts');
     }
 
-    const contract = await bookingService.convertToContract(id, context);
+    const { booking } = await bookingService.convertToContract(id, context);
 
-    return sendSuccess(res, contract, 200, 'Booking converted to contract successfully');
+    return sendSuccess(res, booking, 200, 'Booking converted to contract successfully');
   } catch (error: unknown) {
     return sendError(res, error, 'Failed to convert booking');
   }

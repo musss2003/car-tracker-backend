@@ -158,6 +158,10 @@ export class Booking {
   @Column({ name: 'cancellation_reason', type: 'text', nullable: true })
   cancellationReason?: string;
 
+  // Confirmation timestamp
+  @Column({ name: 'confirmed_at', type: 'timestamp', nullable: true })
+  confirmedAt?: Date;
+
   // Conversion to Contract
   @Column({ name: 'converted_to_contract_id', nullable: true })
   convertedToContractId?: string;
@@ -217,6 +221,7 @@ export interface IBooking {
   expiresAt: Date;
   cancelledAt?: Date;
   cancellationReason?: string;
+  confirmedAt?: Date;
   convertedToContractId?: string;
   convertedToContract?: Contract;
   convertedAt?: Date;

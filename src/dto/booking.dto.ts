@@ -266,6 +266,10 @@ export class CreateBookingDto {
  * Security: Same validations as CreateBookingDto for updated fields
  */
 export class UpdateBookingDto {
+  @IsUUID('4', { message: 'Customer ID must be a valid UUID' })
+  @IsOptional()
+  customerId?: string;
+
   @IsDateString({}, { message: 'Start date must be a valid ISO 8601 date string' })
   @Validate(IsValidDateConstraint)
   @IsOptional()
@@ -342,11 +346,23 @@ export class UpdateBookingDto {
   @IsOptional()
   depositPaid?: boolean;
 
+  @IsOptional()
+  confirmedAt?: Date;
+
   @IsEnum(BookingStatus, {
     message: `Status must be one of: ${Object.values(BookingStatus).join(', ')}`,
   })
   @IsOptional()
   status?: BookingStatus;
+}
+
+/**
+ * DTO for confirming a booking
+ */
+export class ConfirmBookingDto {
+  @IsBoolean()
+  @IsOptional()
+  forceConfirm?: boolean;
 }
 
 /**

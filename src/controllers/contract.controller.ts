@@ -263,6 +263,10 @@ export const downloadContractDocx = asyncHandler(async (req: Request, res: Respo
   const contract = await contractService.getById(id);
 
   // Assuming photoUrl contains the path to the generated contract file
+  if (!contract.photoUrl) {
+    return res.status(404).json(createSuccessResponse(null, 'Contract file not found'));
+  }
+
   const filePath = path.resolve(contract.photoUrl);
 
   if (!fs.existsSync(filePath)) {
