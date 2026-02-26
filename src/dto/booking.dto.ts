@@ -268,7 +268,6 @@ export class CreateBookingDto {
 export class UpdateBookingDto {
   @IsDateString({}, { message: 'Start date must be a valid ISO 8601 date string' })
   @Validate(IsValidDateConstraint)
-  @Validate(IsFutureDateConstraint)
   @IsOptional()
   startDate?: string;
 
