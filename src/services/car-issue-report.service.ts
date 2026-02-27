@@ -35,9 +35,7 @@ export class CarIssueReportService extends BaseService<
     }
 
     // Set reportedById from the authenticated user (column name differs from base service's createdById)
-    const enrichedData = context?.userId
-      ? { ...data, reportedById: context.userId }
-      : data;
+    const enrichedData = context?.userId ? { ...data, reportedById: context.userId } : data;
 
     return super.create(enrichedData as CreateCarIssueReportDto, context);
   }
