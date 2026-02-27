@@ -20,6 +20,16 @@ export class BookingRepository extends BaseRepository<Booking> {
   }
 
   /**
+   * Override findById to include relations
+   */
+  async findById(id: string): Promise<Booking | null> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['customer', 'car', 'createdBy', 'updatedBy'],
+    });
+  }
+
+  /**
    * Find booking by reference
    */
   async findByReference(bookingReference: string): Promise<Booking | null> {

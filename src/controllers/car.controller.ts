@@ -14,11 +14,19 @@ const carService = new CarService(carRepository);
 
 /**
  * GET /api/cars
- * Get all cars
+ * Get all cars (paginated if ?page= is provided, otherwise all)
  */
 export const getCars = asyncHandler(async (req: Request, res: Response) => {
-  const cars = await carService.getAll();
-  res.json(createSuccessResponse(cars, 'Cars retrieved successfully'));
+  const { page, limit } = req.query;
+  if (page !== undefined) {
+    const p = Math.max(1, parseInt(page as string, 10) || 1);
+    const l = Math.min(100, Math.max(1, parseInt((limit as string) || '20', 10)));
+    const result = await carService.getPaginated(p, l);
+    res.json(createSuccessResponse(result, 'Cars retrieved successfully'));
+  } else {
+    const cars = await carService.getAll();
+    res.json(createSuccessResponse(cars, 'Cars retrieved successfully'));
+  }
 });
 
 /**

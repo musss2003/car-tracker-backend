@@ -49,7 +49,6 @@ export const createBooking = async (req: Request, res: Response) => {
     });
 
     if (errors.length > 0) {
-      console.log('Full validation errors:', JSON.stringify(errors, null, 2));
       return sendValidationError(
         res,
         errors.map((e) => {

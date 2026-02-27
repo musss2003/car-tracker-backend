@@ -10,6 +10,26 @@ export class CarRepository extends BaseRepository<Car> {
   }
 
   /**
+   * Override findAll to include user relations
+   */
+  async findAll(): Promise<Car[]> {
+    return this.repository.find({
+      relations: ['createdBy', 'updatedBy'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Override findById to include user relations
+   */
+  async findById(id: string): Promise<Car | null> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['createdBy', 'updatedBy', 'archivedBy', 'deletedBy'],
+    });
+  }
+
+  /**
    * Find car by license plate
    */
   async findByLicensePlate(licensePlate: string): Promise<Car | null> {

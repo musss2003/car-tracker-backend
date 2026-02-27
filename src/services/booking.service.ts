@@ -150,6 +150,9 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
 
     // 9. Determine deposit amount (if not provided, use 30% of total)
     const depositAmount = data.depositAmount ?? totalCost * 0.3;
+    if (depositAmount > totalCost) {
+      throw new ValidationError('Deposit amount cannot exceed the total cost');
+    }
 
     // 10. Create booking with proper date conversion
     const bookingData: Partial<Booking> = {

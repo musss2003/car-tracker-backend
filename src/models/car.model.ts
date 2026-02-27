@@ -91,7 +91,7 @@ export class Car {
   @Column({ name: 'created_by' })
   createdById: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
@@ -177,7 +177,7 @@ export class Car {
   @Column({ name: 'updated_by', nullable: true })
   updatedById?: string;
 
-  @ManyToOne(() => User, { eager: true, nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updatedBy?: User;
 
@@ -191,7 +191,7 @@ export class Car {
   @Column({ name: 'archived_by', nullable: true })
   archivedById?: string;
 
-  @ManyToOne(() => User, { eager: true, nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'archived_by' })
   archivedBy?: User;
 
@@ -205,7 +205,7 @@ export class Car {
   @Column({ name: 'deleted_by', nullable: true })
   deletedById?: string;
 
-  @ManyToOne(() => User, { eager: true, nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'deleted_by' })
   deletedBy?: User;
 }

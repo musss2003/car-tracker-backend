@@ -3,7 +3,7 @@ import { ContractService } from '../services/contract.service';
 import { ContractRepository } from '../repositories/contract.repository';
 import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext } from '../common/utils/request.utils';
-import { createSuccessResponse } from '../common/dto/response.dto';
+import { createSuccessResponse, createErrorResponse } from '../common/dto/response.dto';
 import { validate as isUUID } from 'uuid';
 import path from 'path';
 import fs from 'fs';
@@ -13,11 +13,19 @@ const contractService = new ContractService(contractRepository);
 
 /**
  * GET /api/contracts
- * Get all contracts
+ * Get all contracts (paginated if ?page= is provided, otherwise all)
  */
 export const getContracts = asyncHandler(async (req: Request, res: Response) => {
-  const contracts = await contractService.getAll();
-  res.json(createSuccessResponse(contracts, 'Contracts retrieved successfully'));
+  const { page, limit } = req.query;
+  if (page !== undefined) {
+    const p = Math.max(1, parseInt(page as string, 10) || 1);
+    const l = Math.min(100, Math.max(1, parseInt((limit as string) || '20', 10)));
+    const result = await contractService.getPaginated(p, l);
+    res.json(createSuccessResponse(result, 'Contracts retrieved successfully'));
+  } else {
+    const contracts = await contractService.getAll();
+    res.json(createSuccessResponse(contracts, 'Contracts retrieved successfully'));
+  }
 });
 
 /**
@@ -29,11 +37,7 @@ export const getContract = asyncHandler(async (req: Request, res: Response) => {
 
   // Validate UUID format
   if (!isUUID(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid contract ID format',
-      data: null,
-    });
+    return res.status(400).json(createErrorResponse('Invalid contract ID format'));
   }
 
   const contract = await contractService.getById(id);
@@ -59,11 +63,7 @@ export const updateContract = asyncHandler(async (req: Request, res: Response) =
 
   // Validate UUID format
   if (!isUUID(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid contract ID format',
-      data: null,
-    });
+    return res.status(400).json(createErrorResponse('Invalid contract ID format'));
   }
 
   const context = extractAuditContext(req);
@@ -80,11 +80,7 @@ export const deleteContract = asyncHandler(async (req: Request, res: Response) =
 
   // Validate UUID format
   if (!isUUID(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid contract ID format',
-      data: null,
-    });
+    return res.status(400).json(createErrorResponse('Invalid contract ID format'));
   }
 
   const context = extractAuditContext(req);
@@ -101,11 +97,7 @@ export const getContractsByCustomer = asyncHandler(async (req: Request, res: Res
 
   // Validate UUID format
   if (!isUUID(customerId)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid customer ID format',
-      data: null,
-    });
+    return res.status(400).json(createErrorResponse('Invalid customer ID format'));
   }
 
   const contracts = await contractService.getByCustomerId(customerId);
@@ -121,11 +113,7 @@ export const getContractsByCar = asyncHandler(async (req: Request, res: Response
 
   // Validate UUID format
   if (!isUUID(carId)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid car ID format',
-      data: null,
-    });
+    return res.status(400).json(createErrorResponse('Invalid car ID format'));
   }
 
   const contracts = await contractService.getByCarId(carId);
@@ -233,11 +221,7 @@ export const markNotificationSent = asyncHandler(async (req: Request, res: Respo
 
   // Validate UUID format
   if (!isUUID(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid contract ID format',
-      data: null,
-    });
+    return res.status(400).json(createErrorResponse('Invalid contract ID format'));
   }
 
   await contractService.markNotificationSent(id);
@@ -253,30 +237,26 @@ export const downloadContractDocx = asyncHandler(async (req: Request, res: Respo
 
   // Validate UUID format
   if (!isUUID(id)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid contract ID format',
-      data: null,
-    });
+    return res.status(400).json(createErrorResponse('Invalid contract ID format'));
   }
 
   const contract = await contractService.getById(id);
 
   // Assuming photoUrl contains the path to the generated contract file
   if (!contract.photoUrl) {
-    return res.status(404).json(createSuccessResponse(null, 'Contract file not found'));
+    return res.status(404).json(createErrorResponse('Contract file not found'));
   }
 
   const filePath = path.resolve(contract.photoUrl);
 
   if (!fs.existsSync(filePath)) {
-    return res.status(404).json(createSuccessResponse(null, 'Contract file not found'));
+    return res.status(404).json(createErrorResponse('Contract file not found'));
   }
 
   res.download(filePath, `contract-${id}.docx`, (err) => {
     if (err) {
       console.error('Error downloading file:', err);
-      res.status(500).json(createSuccessResponse(null, 'Error downloading file'));
+      res.status(500).json(createErrorResponse('Error downloading file'));
     }
   });
 });
