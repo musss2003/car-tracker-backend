@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../config/db';
 import { Country } from '../models/country.model';
 import logger from '../config/logger';
+import { createSuccessResponse } from '../common';
 
 // Get all countries
 export const getCountries = async (req: Request, res: Response) => {
@@ -21,7 +22,7 @@ export const getCountries = async (req: Request, res: Response) => {
       dialCode: country.dialCode || '+0',
     }));
 
-    res.json(transformedCountries);
+    res.json(createSuccessResponse(transformedCountries, 'Countries retrieved successfully'));
   } catch (error) {
     logger.error('Error fetching countries', {
       error: error instanceof Error ? error.message : String(error),

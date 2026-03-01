@@ -34,8 +34,12 @@ export class CarIssueReportService extends BaseService<
       throw new NotFoundError('Car', data.carId);
     }
 
-    // Create issue report
-    return super.create(data, context);
+    // Set reportedById from the authenticated user (column name differs from base service's createdById)
+    const enrichedData = context?.userId ? { ...data, reportedById: context.userId } : data;
+
+    // Call repository directly to avoid BaseService adding a 'createdById' field
+    // that does not exist on the CarIssueReport model
+    return this.repository.create(enrichedData as any);
   }
 
   /**

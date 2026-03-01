@@ -56,7 +56,19 @@ app.use((req, res, next) => {
 // ── 5. Helmet security headers ────────────────────────────────────────────────
 app.use(
   helmet({
-    contentSecurityPolicy: false, // TODO: define CSP policy and enable
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", 'https:'],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
   })
 );
 
@@ -67,7 +79,6 @@ const server = http.createServer(app);
 // globalLimiter removed — per-route apiLimiter/authLimiter is sufficient.
 const allowedOrigins = [
   'https://car-tracker-frontend-lime.vercel.app',
-  'https://cartrackerbooo.mooo.com',
   'http://localhost:5173',
   process.env.BASE_URL,
 ].filter((origin): origin is string => typeof origin === 'string' && origin.length > 0);

@@ -22,6 +22,7 @@ import {
   getCarsWithLowMileage,
 } from '../controllers/car.controller';
 import authenticate from '../middlewares/verify-jwt.middleware';
+import verifyRole from '../middlewares/verify-role.middleware';
 
 /**
  * @swagger
@@ -86,7 +87,7 @@ router.get('/', getCars);
  *         description: Unauthorized
  */
 // Route to create a new car
-router.post('/', createCar);
+router.post('/', verifyRole(['admin', 'employee']), createCar);
 
 /**
  * @swagger
@@ -134,27 +135,27 @@ router.get('/license-plate/:licensePlate', getCarByLicensePlate);
 router.get('/:licensePlate/availability', getCarAvailability);
 
 // PUT: Update car by license plate
-router.put('/:licensePlate/by-plate', updateCarByLicensePlate);
+router.put('/:licensePlate/by-plate', verifyRole(['admin', 'employee']), updateCarByLicensePlate);
 
 // DELETE: Delete car by license plate
-router.delete('/:licensePlate/by-plate', deleteCarByLicensePlate);
+router.delete('/:licensePlate/by-plate', verifyRole(['admin']), deleteCarByLicensePlate);
 
 // POST: Archive car
-router.post('/:id/archive', archiveCar);
+router.post('/:id/archive', verifyRole(['admin', 'employee']), archiveCar);
 
 // POST: Unarchive car
-router.post('/:id/unarchive', unarchiveCar);
+router.post('/:id/unarchive', verifyRole(['admin', 'employee']), unarchiveCar);
 
 // PATCH: Update car mileage
-router.patch('/:id/mileage', updateCarMileage);
+router.patch('/:id/mileage', verifyRole(['admin', 'employee']), updateCarMileage);
 
 // GET: Get single car by ID
 router.get('/:id', getCar);
 
 // PUT: Update car by ID
-router.put('/:id', updateCar);
+router.put('/:id', verifyRole(['admin', 'employee']), updateCar);
 
 // DELETE: Delete car by ID
-router.delete('/:id', deleteCar);
+router.delete('/:id', verifyRole(['admin']), deleteCar);
 
 export default router;

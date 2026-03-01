@@ -44,8 +44,8 @@ export class CreateContractDto {
   additionalNotes?: string;
 
   @IsString()
-  @IsNotEmpty()
-  photoUrl!: string;
+  @IsOptional()
+  photoUrl?: string;
 }
 
 /**

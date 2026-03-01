@@ -205,6 +205,54 @@ export class NotificationService extends BaseService<Notification> {
 }
 
 /**
+ * Utility function to send notifications to all staff (admins + employees)
+ */
+export async function notifyStaff(
+  message: string,
+  type: string,
+  senderId?: string,
+  io?: SocketIOServer
+): Promise<void> {
+  try {
+    const userRepository = new UserRepository();
+    const [admins, employees] = await Promise.all([
+      userRepository.findByRole(UserRole.ADMIN),
+      userRepository.findByRole(UserRole.EMPLOYEE),
+    ]);
+
+    const recipients = [...admins, ...employees];
+
+    if (recipients.length === 0) {
+      console.warn('No staff users found to notify');
+      return;
+    }
+
+    const notificationRepository = new NotificationRepository();
+
+    const notificationPromises = recipients.map(async (user: User) => {
+      const notification = await notificationRepository.create({
+        recipientId: user.id,
+        senderId,
+        type,
+        message,
+        status: NotificationStatus.NEW,
+      });
+
+      if (io && user.id) {
+        io.to(user.id).emit('receiveNotification', notification);
+      }
+
+      return notification;
+    });
+
+    await Promise.all(notificationPromises);
+  } catch (error) {
+    console.error('Error in notifyStaff:', error);
+    throw error;
+  }
+}
+
+/**
  * Utility function to send notifications to all admin users
  */
 export async function notifyAdmins(

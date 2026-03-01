@@ -90,7 +90,8 @@ export abstract class BaseService<
    * Override this method in derived classes for custom validation/transformation
    */
   async create(data: CreateDTO, context?: AuditContext): Promise<T> {
-    const entity = await this.repository.create(data as any);
+    const entityData = context?.userId ? { ...data, createdById: context.userId } : data;
+    const entity = await this.repository.create(entityData as any);
 
     // Log create action
     if (context) {

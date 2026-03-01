@@ -233,6 +233,7 @@ export const getCarDashboard = asyncHandler(async (req: Request, res: Response) 
       latestRegistration: latestRegistration || null,
       latestInsurance: latestInsurance || null,
       recentIssues,
+      activeIssuesCount: activeIssues.length,
     },
   };
 

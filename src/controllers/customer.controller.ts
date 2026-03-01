@@ -6,7 +6,7 @@ import { ContractRepository } from '../repositories/contract.repository';
 import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
-import { notifyAdmins } from '../services/notification.service';
+import { notifyStaff } from '../services/notification.service';
 import { validate as isUUID } from 'uuid';
 
 // Get Socket.IO instance from global
@@ -44,10 +44,10 @@ export const createCustomer = asyncHandler(async (req: Request, res: Response) =
   const context = extractAuditContext(req);
   const customer = await customerService.create(req.body, context);
 
-  // Send notification to admins
+  // Send notification to all staff (admins + employees)
   try {
-    await notifyAdmins(
-      `Novi korisnik dodat: ${customer.name}`,
+    await notifyStaff(
+      `Novi kupac dodat: ${customer.name}`,
       'customer-new',
       context.userId,
       getIO() as any

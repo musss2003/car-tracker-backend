@@ -663,7 +663,7 @@ describe('Booking Controller', () => {
         status: 'active',
       };
 
-      mockConvertToContract.mockResolvedValue(mockContract as any);
+      mockConvertToContract.mockResolvedValue({ booking: mockContract } as any);
 
       await convertToContract(mockRequest as Request, mockResponse as Response);
 
@@ -841,11 +841,19 @@ describe('Booking Controller', () => {
   });
 
   describe('checkAvailability', () => {
+    // Use dynamic future dates so tests don't break as time passes
+    const futureStart = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    futureStart.setMilliseconds(0);
+    const futureEnd = new Date(Date.now() + 11 * 24 * 60 * 60 * 1000);
+    futureEnd.setMilliseconds(0);
+    const futureStartISO = futureStart.toISOString();
+    const futureEndISO = futureEnd.toISOString();
+
     beforeEach(() => {
       mockRequest.body = {
         carId: 'car-123',
-        startDate: '2026-03-01T10:00:00Z',
-        endDate: '2026-03-05T10:00:00Z',
+        startDate: futureStartISO,
+        endDate: futureEndISO,
       };
     });
 
@@ -859,8 +867,8 @@ describe('Booking Controller', () => {
         data: {
           available: true,
           carId: 'car-123',
-          startDate: '2026-03-01T10:00:00.000Z',
-          endDate: '2026-03-05T10:00:00.000Z',
+          startDate: futureStartISO,
+          endDate: futureEndISO,
         },
       });
     });
@@ -902,7 +910,7 @@ describe('Booking Controller', () => {
     it('should return 400 when endDate is invalid', async () => {
       mockRequest.body = {
         carId: 'car-123',
-        startDate: '2026-03-01T10:00:00Z',
+        startDate: futureStartISO,
         endDate: 'not-a-date',
       };
 
@@ -921,8 +929,8 @@ describe('Booking Controller', () => {
     it('should return 400 when endDate is before startDate', async () => {
       mockRequest.body = {
         carId: 'car-123',
-        startDate: '2026-03-05T10:00:00Z',
-        endDate: '2026-03-01T10:00:00Z', // Before start date
+        startDate: futureEndISO, // later date as start
+        endDate: futureStartISO, // earlier date as end
       };
 
       await checkAvailability(mockRequest as Request, mockResponse as Response);
@@ -957,10 +965,13 @@ describe('Booking Controller', () => {
     });
 
     it('should return 400 when booking duration exceeds 1 year', async () => {
+      const twoYearsLater = new Date(
+        futureStart.getTime() + 2 * 365 * 24 * 60 * 60 * 1000
+      ).toISOString();
       mockRequest.body = {
         carId: 'car-123',
-        startDate: '2026-03-01T10:00:00Z',
-        endDate: '2028-03-01T10:00:00Z', // 2 years later
+        startDate: futureStartISO,
+        endDate: twoYearsLater,
       };
 
       await checkAvailability(mockRequest as Request, mockResponse as Response);

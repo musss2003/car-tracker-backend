@@ -66,7 +66,7 @@ export class Booking {
   @Column({ name: 'customer_id', nullable: true })
   customerId?: string;
 
-  @ManyToOne(() => Customer, { eager: true, onDelete: 'RESTRICT', nullable: true })
+  @ManyToOne(() => Customer, { onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({ name: 'customer_id' })
   customer?: Customer;
 
@@ -74,7 +74,7 @@ export class Booking {
   @Column({ name: 'car_id' })
   carId: string;
 
-  @ManyToOne(() => Car, { eager: true, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Car, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'car_id' })
   car: Car;
 
@@ -158,6 +158,10 @@ export class Booking {
   @Column({ name: 'cancellation_reason', type: 'text', nullable: true })
   cancellationReason?: string;
 
+  // Confirmation timestamp
+  @Column({ name: 'confirmed_at', type: 'timestamp', nullable: true })
+  confirmedAt?: Date;
+
   // Conversion to Contract
   @Column({ name: 'converted_to_contract_id', nullable: true })
   convertedToContractId?: string;
@@ -173,7 +177,7 @@ export class Booking {
   @Column({ name: 'created_by' })
   createdById: string;
 
-  @ManyToOne(() => User, { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
@@ -184,7 +188,7 @@ export class Booking {
   @Column({ name: 'updated_by', nullable: true })
   updatedById?: string;
 
-  @ManyToOne(() => User, { eager: true, nullable: true })
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updatedBy?: User;
 
@@ -217,6 +221,7 @@ export interface IBooking {
   expiresAt: Date;
   cancelledAt?: Date;
   cancellationReason?: string;
+  confirmedAt?: Date;
   convertedToContractId?: string;
   convertedToContract?: Contract;
   convertedAt?: Date;

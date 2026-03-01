@@ -13,6 +13,10 @@ import {
   sendForbidden,
 } from '../common/utils/response.utils';
 import bookingRepository from '../repositories/booking.repository';
+import { notifyStaff } from '../services/notification.service';
+
+// Get Socket.IO instance from global
+const getIO = () => (global as Record<string, unknown>).io;
 
 const bookingService = new BookingService(bookingRepository);
 
@@ -49,7 +53,6 @@ export const createBooking = async (req: Request, res: Response) => {
     });
 
     if (errors.length > 0) {
-      console.log('Full validation errors:', JSON.stringify(errors, null, 2));
       return sendValidationError(
         res,
         errors.map((e) => {
@@ -73,6 +76,17 @@ export const createBooking = async (req: Request, res: Response) => {
     }
 
     const booking = await bookingService.create(dto, context);
+
+    try {
+      await notifyStaff(
+        `Nova rezervacija kreirana: ${booking.bookingReference}`,
+        'booking-created',
+        context.userId,
+        getIO() as any
+      );
+    } catch (notifError) {
+      console.error('Error sending booking created notification:', notifError);
+    }
 
     return sendSuccess(res, booking, 201);
   } catch (error: unknown) {
@@ -362,13 +376,25 @@ export const confirmBooking = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const context = extractAuditContext(req);
+    const forceConfirm = req.body?.forceConfirm === true;
 
     // Only admin/manager can confirm bookings
     if (!['admin', 'employee'].includes((context.userRole || '').toLowerCase())) {
       return sendForbidden(res, 'Only administrators can confirm bookings');
     }
 
-    const booking = await bookingService.confirmBooking(id, context);
+    const booking = await bookingService.confirmBooking(id, context, forceConfirm);
+
+    try {
+      await notifyStaff(
+        `Rezervacija potvrđena: ${booking.bookingReference}`,
+        'booking-confirmed',
+        context.userId,
+        getIO() as any
+      );
+    } catch (notifError) {
+      console.error('Error sending booking confirmed notification:', notifError);
+    }
 
     return sendSuccess(res, booking, 200, 'Booking confirmed successfully');
   } catch (error: unknown) {
@@ -407,6 +433,17 @@ export const cancelBooking = async (req: Request, res: Response) => {
 
     const booking = await bookingService.cancelBooking(id, reason || 'Cancelled by admin', context);
 
+    try {
+      await notifyStaff(
+        `Rezervacija otkazana: ${booking.bookingReference}`,
+        'booking-cancelled',
+        context.userId,
+        getIO() as any
+      );
+    } catch (notifError) {
+      console.error('Error sending booking cancelled notification:', notifError);
+    }
+
     return sendSuccess(res, booking, 200, 'Booking cancelled successfully');
   } catch (error: unknown) {
     return sendError(res, error, 'Failed to cancel booking');
@@ -441,9 +478,20 @@ export const convertToContract = async (req: Request, res: Response) => {
       return sendForbidden(res, 'Only administrators can convert bookings to contracts');
     }
 
-    const contract = await bookingService.convertToContract(id, context);
+    const { booking } = await bookingService.convertToContract(id, context);
 
-    return sendSuccess(res, contract, 200, 'Booking converted to contract successfully');
+    try {
+      await notifyStaff(
+        `Rezervacija konvertovana u ugovor: ${booking.bookingReference}`,
+        'booking-converted',
+        context.userId,
+        getIO() as any
+      );
+    } catch (notifError) {
+      console.error('Error sending booking converted notification:', notifError);
+    }
+
+    return sendSuccess(res, booking, 200, 'Booking converted to contract successfully');
   } catch (error: unknown) {
     return sendError(res, error, 'Failed to convert booking');
   }
