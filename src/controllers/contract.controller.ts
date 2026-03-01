@@ -7,6 +7,10 @@ import { createSuccessResponse, createErrorResponse } from '../common/dto/respon
 import { validate as isUUID } from 'uuid';
 import path from 'path';
 import fs from 'fs';
+import { notifyStaff } from '../services/notification.service';
+
+// Get Socket.IO instance from global
+const getIO = () => (global as Record<string, unknown>).io;
 
 const contractRepository = new ContractRepository();
 const contractService = new ContractService(contractRepository);
@@ -51,6 +55,21 @@ export const getContract = asyncHandler(async (req: Request, res: Response) => {
 export const createContract = asyncHandler(async (req: Request, res: Response) => {
   const context = extractAuditContext(req);
   const contract = await contractService.create(req.body, context);
+
+  // Send notification to all staff (admins + employees)
+  try {
+    const customerName = contract.customer?.name || 'nepoznat kupac';
+    const carInfo = contract.car?.licensePlate || 'nepoznato vozilo';
+    await notifyStaff(
+      `Novi ugovor kreiran: ${customerName} — ${carInfo}`,
+      'contract-created',
+      context.userId,
+      getIO() as any
+    );
+  } catch (notifError) {
+    console.error('Error sending contract created notification:', notifError);
+  }
+
   res.status(201).json(createSuccessResponse(contract, 'Contract created successfully'));
 });
 

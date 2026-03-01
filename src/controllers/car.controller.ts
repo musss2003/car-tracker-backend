@@ -4,7 +4,7 @@ import { CarRepository } from '../repositories/car.repository';
 import { asyncHandler } from '../common/errors/error-handler';
 import { extractAuditContext } from '../common/utils/request.utils';
 import { createSuccessResponse } from '../common/dto/response.dto';
-import { notifyAdmins } from '../services/notification.service';
+import { notifyStaff } from '../services/notification.service';
 
 // Get Socket.IO instance from global
 const getIO = () => (global as Record<string, unknown>).io;
@@ -57,9 +57,9 @@ export const createCar = asyncHandler(async (req: Request, res: Response) => {
   const context = extractAuditContext(req);
   const car = await carService.create(req.body, context);
 
-  // Send notification to admins
+  // Send notification to all staff (admins + employees)
   try {
-    await notifyAdmins(
+    await notifyStaff(
       `Novo vozilo dodato: ${car.manufacturer} ${car.model} (${car.licensePlate})`,
       'car-new',
       context.userId || 'system',
