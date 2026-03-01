@@ -149,7 +149,7 @@ export class BookingService extends BaseService<Booking, CreateBookingDto, Updat
     const expiresAt = this.calculateExpirationDate(startDate);
 
     // 9. Determine deposit amount (if not provided, use 30% of total)
-    const depositAmount = data.depositAmount ?? totalCost * 0.3;
+    const depositAmount = data.depositAmount ?? Math.round(totalCost * 0.3 * 100) / 100;
     if (depositAmount > totalCost) {
       throw new ValidationError('Deposit amount cannot exceed the total cost');
     }

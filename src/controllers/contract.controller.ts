@@ -247,14 +247,18 @@ export const downloadContractDocx = asyncHandler(async (req: Request, res: Respo
     return res.status(404).json(createErrorResponse('Contract file not found'));
   }
 
-  const filePath = path.resolve(contract.photoUrl);
+  const baseDir = path.resolve('uploads');
+  const filePath = path.join(baseDir, contract.photoUrl || '');
+  if (!filePath.startsWith(baseDir + path.sep) && filePath !== baseDir) {
+    return res.status(400).json(createErrorResponse('Invalid file path'));
+  }
 
   if (!fs.existsSync(filePath)) {
     return res.status(404).json(createErrorResponse('Contract file not found'));
   }
 
   res.download(filePath, `contract-${id}.docx`, (err) => {
-    if (err) {
+    if (err && !res.headersSent) {
       console.error('Error downloading file:', err);
       res.status(500).json(createErrorResponse('Error downloading file'));
     }
